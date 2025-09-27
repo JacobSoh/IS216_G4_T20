@@ -32,7 +32,7 @@ const navigation = [
     }
 ];
 
-export default function footer() {
+export default function Footer() {
     return (
         <footer className='relative z-10 bg-gray-800'>
             <div className="py-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

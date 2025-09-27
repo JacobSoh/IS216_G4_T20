@@ -24,8 +24,8 @@ function classNames(...classes) {
 	return classes.filter(Boolean).join(' ')
 };
 
-export default function navbar() {
-	const pathname = usePathname() || '/';
+export default function Navbar() {
+	const pathname = usePathname();
 	const isActive = (href) => pathname === href;
 
 	return (
