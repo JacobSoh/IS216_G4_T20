@@ -58,7 +58,7 @@ export default function Navbar() {
 										<Link
 											key={item.name + '_navbar'}
 											href={item.href}
-											aria-current={active ? 'page' : undefined}
+											aria-current={isActive(item.href) ? 'page' : undefined}
 											className={classNames(
 												isActive(item.href) ? 'bg-gray-900 text-white' :
 													item.button ? 'bg-(--custom-accent-red) text-white hover:bg-red-800 px-3' : 'text-gray-300 hover:bg-white/5 hover:text-white',
