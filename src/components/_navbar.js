@@ -22,15 +22,11 @@ const profileDropdown = [
 
 function classNames(...classes) {
 	return classes.filter(Boolean).join(' ')
-}
-
-function isActive(pathname, href) {
-	if (href === '/') return pathname === '/';
-	return pathname === href || pathname.startsWith(href + '/');
-}
+};
 
 export default function navbar() {
 	const pathname = usePathname() || '/';
+	const isActive = (href) => pathname === href;
 
 	return (
 		<Disclosure as="nav" className="fixed left-0 right-0 top-0 bg-gray-800 z-100">
@@ -57,22 +53,20 @@ export default function navbar() {
 						</div>
 						<div className="hidden ms-auto md:ml-6 md:block">
 							<div className="flex space-x-4">
-								{navigation.map((item) => {
-									const active = isActive(pathname, item.href);
-									return (
+								{navigation.map((item) => (
 										<Link
 											key={item.name + '_navbar'}
 											href={item.href}
 											aria-current={active ? 'page' : undefined}
 											className={classNames(
-												active ? 'bg-gray-900 text-white' :
+												isActive(item.href) ? 'bg-gray-900 text-white' :
 													item.button ? 'bg-(--custom-accent-red) text-white hover:bg-red-800 px-3' : 'text-gray-300 hover:bg-white/5 hover:text-white',
 												'rounded-md px-3 py-2 text-sm font-medium',
 											)}>
 											{item.name}
 										</Link>
 									)
-								})}
+								)}
 							</div>
 						</div>
 					</div>
@@ -126,9 +120,9 @@ export default function navbar() {
 							key={item.name}
 							as="a"
 							href={item.href}
-							aria-current={item.current ? 'page' : undefined}
+							aria-current={isActive(item.href) ? 'page' : undefined}
 							className={classNames(
-								item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white',
+								isActive(item.href) ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white',
 								'block rounded-md px-3 py-2 text-base font-medium',
 							)}
 						>
