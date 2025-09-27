@@ -1,3 +1,5 @@
+'use client';
+
 export default function _eyes() {
     return (
         <div id='eyes' className='flex gap-8 z-10'>
