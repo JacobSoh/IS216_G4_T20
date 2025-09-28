@@ -12,7 +12,7 @@ const navigation = [
 	{ name: 'How It Works', href: '/how_it_works', button: false },
 	{ name: 'About', href: '/about', button: false },
 	{ name: 'Contact', href: '/contact', button: false },
-	{ name: 'Join Us', href: '/contact', button: true },
+	{ name: 'Join Us', href: '/register', button: true },
 ]
 
 const profileDropdown = [
@@ -71,6 +71,7 @@ export default function Navbar() {
 							</div>
 						</div>
 					</div>
+					{/*
 					<div className="absolute inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:ml-6 md:pr-0">
 						<button
 							type="button"
@@ -81,7 +82,7 @@ export default function Navbar() {
 							<BellIcon aria-hidden="true" className="size-6" />
 						</button>
 
-						{/* Profile dropdown */}
+						 Profile dropdown 
 						<Menu as="div" className="relative ml-3">
 							<MenuButton className="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
 								<span className="absolute -inset-1.5" />
@@ -110,7 +111,9 @@ export default function Navbar() {
 								))}
 							</MenuItems>
 						</Menu>
+						
 					</div>
+					*/}
 				</div>
 			</div>
 
