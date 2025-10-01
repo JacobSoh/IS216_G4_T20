@@ -33,8 +33,8 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="max-w-2xl mx-auto px-6 lg:px-8 mt-16">
-            <div className="flex flex-col justify-center sm:py-10 md:py-15 lg:py-20">
+        <div className="max-w-2xl mx-auto px-6 lg:px-8">
+            <div className="flex flex-col justify-center py-10 md:py-15 lg:py-20">
                 <div className="text-center space-y-7">
                     <h3 className="text-5xl font-bold tracking-tight text-(--custom-cream-yellow)">BidHub</h3>
                     <h2 className="text-center text-2xl/9 font-bold tracking-tight text-white">Register your account today!</h2>

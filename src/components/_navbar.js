@@ -12,6 +12,7 @@ const navigation = [
 	{ name: 'How It Works', href: '/how_it_works', button: false },
 	{ name: 'About', href: '/about', button: false },
 	{ name: 'Contact', href: '/contact', button: false },
+	{ name: 'Login', href: '/login', button: false },
 	{ name: 'Join Us', href: '/register', button: true },
 ]
 
@@ -126,7 +127,8 @@ export default function Navbar() {
 							href={item.href}
 							aria-current={isActive(item.href) ? 'page' : undefined}
 							className={classNames(
-								isActive(item.href) ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white',
+								isActive(item.href) ? 'bg-gray-900 text-white' :
+								item.button ? 'bg-(--custom-accent-red) text-white hover:bg-red-800 px-3' : 'text-gray-300 hover:bg-white/5 hover:text-white',
 								'block rounded-md px-3 py-2 text-base font-medium',
 							)}
 						>

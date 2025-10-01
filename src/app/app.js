@@ -19,7 +19,9 @@ export default function RootLayout({ children }) {
         className={`${inter.variable} antialiased bg-linear-(--custom-body-bg) bg-no-repeat text-(--custom-text-primary) leading-[1.6]`}
       >
         <Navbar/>
-        {children}
+        <div className="container mx-auto pt-16">
+          {children}
+        </div>
         <Footer/>
       </body>
     </html>
