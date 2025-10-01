@@ -49,7 +49,7 @@ export default function Footer() {
                         <section
                             key={v.title + '_footer'}
                         >
-                            <h3 className='text-2xl font-bold tracking-tight text-(--custom-cream-yellow)'>{v.title}</h3>
+                            <h3 className='text-2xl font-bold tracking-tight text-white'>{v.title}</h3>
                             <div className='text-white mt-6 flex flex-col items-start justify-start'>
                                 {v.links.map(s => (
                                     <Link key={s.name + '_footer'} href={s.href} className='text-md no-underline'>
