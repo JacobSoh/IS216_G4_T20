@@ -1,0 +1,1 @@
+export { default as _link } from "@/components/footer/_link";
