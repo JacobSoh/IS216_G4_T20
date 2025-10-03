@@ -9,7 +9,8 @@ import Footer from "@/components/_footer";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  display: "swap"
+  display: "swap",
+  adjustFontFallback: true
 });
 
 export default function RootLayout({ children }) {
