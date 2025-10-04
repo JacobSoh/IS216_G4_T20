@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { createBrowserClient } from "@supabase/ssr";
+import { createBrowserClient } from '@supabase/ssr';
 
 let _sb = null;
 

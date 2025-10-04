@@ -10,20 +10,20 @@ import {
 
 const validateParam = async (data) => {
     const varErrors = [];
-    if (!data.hasOwnProperty("oid")) {
-        varErrors.push("oid")
+    if (!data.hasOwnProperty('oid')) {
+        varErrors.push('oid')
     };
 
-    if (!data.hasOwnProperty("name")) {
-        varErrors.push("name")
+    if (!data.hasOwnProperty('name')) {
+        varErrors.push('name')
     };
 
-    if (!data.hasOwnProperty("start_time")) {
-        varErrors.push("start_time")
+    if (!data.hasOwnProperty('start_time')) {
+        varErrors.push('start_time')
     };
 
-    if (!data.hasOwnProperty("end_time")) {
-        varErrors.push("end_time")
+    if (!data.hasOwnProperty('end_time')) {
+        varErrors.push('end_time')
     };
     return varErrors.length <= 0 ? 
     {
@@ -33,7 +33,7 @@ const validateParam = async (data) => {
     :
     {
         success: false,
-        message: `Missing parameters: ${varErrors.join(", ")}`
+        message: `Missing parameters: ${varErrors.join(', ')}`
     }
 };
 
