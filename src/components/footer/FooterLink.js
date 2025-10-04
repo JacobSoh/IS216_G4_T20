@@ -1,20 +1,18 @@
 "use client";
 import Link from "next/link";
 
-export default function FooterLink({
-    title,
-    links
-}) {
+export default function FooterLink({ title, links=[], isLink=true, message=null }) {
     return (
         <section>
-            <h3 className='text-2xl font-bold tracking-tight text-white'>{title}</h3>
-            <div className='text-white mt-6 flex flex-col items-start justify-start'>
-                {links.map(s => (
-                    <Link key={s.name + '_footer'} href={s.href} className='text-md no-underline'>
+            <h3 className={`text-lg font-bold tracking-tight ${isLink?'text-white':'text-(--custom-cream-yellow)'}`}>{title}</h3>
+            <div className={`mt-3 text-white text-sm ${isLink?'flex flex-col items-start justify-start':null}`}>
+                {!isLink && message}
+                {isLink && links.map(s => (
+                    <Link key={s.name + '_footer_link'} href={s.href} className='text-sm no-underline'>
                         {s.name}
                     </Link>
                 ))}
             </div>
         </section>
-    )
+    );
 }
