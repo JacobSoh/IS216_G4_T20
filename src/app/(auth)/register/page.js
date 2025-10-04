@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@headlessui/react';
 import Image from 'next/image';
-import _AuthFormControl from '@/components/form/AuthFormControl';
+import AuthFormControl from '@/components/form/AuthFormControl';
 import { axiosBrowserClient } from '@/utils/axios/client';
 import { useRouter } from 'next/navigation';
 
@@ -41,16 +41,16 @@ export default function LoginPage() {
                 </div>
                 <div className='mt-10 mx-auto w-full'>
                     <form onSubmit={onSubmit} className='space-y-6'>
-                        <_AuthFormControl labelText='Email' formName='email' type='email' isRequired={true} placeholder='example_email@example.com' />
-                        <_AuthFormControl labelText='Username' formName='username' type='text' isRequired={true} onkeypress={(event) => {event.key === ' '?event.preventDefault():null}} />
+                        <AuthFormControl labelText='Email' formName='email' type='email' isRequired={true} placeholder='example_email@example.com' />
+                        <AuthFormControl labelText='Username' formName='username' type='text' isRequired={true} onkeypress={(event) => {event.key === ' '?event.preventDefault():null}} />
                         <div className='grid sm:grid-cols-1 lg:grid-cols-2 gap-8'>
-                            <_AuthFormControl labelText='Password' formName='password' type='password' isRequired={true} placeholder='Enter your password' />
-                            <_AuthFormControl labelText='Confirm Password' formName='confirm_password' type='password' isRequired={true} placeholder='Re-enter your password' />
+                            <AuthFormControl labelText='Password' formName='password' type='password' isRequired={true} placeholder='Enter your password' />
+                            <AuthFormControl labelText='Confirm Password' formName='confirm_password' type='password' isRequired={true} placeholder='Re-enter your password' />
                         </div>
                         
-                        <_AuthFormControl labelText='First Name' formName='first_name' type='text' isRequired={true} />
-                        <_AuthFormControl labelText='Middle Name' formName='middle_name' type='text' />
-                        <_AuthFormControl labelText='Last Name' formName='last_name' type='text' isRequired={true} />
+                        <AuthFormControl labelText='First Name' formName='first_name' type='text' isRequired={true} />
+                        <AuthFormControl labelText='Middle Name' formName='middle_name' type='text' />
+                        <AuthFormControl labelText='Last Name' formName='last_name' type='text' isRequired={true} />
                         <Button type='submit'
                             className='mt-5 w-full rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500'
                         >

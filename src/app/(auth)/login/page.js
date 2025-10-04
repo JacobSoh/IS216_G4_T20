@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@headlessui/react';
 import Image from 'next/image';
-import _AuthFormControl from '@/components/form/AuthFormControl';
+import AuthFormControl from '@/components/form/AuthFormControl';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -46,8 +46,8 @@ export default function LoginPage() {
                 </div>
                 <div className='mt-10 mx-auto w-full'>
                     <form onSubmit={onSubmit} className='space-y-6'>
-                        <_AuthFormControl labelText='Email' formName='email' type='email' isRequired={true} placeholder='example_email@example.com' />
-                        <_AuthFormControl labelText='Password' formName='password' type='password' isRequired={true} placeholder='Enter your password' />
+                        <AuthFormControl labelText='Email' formName='email' type='email' isRequired={true} placeholder='example_email@example.com' />
+                        <AuthFormControl labelText='Password' formName='password' type='password' isRequired={true} placeholder='Enter your password' />
                         <Button type='submit'
                             className='mt-5 w-full rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500'
                         >

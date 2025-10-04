@@ -1,6 +1,6 @@
 import { Input, Field, Label, Button } from "@headlessui/react";
 
-export default function _AuthFormControl({
+export default function AuthFormControl({
     labelText,
     formName,
     type,
