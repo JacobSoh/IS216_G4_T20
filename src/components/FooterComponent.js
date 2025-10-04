@@ -8,7 +8,7 @@ import {
 
 export default function FooterComponent() {
     return (
-        <footer className='fixed bottom-0 left-0 right-0 lg:h-76 z-10 bg-gray-800'>
+        <footer className='z-10 bg-gray-800'>
             <div className='py-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 
                         [@media(max-width:29rem)]:hidden'>
                 <div
