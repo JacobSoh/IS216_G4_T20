@@ -1,6 +1,6 @@
 'use client';
 
-export default function _errorMsg({ status, error }) {
+export default function ErrorMsg({ status, error }) {
     return (
         <div className='space-y-3 text-center'>
             {error?.message ? (

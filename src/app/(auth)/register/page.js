@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@headlessui/react";
 import Image from "next/image";
-import _AuthFormControl from "@/components/_authFormControl";
+import _AuthFormControl from "@/components/form/AuthFormControl";
 import { axiosBrowserClient } from "@/utils/axios/client";
 import { useRouter } from "next/navigation";
 

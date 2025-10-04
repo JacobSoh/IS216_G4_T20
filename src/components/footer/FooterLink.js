@@ -1,8 +1,7 @@
 "use client";
 import Link from "next/link";
 
-
-export default function _link({
+export default function FooterLink({
     title,
     links
 }) {

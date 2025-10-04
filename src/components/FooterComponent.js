@@ -1,8 +1,8 @@
 'use client';
 
 import {
-    _link
-} from "@/components/footer";
+    FooterLink
+} from '@/components/footer';
 
 const navigation = [
     {
@@ -34,11 +34,11 @@ const navigation = [
     }
 ];
 
-export default function Footer() {
+export default function FooterComponent() {
     return (
-        <footer className='relative z-10 bg-gray-800'>
-            <div className="py-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 
-                        [@media(max-width:29rem)]:hidden">
+        <footer className='fixed bottom-0 left-0 right-0 lg:h-76 z-10 bg-gray-800'>
+            <div className='py-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 
+                        [@media(max-width:29rem)]:hidden'>
                 <div
                     className={`
                         grid 
@@ -52,10 +52,10 @@ export default function Footer() {
                             <p className='text-md'>The modern way to discover and bid on unique items from around the world.</p>
                         </div>
                     </section>
-                    {navigation.map(v => <_link key={v.title + '_footer'} title={v.title} links={v.links} />)}
+                    {navigation.map(v => <FooterLink key={v.title + '_footer'} title={v.title} links={v.links} />)}
                 </div>
             </div>
-            <hr className="max-w-7xl mx-auto [@media(max-width:29rem)]:hidden"/>
+            <hr className='max-w-7xl mx-auto [@media(max-width:29rem)]:hidden'/>
             <div className='text-white border-top max-w-7xl text-center px-4 sm:px-6 lg:px-8 py-5 mx-auto'>
                 &copy; 2024 BidHub. All rights reserved.
             </div>
