@@ -1,6 +1,6 @@
 'use client';
 
-export default function _eyes() {
+export default function Eyes() {
     return (
         <div id='eyes' className='flex gap-8 z-10'>
             {[1,2].map(v => (

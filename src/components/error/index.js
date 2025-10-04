@@ -1,3 +1,3 @@
-export { default as _eyes } from "@/components/error/_eyes";
-export { default as _errorMsg } from "@/components/error/_errorMsg";
-export { default as _errorBtn } from "@/components/error/_errorBtn";
+export { default as Eyes } from "@/components/error/Eyes";
+export { default as ErrorMsg } from "@/components/error/ErrorMsg";
+export { default as ErrorBtn } from "@/components/error/ErrorBtn";
