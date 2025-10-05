@@ -1,3 +1,4 @@
+'use client';
 export { default as Header } from '@/components/authForm/Header';
 export { default as InputControl } from '@/components/authForm/InputControl';
 export { default as Error } from '@/components/authForm/Error';

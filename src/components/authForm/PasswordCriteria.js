@@ -1,4 +1,9 @@
-import { useMemo } from "react";
+'use client';
+import { useMemo, forwardRef } from "react";
+import { 
+    CheckCircleIcon,
+    ExclamationTriangleIcon
+} from "@heroicons/react/24/outline";
 
 const MIN_LEN = 8;
 
@@ -39,25 +44,19 @@ export default function PasswordCriteria({ pwd }) {
     ];
 
     return (
-        <div className='py-2 px-4 my-4 text-sm text-red-800 rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-red-400'>
-            <ul className="mt-2 space-y-1 text-sm">
-                {pwdCriteria.map(({ key, label }) => {
-                    const ok = flags[key];
-                    console.log(label);
-                    return (
-                        <li key={key} className={`flex items-center gap-2 ${ok ? 'text-green-600' : 'text-red-600'}`}>
-                            <span
-                                aria-hidden="true"
-                                className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px]
-                        ${ok ? "border-green-600" : "border-gray-400"}`}
-                            >
-                                {ok ? "✓" : "•"}
-                            </span>
-                            {label}
-                        </li>
-                    );
-                })}
-            </ul>
-        </div>
+        <ul className="mt-2 space-y-1 text-sm">
+            {pwdCriteria.map(({ key, label }) => {
+                const ok = flags[key];
+                return (
+                    <li key={key} className={`flex items-center gap-1 ${ok ? 'text-green-600' : 'text-red-600'}`}>
+                        {
+                            ok? (<CheckCircleIcon aria-hidden='true' className='block size-6' />):
+                            (<ExclamationTriangleIcon aria-hidden='true' className='block size-6' />)
+                        }
+                        {label}
+                    </li>
+                );
+            })}
+        </ul>
     );
 };

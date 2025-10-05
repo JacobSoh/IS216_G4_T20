@@ -1,3 +1,4 @@
+'use client';
 export default function SwitchLink( { isLogin } ) {
     return (
         <p className='mt-4 text-center text-sm/6 text-gray-400'>

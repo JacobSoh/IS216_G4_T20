@@ -1,3 +1,4 @@
+'use client';
 export default function Header( { isLogin } ) {
     return (
         <div className='text-center space-y-7'>
