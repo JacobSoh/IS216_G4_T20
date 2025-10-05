@@ -10,7 +10,6 @@ import {
 import { Button } from '@headlessui/react';
 
 
-// ----- Initializer for Email and Username Test (fast, simple) -----
 const initialFormData = { email: '', username: '', password: '', cfmPwd: '' };
 
 const formDataReducer = (state, action) => {
@@ -24,8 +23,8 @@ const formDataReducer = (state, action) => {
     };
 };
 
-const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;     // simple & effective
-const usernameRe = /^[A-Za-z0-9_]{3,20}$/;       // 3–20, no spaces, only _
+const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const usernameRe = /^[A-Za-z0-9_]{3,20}$/;
 
 function validateEmail(v) {
     return emailRe.test(v);
