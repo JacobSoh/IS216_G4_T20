@@ -15,13 +15,17 @@ export default function InputControl({
     isRequired,
     onKeyDown,
     onChange,
-    placeholder
+    placeholder,
+    inputErr
 }) {
     const [showPwdCriteria, setShowPwdCriteria] = useState(false);
-    const handleFocus = () => formName === 'password' && setShowPwdCriteria(true);
-    const handleBlur = () => formName === 'password' && setShowPwdCriteria(false);
+    const handleFocus = () => {
+        if (formName === 'password') setShowPwdCriteria(true);
+    };
+    const handleBlur = () => {
+        if (formName === 'password') setShowPwdCriteria(false);
+    };
 
-    const showPwCriteria = formName === 'password' && (value?.length ?? 0) > 0;
     return (
         <Field
             className='space-y-2'
@@ -54,6 +58,19 @@ export default function InputControl({
             >
                 <div className='py-2 px-4 my-4 text-sm text-red-800 rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-red-400'>
                     <PasswordCriteria pwd={value} />
+                </div>
+            </Transition>
+            <Transition
+                show={inputErr?.length>0??false}
+                enter='transition ease-out duration-200'
+                enterFrom='opacity-0 translate-y-1'
+                enterTo='opacity-100 translate-y-0'
+                leave="transition ease-in duration-150"
+                leaveFrom="opacity-100 translate-y-0"
+                leaveTo="opacity-0 -translate-y-1"
+            >
+                <div className='py-2 px-4 my-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400' role='alert'>
+                    <Error error={inputErr} rmvDupDiv={true} />
                 </div>
             </Transition>
         </Field>
