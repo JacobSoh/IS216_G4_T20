@@ -19,7 +19,7 @@ export default function LoginPage() {
         if (Number(verified) === 1) {
             showAlert({ message: 'Email verified! You can log in now.', variant: 'success' })
         };
-    }, [])
+    }, [showAlert])
 
     async function onSubmit(e) {
         e.preventDefault();
