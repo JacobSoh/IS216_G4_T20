@@ -131,7 +131,6 @@ export default function AuthFormComponent({
                         </Button>
                     </form>
 
-                    {error ? <Error error={error} /> : null}
                     <SwitchLink isLogin={isLogin} />
                 </div>
             </div>

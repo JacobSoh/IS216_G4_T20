@@ -20,9 +20,12 @@ export default function LoginPage() {
             const res = await axiosBrowserClient.post('/auth/register', {
                 email: form.get('email'),
                 password: form.get('password'),
-                metadata: {
-                    username: form.get('username')
-                }
+                options: {
+                    data: {
+                        username: form.get('username')
+                    },
+                    emailRedirectTo: `${window.location.origin}/login?email_verified=1`
+                },
             });
             if (res.status !== 200) return setError('Unable to login!');
             return router.push('/login');
