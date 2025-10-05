@@ -6,7 +6,7 @@ import {
     FooterBottom
 } from '@/components/footer';
 
-export default function FooterComponent() {
+export default function Footer() {
     return (
         <footer className='z-10 bg-gray-800'>
             <div className='py-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 
