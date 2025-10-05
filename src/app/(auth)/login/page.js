@@ -8,13 +8,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAlert } from '@/context/AlertContext';
 
 export default function LoginPage() {
-    const sp = useSearchParams();
     const [showLoading, setShowLoading] = useState(false);
     const { showAlert } = useAlert();
     const router = useRouter();
     const sb = supabaseBrowser();
 
     useEffect(() => {
+        const sp = useSearchParams();
         const verified = sp.get('verified');
         if (Number(verified) === 1) {
             showAlert({ message: 'Email verified! You can log in now.', variant: 'success' })
@@ -26,7 +26,7 @@ export default function LoginPage() {
         setShowLoading(true);
 
         const form = new FormData(e.currentTarget);
-        console.log(form.get('email'));
+        
         const { data, error } = await (await sb).auth.signInWithPassword({
             email: form.get('email'),
             password: form.get('password')
