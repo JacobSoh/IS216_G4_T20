@@ -5,6 +5,7 @@ import '@/styles/globals.css';
 /* Importing Components */
 import Navbar from '@/components/NavbarComponent';
 import Footer from '@/components/FooterComponent';
+import Providers from '@/app/providers';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -19,11 +20,13 @@ export default function RootLayout({ children }) {
       <body
         className={`${inter.variable} antialiased bg-linear-(--custom-body-bg) bg-no-repeat text-(--custom-text-primary) leading-[1.6]`}
       >
-        <Navbar/>
-        <div className='container min-h-dvh mx-auto pt-16'>
-          {children}
-        </div>
-        <Footer/>
+        <Navbar />
+        <Providers>
+          <div className='container min-h-dvh mx-auto pt-16'>
+            {children}
+          </div>
+        </Providers>
+        <Footer />
       </body>
     </html>
   );
