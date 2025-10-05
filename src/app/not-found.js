@@ -1,6 +1,6 @@
 'use client';
-import ErrorComponent from '@/components/ErrorComponent';
+import Error from '@/components/ErrorComponent';
 
 export default function NotFound() {
-    return (<ErrorComponent status={'404'} error={{message: 'Looks like you\'re lost'}}/>);
+    return (<Error status={'404'} error={{message: 'Looks like you\'re lost'}}/>);
 };

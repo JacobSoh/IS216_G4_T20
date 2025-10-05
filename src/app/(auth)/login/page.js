@@ -7,13 +7,15 @@ import { supabaseBrowser } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-    const router = useRouter();
     const [error, setError] = useState('');
+    const [showLoading, setShowLoading] = useState(false);
+    const router = useRouter();
     const sb = supabaseBrowser();
 
     async function onSubmit(e) {
-        setError('');
         e.preventDefault();
+        setError('');
+        setShowLoading(true);
 
         const form = new FormData(e.currentTarget);
         console.log(form.get('email'));
@@ -21,9 +23,10 @@ export default function LoginPage() {
             email: form.get('email'),
             password: form.get('password')
         });
+        setShowLoading(false);
         if (error) return setError(error.message);
-        router.push('/');as
+        return router.push('/');
     };
 
-    return <AuthFormComponent error={error} onSubmit={onSubmit}/>;
+    return <AuthFormComponent showLoading={showLoading} error={error} onSubmit={onSubmit}/>;
 };

@@ -7,6 +7,7 @@ import {
     Error,
     SwitchLink
 } from '@/components/authForm/index';
+import Spinner from './SpinnerComponent';
 import { Button } from '@headlessui/react';
 
 
@@ -34,6 +35,7 @@ function validateUsername(v) {
 };
 
 export default function AuthFormComponent({
+    showLoading,
     error,
     onSubmit,
     isLogin = true
@@ -74,6 +76,7 @@ export default function AuthFormComponent({
                             value={form.email}
                             onChange={handleField("email")}
                             inputErr={emailErr}
+                            isLogin={isLogin}
                         />
 
                         <InputControl
@@ -84,6 +87,7 @@ export default function AuthFormComponent({
                             placeholder="Enter your password"
                             value={form.password}
                             onChange={handleField("password")}
+                            isLogin={isLogin}
                         />
 
                         {!isLogin && (
@@ -115,10 +119,15 @@ export default function AuthFormComponent({
 
                         <Button
                             type="submit"
-                            className="mt-5 w-full rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                            className="mt-5 w-full rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white 
+                            hover:bg-indigo-400 focus-visible:outline-2 
+                            focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
                             disabled={hasErrors}
-                        >
-                            {isLogin ? "Login" : "Register"}
+                        >   
+                            <div className='flex items-center justify-center gap-2'>
+                                {isLogin ? "Login" : "Register"}
+                                {showLoading && <Spinner />}
+                            </div>
                         </Button>
                     </form>
 
