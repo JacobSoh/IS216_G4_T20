@@ -1,11 +1,18 @@
-import { Input, Field, Label, Button } from "@headlessui/react";
+import { Input, Field, Label } from "@headlessui/react";
 
-export default function AuthFormControl({
+import {
+    Error,
+    PasswordCriteria
+} from '@/components/authForm/index';
+
+export default function InputControl({
     labelText,
     formName,
     type,
+    value,
     isRequired,
-    onkeypress,
+    onKeyDown,
+    onChange,
     placeholder
 }) {
     return (
@@ -20,9 +27,12 @@ export default function AuthFormControl({
                 type={type}
                 className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
                 required={isRequired}
-                onKeyDown={onkeypress}
+                onKeyDown={onKeyDown}
+                onChange={onChange}
                 placeholder={placeholder}
             />
+            {value?.length > 0 && <PasswordCriteria pwd={value} />}
+            {/* {pwdRequirement?<Error error={error}/>:null} */}
         </Field>
     )
 }
