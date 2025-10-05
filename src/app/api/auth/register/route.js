@@ -4,9 +4,9 @@ import {
 } from '@/services/userService';
 
 export async function POST(req) {
-    const { email, password, metadata } = await req.json();
+    const { email, password, options } = await req.json();
     try {
-        const result = await register(email, password, metadata);
+        const result = await register(email, password, options);
         return NextResponse.json({
             status: 200,
             record: result

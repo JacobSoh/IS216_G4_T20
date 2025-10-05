@@ -26,7 +26,7 @@ function classNames(...classes) {
 	return classes.filter(Boolean).join(' ')
 };
 
-export default function NavbarComponent() {
+export default function Navbar() {
 	const pathname = usePathname();
 	const isActive = (href) => pathname === href;
 

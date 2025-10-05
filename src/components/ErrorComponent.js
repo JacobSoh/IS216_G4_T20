@@ -6,7 +6,7 @@ import {
     ErrorBtn
 } from '@/components/error/index';
 
-export default function ErrorComponent({ status, error, reset }) {
+export default function Error({ status, error, reset }) {
     
 
     return (

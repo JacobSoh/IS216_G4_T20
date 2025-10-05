@@ -3,8 +3,8 @@ import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
 
 /* Importing Components */
-import NavbarComponent from '@/components/NavbarComponent';
-import FooterComponent from '@/components/FooterComponent';
+import Navbar from '@/components/NavbarComponent';
+import Footer from '@/components/FooterComponent';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -19,11 +19,11 @@ export default function RootLayout({ children }) {
       <body
         className={`${inter.variable} antialiased bg-linear-(--custom-body-bg) bg-no-repeat text-(--custom-text-primary) leading-[1.6]`}
       >
-        <NavbarComponent/>
+        <Navbar/>
         <div className='container min-h-dvh mx-auto pt-16'>
           {children}
         </div>
-        <FooterComponent/>
+        <Footer/>
       </body>
     </html>
   );
