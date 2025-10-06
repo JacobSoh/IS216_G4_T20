@@ -13,7 +13,7 @@ function VerifiedGate() {
   const { showAlert } = useAlert();
 
   useEffect(() => {
-    const v = params.get('verified');
+    const v = params.get('email_verified');
     if (v === '1') {
       showAlert({ message: 'Email verified! You can log in now.', variant: 'success' });
       // Clean the URL so the alert doesn’t re-fire on refresh/back
