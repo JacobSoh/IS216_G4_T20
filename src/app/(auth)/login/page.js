@@ -25,7 +25,6 @@ function VerifiedGate() {
 }
 
 export default function LoginPage() {
-    const sp = useSearchParams();
     const [showLoading, setShowLoading] = useState(false);
     const { showAlert } = useAlert();
     const router = useRouter();
