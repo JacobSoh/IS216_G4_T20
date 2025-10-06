@@ -1,3 +1,4 @@
+'use client';
 /* Importing Style or Fonts */
 import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
