@@ -18,7 +18,7 @@ export default function LoginPage() {
 			showAlert({message, variant});
 			sessionStorage.removeItem('flash');
 		};
-	}, [showAlert])
+	}, [showAlert]);
 
 	async function onSubmit(e) {
 		e.preventDefault();
@@ -37,6 +37,10 @@ export default function LoginPage() {
 			showAlert({ message: error.message, variant: 'danger' });
 			return window.scrollTo({ top: 0, behavior: 'smooth' })
 		};
+		sessionStorage.setItem('flash', JSON.stringify({
+			message: 'Login successfully!',
+			variant: 'success',
+		}));
 		return router.push('/');
 	};
 
