@@ -4,7 +4,6 @@ import { useState, useReducer } from 'react';
 import {
     Header,
     InputControl,
-    Error,
     SwitchLink
 } from '@/components/authForm/index';
 import Spinner from './SpinnerComponent';
