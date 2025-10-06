@@ -26,7 +26,6 @@ export async function middleware(req) {
 
     if (isProtected && !session) {
         const loginUrl = new URL('/login', req.url);
-        loginUrl.searchParams.set('next', `${pathname}${search}`); // keep return path
         return NextResponse.redirect(loginUrl);
     }
 
