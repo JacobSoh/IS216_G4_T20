@@ -1,4 +1,3 @@
-'use client';
 /* Importing Style or Fonts */
 import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
@@ -15,7 +14,7 @@ const inter = Inter({
   adjustFontFallback: true
 });
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
   return (
     <html lang='en'>
       <body
