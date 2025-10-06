@@ -20,7 +20,7 @@ export default function LoginPage() {
         const form = new FormData(e.currentTarget);
         try {
             const res = await axiosBrowserClient.post('/auth/register', {
-                email: form.get('email'),
+                email: form.get('email').trim(),
                 password: form.get('password'),
                 options: {
                     data: {
