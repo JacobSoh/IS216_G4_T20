@@ -2,6 +2,7 @@
 /* Importing Style or Fonts */
 import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
+import { usePathname } from 'next/navigation';
 
 /* Importing Components */
 import Navbar from '@/components/NavbarComponent';
@@ -16,18 +17,25 @@ const inter = Inter({
 });
 
 export default function RootLayout({ children }) {
+  const pathname = usePathname();
+  const isAuctionPage = pathname === '/auction';
+
   return (
     <html lang='en'>
       <body
         className={`${inter.variable} antialiased bg-linear-(--custom-body-bg) bg-no-repeat text-(--custom-text-primary) leading-[1.6]`}
       >
-        <Navbar />
+        {!isAuctionPage && <Navbar />}
         <Providers>
-          <div className='container min-h-dvh mx-auto pt-16'>
-            {children}
-          </div>
+          {isAuctionPage ? (
+            children
+          ) : (
+            <div className='container min-h-dvh mx-auto pt-16'>
+              {children}
+            </div>
+          )}
         </Providers>
-        <Footer />
+        {!isAuctionPage && <Footer />}
       </body>
     </html>
   );
