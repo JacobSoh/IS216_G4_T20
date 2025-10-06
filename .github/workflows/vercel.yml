@@ -1,40 +1,58 @@
+# .github/workflows/vercel.yml
 name: Vercel CI Deploys
 
 on:
   push:
-    branches: ["**"]          # every branch
+    branches: ["**"]
   pull_request:
     branches: ["**"]
 
 jobs:
-  preview:
-    if: github.ref != 'refs/heads/main' || github.event_name == 'pull_request'
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Install Vercel CLI
-      - run: npm i -g vercel@latest
+        run: npm i -g vercel@latest
 
-      - name: Pull Preview env
-      - run: vercel pull --yes --environment=preview --token ${{ secrets.VERCEL_TOKEN }}
+      # Decide preview vs production once and reuse
+      - name: Select environment
+        id: env
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ github.event_name }}" = "push" ]; then
+            echo "envtype=production" >> $GITHUB_OUTPUT
+            echo "prodflag=--prod" >> $GITHUB_OUTPUT
+          else
+            echo "envtype=preview" >> $GITHUB_OUTPUT
+            echo "prodflag=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pull env from Vercel
+        run: vercel pull --yes --environment=${{ steps.env.outputs.envtype }} --token ${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Build (preview)
-      - run: vercel build --token ${{ secrets.VERCEL_TOKEN }}
+      - name: Build
+        run: vercel build ${{ steps.env.outputs.prodflag }} --token ${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Deploy (preview)
-      - id: deploy
-      - run: |
-          url=$(vercel deploy --prebuilt --token ${{ secrets.VERCEL_TOKEN }})
+      - name: Deploy
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt ${{ steps.env.outputs.prodflag }} --token ${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> $GITHUB_OUTPUT
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -47,27 +65,8 @@ jobs:
           script: |
             const url = '${{ steps.deploy.outputs.url }}';
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
+              issue_number: context.issue.number,
               body: `✅ Preview ready: ${url}`
             });
-
-  production:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm i -g vercel@latest
-      - run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      - run: vercel build --prod --token ${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      - run: vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
