@@ -1,4 +1,3 @@
-# .github/workflows/vercel.yml
 name: Vercel CI Deploys
 
 on:
