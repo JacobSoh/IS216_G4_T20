@@ -30,10 +30,10 @@ const styles = {
 async function handleAction(action, showAlert, openModal, logout) {
     switch (action) {
         case 'login':
-            openModal({content: <Login/>, title: "BidHub", titleClassName: styles.title});
+            openModal({ content: <Login />, title: "BidHub", titleClassName: styles.title });
             break;
         case 'register':
-            openModal({content: <Register/>, title: "BidHub", titleClassName: styles.title});
+            openModal({ content: <Register />, title: "BidHub", titleClassName: styles.title });
             break;
         case 'logout':
             await logout?.();
@@ -58,7 +58,7 @@ export default memo(function NavItems({
 
     const isMobile = layout === 'mobile';
 
-     const containerClass = isMobile
+    const containerClass = isMobile
         ? 'flex flex-col gap-3 px-2 pt-2 pb-3'
         : 'flex space-x-4';
 
@@ -105,15 +105,29 @@ export default memo(function NavItems({
                             </Link>
                         )
                     ) : (
-                        <button
-                            key={`${item.label}_${layout}`}
-                            type="button"
-                            onClick={() => handleAction(item.action, showAlert, openModal, logout)}
-                            className={itemClass(item)}
-                            aria-label={item.label}
-                        >
-                            {item.label}
-                        </button>
+                        isMobile ? (
+                            // IMPORTANT: use DisclosureButton on mobile so it closes after click
+                            <DisclosureButton
+                                key={`${item.label}_m_btn`}
+                                as="button"
+                                type="button"
+                                onClick={() => handleAction(item.action, showAlert, openModal, logout)}
+                                className={itemClass(item)}
+                                aria-label={item.label}
+                            >
+                                {item.label}
+                            </DisclosureButton>
+                        ) : (
+                            <button
+                                key={`${item.label}_d_btn`}
+                                type="button"
+                                onClick={() => handleAction(item.action, showAlert, openModal, logout)}
+                                className={itemClass(item)}
+                                aria-label={item.label}
+                            >
+                                {item.label}
+                            </button>
+                        )
                     )
                 )}
             </div>
