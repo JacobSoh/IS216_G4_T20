@@ -1,7 +1,6 @@
 /* Importing Style or Fonts */
 import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
-import { usePathname } from 'next/navigation';
 
 /* Importing Components */
 import Navbar from '@/components/NavbarComponent';
