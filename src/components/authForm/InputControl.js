@@ -33,7 +33,7 @@ export default function InputControl({
         if (formName === 'password') setShowPwdCriteria(false);
     };
 
-    const showError = !!(!`isLogin` && inputErr && inputErr.length > 0);
+    const showError = !!(!isLogin && inputErr && inputErr.length > 0);
 
     return (
         <Field
