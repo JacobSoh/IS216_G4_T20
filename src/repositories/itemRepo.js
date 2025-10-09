@@ -8,6 +8,7 @@ const baseItemSelect = `
   title,
   description,
   min_bid,
+  bid_increment,
   item_bucket,
   object_path
 `

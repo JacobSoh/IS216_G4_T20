@@ -63,7 +63,12 @@ const buildLotFromSnapshot = (snapshot) => {
   }, 0)
   const activeBid = active?.current_bid ?? null
   const endDate = auction.end_time ? new Date(auction.end_time) : null
-  const minBid = active?.min_bid ?? 0
+  const minBid = Number(active?.min_bid ?? 0)
+  const bidIncrement = Number.isFinite(Number(active?.bid_increment)) && Number(active?.bid_increment) > 0
+    ? Number(active?.bid_increment)
+    : 0.01
+  const currentBidValue = Number(activeBid?.current_price ?? 0)
+  const nextBidMinimum = currentBidValue + bidIncrement
   return {
     id: active?.iid ?? null,
     name: active?.title ?? 'Upcoming Lot',
@@ -75,6 +80,8 @@ const buildLotFromSnapshot = (snapshot) => {
     auctionName: auction.name ?? '',
     imageUrl: active?.imageUrl ?? null,
     minBid,
+    bidIncrement,
+    nextBidMinimum,
     hasBid: Boolean(activeBid),
     auctionEndsAt: auction.end_time ?? null,
     auctionStartsAt: auction.start_time ?? null
@@ -902,6 +909,7 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
   const [bidAmount, setBidAmount] = useState('')
   const [bidFeedback, setBidFeedback] = useState(null)
   const [isBidding, setIsBidding] = useState(false)
+  const [nowTs, setNowTs] = useState(() => Date.now())
 
   useEffect(() => {
     setCurrentLot(buildLotFromSnapshot(snapshot))
@@ -928,12 +936,17 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
     return () => window.clearTimeout(id)
   }, [bidFeedback])
 
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTs(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
   const handleBidSubmit = async () => {
     if (!aid || !currentLot.activeItem?.iid) return
     const parsedAmount = Number(bidAmount)
-    const minimumRequired = currentLot.hasBid ? currentLot.currentBid + 1 : currentLot.minBid
+    const minimumRequired = currentLot.nextBidMinimum ?? currentLot.minBid ?? 0
     if (Number.isNaN(parsedAmount) || parsedAmount < minimumRequired) {
-      setBidFeedback(`Enter at least ${minimumRequired.toLocaleString()}`)
+      setBidFeedback(`Enter at least $${minimumRequired.toFixed(2)}`)
       return
     }
 
@@ -943,8 +956,45 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
         iid: currentLot.activeItem.iid,
         amount: parsedAmount
       })
+      const nextRequired = parsedAmount + bidIncrementValue
+      setCurrentLot((prev) => {
+        if (!prev) {
+          return prev
+        }
+        const updatedActiveItem = prev.activeItem
+          ? {
+              ...prev.activeItem,
+              current_bid: {
+                ...(prev.activeItem.current_bid ?? {}),
+                current_price: parsedAmount
+              }
+            }
+          : prev.activeItem
+        return {
+          ...prev,
+          hasBid: true,
+          currentBid: parsedAmount,
+          displayPriceValue: parsedAmount,
+          displayPriceLabel: 'Current Bid',
+          nextBidMinimum: nextRequired,
+          activeItem: updatedActiveItem
+        }
+      })
+      setLotItems((prevItems) =>
+        prevItems.map((item) =>
+          item.iid === currentLot.activeItem?.iid
+            ? {
+                ...item,
+                current_bid: {
+                  ...(item.current_bid ?? {}),
+                  current_price: parsedAmount
+                }
+              }
+            : item
+        )
+      )
       setBidFeedback('Bid placed successfully')
-      setBidAmount('')
+      setBidAmount(nextRequired.toFixed(2))
       refresh?.()
     } catch (error) {
       setBidFeedback(error?.message ?? 'Unable to place bid')
@@ -955,16 +1005,34 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
 
   const isLoading = !currentLot || !initialLiveData && !snapshot
 
-  const lotBidValue = useMemo(() => {
-    return Number(currentLot.currentBid ?? 0)
-  }, [currentLot.currentBid])
+  const lotBidValue = useMemo(() => Number(currentLot.currentBid ?? 0), [currentLot.currentBid])
   const minBidValue = useMemo(() => Number(currentLot.minBid ?? 0), [currentLot.minBid])
-  const displayPriceLabel = currentLot.hasBid ? 'Current Bid' : 'Minimum Bid'
-  const displayPriceValue = currentLot.hasBid ? lotBidValue : minBidValue
+  const bidIncrementValue = useMemo(
+    () => (Number.isFinite(Number(currentLot.bidIncrement)) && Number(currentLot.bidIncrement) > 0 ? Number(currentLot.bidIncrement) : 0.01),
+    [currentLot.bidIncrement]
+  )
   const nextBidMinimum = useMemo(() => {
-    return currentLot.hasBid ? lotBidValue + 1 : minBidValue
-  }, [currentLot.hasBid, lotBidValue, minBidValue])
+    return lotBidValue + bidIncrementValue
+  }, [lotBidValue, bidIncrementValue])
   const modalLotData = useMemo(() => buildScreenLot(currentLot, currentLot.nextItem), [currentLot, currentLot.nextItem])
+  const auctionStart = useMemo(
+    () => (currentLot.auctionStartsAt ? new Date(currentLot.auctionStartsAt) : null),
+    [currentLot.auctionStartsAt]
+  )
+  const auctionEnd = useMemo(
+    () => (currentLot.auctionEndsAt ? new Date(currentLot.auctionEndsAt) : null),
+    [currentLot.auctionEndsAt]
+  )
+  const isBeforeStart = auctionStart ? nowTs < auctionStart.getTime() : false
+  const isAfterEnd = auctionEnd ? nowTs > auctionEnd.getTime() : false
+
+  useEffect(() => {
+    if (!isBidPanelOpen) return undefined
+    if (!bidAmount) {
+      setBidAmount(nextBidMinimum.toFixed(2))
+    }
+    return undefined
+  }, [isBidPanelOpen, nextBidMinimum, bidAmount])
 
   if (isLoading) {
     return (
@@ -973,6 +1041,48 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-[var(--custom-bright-blue)] border-t-transparent mx-auto mb-4"></div>
           <p className="text-[var(--custom-text-primary)] text-lg">Loading Auction House...</p>
         </div>
+      </div>
+    )
+  }
+
+  if (isBeforeStart) {
+    return (
+      <div className="w-full h-screen bg-[var(--custom-bg-primary)] flex flex-col items-center justify-center px-6 text-center gap-6">
+        <div className="space-y-4 max-w-xl">
+          <p className="text-xs uppercase tracking-[0.32em] text-[var(--custom-bright-blue)]">Auction Preview</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-[var(--custom-text-primary)]">Auction starting soon</h1>
+          <p className="text-[var(--custom-text-secondary)]">
+            The house opens at{' '}
+            {auctionStart?.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}.{" "}
+            Grab a seat and check back shortly.
+          </p>
+        </div>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 rounded-xl border border-[var(--custom-border-color)] px-5 py-3 text-sm font-semibold text-[var(--custom-text-primary)] hover:bg-[var(--custom-bg-secondary)] transition"
+        >
+          Return Home
+        </Link>
+      </div>
+    )
+  }
+
+  if (isAfterEnd) {
+    return (
+      <div className="w-full h-screen bg-[var(--custom-bg-primary)] flex flex-col items-center justify-center px-6 text-center gap-6">
+        <div className="space-y-4 max-w-xl">
+          <p className="text-xs uppercase tracking-[0.32em] text-[var(--custom-bright-blue)]">Auction Closed</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-[var(--custom-text-primary)]">This auction has ended</h1>
+          <p className="text-[var(--custom-text-secondary)]">
+            This auction has ended, feel free to explore other auctions.
+          </p>
+        </div>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 rounded-xl border border-[var(--custom-border-color)] px-5 py-3 text-sm font-semibold text-[var(--custom-text-primary)] hover:bg-[var(--custom-bg-secondary)] transition"
+        >
+          Return Home
+        </Link>
       </div>
     )
   }
@@ -1074,31 +1184,50 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
 
                 <div className="space-y-4">
                   {/* Current Bid Info */}
-                  <div className="bg-[var(--custom-bg-secondary)] p-3 md:p-4 rounded-lg">
-                    <p className="text-[var(--custom-text-muted)] text-xs md:text-sm">Current Bid</p>
-                    <p className="text-xl md:text-2xl font-bold text-[var(--custom-cream-yellow)]">
-                      ${lotBidValue.toLocaleString()}
-                    </p>
+                  <div className="bg-[var(--custom-bg-secondary)] p-3 md:p-4 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[var(--custom-text-muted)] text-xs md:text-sm uppercase tracking-wide">Current Bid</p>
+                        <p className="text-xl md:text-2xl font-bold text-[var(--custom-cream-yellow)]">${lotBidValue.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[var(--custom-text-muted)] text-xs md:text-sm uppercase tracking-wide">Min Increment</p>
+                        <p className="text-lg font-semibold text-[var(--custom-bright-blue)]">${bidIncrementValue.toFixed(2)}</p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Bid Input */}
                   <div>
                     <label className="text-xs md:text-sm text-[var(--custom-text-secondary)] mb-2 block">
-                      Your Bid Amount (Min increment: $2)
+                      Your Bid Amount
                     </label>
                     <input
                       type="number"
-                      step="2"
-                      min={Math.max(0, lotBidValue + 2)}
-                      placeholder={`Min: $${(lotBidValue + 2).toLocaleString()}`}
+                      inputMode="decimal"
+                      step={bidIncrementValue}
+                      min={nextBidMinimum}
+                      value={bidAmount}
+                      onChange={(event) => setBidAmount(event.target.value)}
+                      placeholder={`Min: $${nextBidMinimum.toFixed(2)}`}
                       className="w-full px-3 md:px-4 py-2 md:py-3 bg-[var(--custom-bg-secondary)] border border-[var(--custom-border-color)] rounded-lg text-[var(--custom-text-primary)] text-sm md:text-base focus:outline-none focus:border-[var(--custom-bright-blue)]"
                     />
+                    <p className="mt-2 text-[11px] md:text-xs text-[var(--custom-text-muted)]">
+                      Enter in increments of ${bidIncrementValue.toFixed(2)}.
+                    </p>
                   </div>
 
                   {/* Place Bid Button */}
-                  <button className="w-full py-3 md:py-4 bg-[var(--custom-accent-red)] hover:bg-[#8b1f22] text-white font-bold rounded-lg transition-all text-sm md:text-base">
-                    Place Bid
+                  <button
+                    onClick={handleBidSubmit}
+                    disabled={isBidding}
+                    className="w-full py-3 md:py-4 bg-[var(--custom-accent-red)] hover:bg-[#8b1f22] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all text-sm md:text-base"
+                  >
+                    {isBidding ? 'Submitting...' : 'Place Bid'}
                   </button>
+                  {bidFeedback && (
+                    <p className="text-xs md:text-sm text-[var(--custom-cream-yellow)]">{bidFeedback}</p>
+                  )}
                 </div>
               </div>
             </div>

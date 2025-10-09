@@ -45,8 +45,10 @@ function enhanceAuctionRecord(record) {
 
 function enhanceItemRecord(item, bidsMap) {
   const bid = bidsMap.get(item.iid)
+  const bidIncrement = Number(item.bid_increment ?? 0.01)
   return {
     ...item,
+    bid_increment: Number.isFinite(bidIncrement) && bidIncrement > 0 ? bidIncrement : 0.01,
     imageUrl: buildStoragePublicUrl({
       bucket: item.item_bucket,
       objectPath: item.object_path
@@ -170,16 +172,25 @@ export async function placeBidForItem({ aid, iid, bidderId, amount }) {
     throw new Error('Item not found for this auction')
   }
   const currentBid = await retrieveCurrentBidByItem(iid)
-  const minBid = Math.max(itemRecord.min_bid, currentBid?.current_price ?? 0)
-  if (amount < minBid) {
-    throw new Error(`Bid must be at least ${minBid}`)
+  const rawIncrement = Number(itemRecord.bid_increment ?? 0.01)
+  const bidIncrement = Number.isFinite(rawIncrement) && rawIncrement > 0 ? rawIncrement : 0.01
+  const currentPrice = currentBid?.current_price ? Number(currentBid.current_price) : null
+  const minimumRequired = currentPrice !== null
+    ? currentPrice + bidIncrement
+    : Math.max(Number(itemRecord.min_bid ?? 0), bidIncrement)
+  const normalizedAmount = Number(amount)
+  if (!Number.isFinite(normalizedAmount)) {
+    throw new Error('Bid amount must be a valid number')
+  }
+  if (normalizedAmount + 1e-9 < minimumRequired) {
+    throw new Error(`Bid must be at least ${minimumRequired.toFixed(2)}`)
   }
   const payload = {
     aid,
     iid,
     uid: bidderId,
     oid: itemRecord.oid,
-    current_price: amount,
+    current_price: normalizedAmount,
     bid_datetime: new Date().toISOString()
   }
   return upsertCurrentBid(payload)
