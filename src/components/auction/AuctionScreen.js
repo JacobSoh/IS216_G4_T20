@@ -48,7 +48,7 @@ export const buildScreenLot = (currentLot = {}, nextItem = null) => {
   }
 }
 
-function StageAuctionCard({ lotData, onClick, isModal = false }) {
+function StageAuctionCard({ lotData, onClick }) {
   const {
     auctionName,
     lotLabel,
@@ -65,15 +65,12 @@ function StageAuctionCard({ lotData, onClick, isModal = false }) {
     nextLotImage
   } = lotData
 
-  const cardWidth = isModal ? 'min(960px, 95vw)' : '820px'
-  const cardHeight = isModal ? 'min(560px, 85vh)' : '460px'
-
   return (
     <div
       onClick={onClick}
       style={{
-        width: cardWidth,
-        height: cardHeight,
+        width: '820px',
+        height: '460px',
         backgroundColor: '#050910',
         border: '2px solid rgba(255, 255, 255, 0.14)',
         borderRadius: '18px',
@@ -248,21 +245,119 @@ function StageAuctionCard({ lotData, onClick, isModal = false }) {
   )
 }
 
-function ModalAuctionCard({ lotData, onClick, onClose }) {
+function ModalAuctionCard({ lotData, onClose }) {
+  const {
+    auctionName,
+    lotLabel,
+    imageUrl,
+    title,
+    priceLabel,
+    priceValue,
+    minBidLabel,
+    minBidValue,
+    nextBidMinimum,
+    timeRemaining,
+    biddersLabel,
+    nextLotTitle,
+    nextLotImage
+  } = lotData
+
   return (
-    <div className="relative" onClick={onClick}>
+    <div className="relative w-full max-w-6xl mx-auto bg-[#050910] border-2 border-white/[0.14] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      {/* Close Button Inside Card */}
       <button
         type="button"
         onClick={(event) => {
           event.stopPropagation()
           onClose?.()
         }}
-        className="absolute -right-3 -top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--custom-bg-secondary)] text-[var(--custom-text-primary)] shadow-lg transition hover:bg-[var(--custom-bg-tertiary)]"
+        className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-all border border-white/20"
       >
-        <span className="sr-only">Close modal</span>
-        ✕
+        <span className="text-xl leading-none">✕</span>
       </button>
-      <StageAuctionCard lotData={lotData} onClick={onClick} isModal />
+
+      <div className="p-4 md:p-6 lg:p-8 overflow-y-auto">
+        {/* Header - Added padding-right to prevent overlap with close button */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4 md:mb-6 pr-12">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs tracking-[0.18em] text-[#6dd6ff] uppercase">Live Auction</span>
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white">{auctionName}</h2>
+            <span className="text-xs tracking-[0.12em] text-[#94a3b8] uppercase">{lotLabel}</span>
+          </div>
+          <div className="bg-[#6dd6ff]/[0.18] rounded-full px-3 py-2 text-xs text-[#6dd6ff] uppercase tracking-wider flex items-center gap-2 w-fit flex-shrink-0">
+            <span className="w-2 h-2 rounded-full bg-[#6dd6ff]" />
+            <span className="whitespace-nowrap">{timeRemaining} remaining</span>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
+          {/* Left: Main Image */}
+          <div className="flex-1 lg:flex-[1.2] rounded-xl md:rounded-2xl overflow-hidden relative bg-[#0c121f] min-h-[250px] md:min-h-[320px]">
+            <Image
+              src={imageUrl}
+              alt={title}
+              width={600}
+              height={400}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-[#050910] via-[#050910]/90 to-transparent">
+              <span className="text-xs tracking-[0.18em] text-[#9ab6ff] uppercase block mb-1">{lotLabel}</span>
+              <p className="text-base md:text-lg font-semibold text-white">{title}</p>
+            </div>
+          </div>
+
+          {/* Right: Bid Info */}
+          <div className="flex-1 flex flex-col gap-3 md:gap-4">
+            {/* Current Bid */}
+            <div className="bg-[#0f1827]/92 rounded-xl md:rounded-2xl p-4 md:p-5 border border-[#6dd6ff]/12">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs md:text-sm text-[#94a3b8] uppercase">{priceLabel}</span>
+                <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#fff9af]">${priceValue}</span>
+              </div>
+              <div className="space-y-2 text-xs md:text-sm">
+                <div className="flex justify-between text-[#9ab6ff]">
+                  <span>{minBidLabel}</span>
+                  <span>${minBidValue}</span>
+                </div>
+                <div className="flex justify-between text-[#9ab6ff]">
+                  <span>Next Required Bid</span>
+                  <span>${formatNumber(Number(nextBidMinimum) + Number(priceValue))}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-3 md:gap-4 bg-[#0c121f]/92 rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/[0.15]">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] md:text-xs text-[#94a3b8] uppercase">Time Remaining</span>
+                <span className="text-sm md:text-base lg:text-lg font-semibold text-white">{timeRemaining}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] md:text-xs text-[#94a3b8] uppercase">Bidders</span>
+                <span className="text-sm md:text-base lg:text-lg font-semibold text-white">{biddersLabel}</span>
+              </div>
+            </div>
+
+            {/* Next Lot Preview */}
+            <div className="flex gap-3 items-center bg-[#080c15]/92 rounded-xl md:rounded-2xl p-3 md:p-4 border border-dashed border-white/[0.25]">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden bg-[#111827] flex-shrink-0">
+                <Image
+                  src={nextLotImage}
+                  alt="Upcoming lot preview"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] md:text-xs text-[#94a3b8] uppercase">Next Up</span>
+                <span className="text-sm md:text-base font-semibold text-white truncate">{nextLotTitle}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

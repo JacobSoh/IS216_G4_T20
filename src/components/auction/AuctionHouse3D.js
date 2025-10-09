@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Suspense, useRef, useEffect, useState, useMemo, createContext, useContext } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
@@ -19,8 +20,10 @@ import {
 } from '@react-three/drei'
 import * as THREE from 'three'
 import { useAuctionLive } from '@/hooks/useAuctionLive'
+import { useAuctionChat } from '@/hooks/useAuctionChat'
 import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen'
 import { axiosBrowserClient } from '@/utils/axios/client'
+import { buildStoragePublicUrl } from '@/utils/storage'
 
 const pad = (value) => String(Math.max(0, Math.floor(value))).padStart(2, '0')
 
@@ -34,6 +37,29 @@ const formatTimeRemaining = (endTime) => {
   const seconds = totalSeconds % 60
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
 }
+
+const formatChatTimestamp = (value) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const resolveAvatarUrl = (sender) => {
+  if (!sender) {
+    return DEFAULT_AVATAR
+  }
+  const bucket = sender.avatar_bucket || 'avatar'
+  const objectPath = sender.object_path || 'default.png'
+  return (
+    buildStoragePublicUrl({
+      bucket,
+      objectPath
+    }) || DEFAULT_AVATAR
+  )
+}
+
+const DEFAULT_AVATAR = '/images/avatar-placeholder.png'
 
 const buildLotFromSnapshot = (snapshot) => {
   if (!snapshot) {
@@ -899,8 +925,15 @@ function TheatreLighting() {
   )
 }
 
-export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 }) {
+export default function AuctionHouse3D({
+  aid,
+  initialLiveData,
+  initialChatMessages = [],
+  currentUserId = null,
+  pollingMs = 7000
+}) {
   const { snapshot, isFetching, refresh } = useAuctionLive(aid, initialLiveData, pollingMs)
+  const chatPollMs = Math.max(3000, pollingMs || 5000)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isBidPanelOpen, setIsBidPanelOpen] = useState(false)
   const [isChatPanelOpen, setIsChatPanelOpen] = useState(false)
@@ -910,6 +943,16 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
   const [bidFeedback, setBidFeedback] = useState(null)
   const [isBidding, setIsBidding] = useState(false)
   const [nowTs, setNowTs] = useState(() => Date.now())
+  const {
+    messages: chatMessages,
+    isFetching: isChatFetching,
+    setMessages: setChatMessages,
+    refresh: refreshChat
+  } = useAuctionChat(aid, initialChatMessages, { enabled: true, pollInterval: chatPollMs })
+  const [chatInput, setChatInput] = useState('')
+  const [chatFeedback, setChatFeedback] = useState(null)
+  const [isSendingChat, setIsSendingChat] = useState(false)
+  const chatMessagesEndRef = useRef(null)
 
   useEffect(() => {
     setCurrentLot(buildLotFromSnapshot(snapshot))
@@ -930,16 +973,35 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
     return () => window.clearInterval(id)
   }, [snapshot?.auction?.end_time])
 
-  useEffect(() => {
-    if (!bidFeedback) return undefined
-    const id = window.setTimeout(() => setBidFeedback(null), 3500)
-    return () => window.clearTimeout(id)
-  }, [bidFeedback])
+useEffect(() => {
+  if (!bidFeedback) return undefined
+  const id = window.setTimeout(() => setBidFeedback(null), 3500)
+  return () => window.clearTimeout(id)
+}, [bidFeedback])
 
-  useEffect(() => {
-    const id = window.setInterval(() => setNowTs(Date.now()), 1000)
-    return () => window.clearInterval(id)
-  }, [])
+useEffect(() => {
+  const id = window.setInterval(() => setNowTs(Date.now()), 1000)
+  return () => window.clearInterval(id)
+}, [])
+
+useEffect(() => {
+  if (isChatPanelOpen) {
+    refreshChat()
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isChatPanelOpen])
+
+useEffect(() => {
+  if (!chatFeedback) return undefined
+  const id = window.setTimeout(() => setChatFeedback(null), 3000)
+  return () => window.clearTimeout(id)
+}, [chatFeedback])
+
+useEffect(() => {
+  if (chatMessagesEndRef.current) {
+    chatMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+  }
+}, [chatMessages])
 
   const handleBidSubmit = async () => {
     if (!aid || !currentLot.activeItem?.iid) return
@@ -1005,6 +1067,29 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
 
   const isLoading = !currentLot || !initialLiveData && !snapshot
 
+  const handleChatSubmit = async (event) => {
+    if (event?.preventDefault) {
+      event.preventDefault()
+    }
+    if (!aid || !chatInput.trim()) {
+      return
+    }
+    try {
+      setIsSendingChat(true)
+      await axiosBrowserClient.post(`/api/auctions/${aid}/chat`, {
+        message: chatInput.trim()
+      })
+      setChatInput('')
+      setChatFeedback('Message sent')
+      // Refresh to get the latest messages from server including the new one
+      await refreshChat?.()
+    } catch (error) {
+      setChatFeedback(error?.message ?? 'Unable to send message')
+    } finally {
+      setIsSendingChat(false)
+    }
+  }
+
   const lotBidValue = useMemo(() => Number(currentLot.currentBid ?? 0), [currentLot.currentBid])
   const minBidValue = useMemo(() => Number(currentLot.minBid ?? 0), [currentLot.minBid])
   const bidIncrementValue = useMemo(
@@ -1025,6 +1110,7 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
   )
   const isBeforeStart = auctionStart ? nowTs < auctionStart.getTime() : false
   const isAfterEnd = auctionEnd ? nowTs > auctionEnd.getTime() : false
+  const chatParticipantCount = chatMessages.length
 
   useEffect(() => {
     if (!isBidPanelOpen) return undefined
@@ -1136,7 +1222,7 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
                 <span className="text-sm font-medium uppercase tracking-wide">Live Auction</span>
               </div>
               <p className="text-[var(--custom-text-muted)] text-xs mt-1">
-                {lotBidValue.toLocaleString('en-US', { minimumFractionDigits: 0 })} USD · {currentLot.timeRemaining}
+                Time remaining: {currentLot.timeRemaining}
               </p>
               <p className="text-[var(--custom-text-muted)] text-xs">
                 {currentLot.auctionName || 'Live Lot'} · {currentLot.bidders} active bidders
@@ -1244,7 +1330,7 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
                       💬 Live Chat
                     </h3>
                     <p className="text-xs text-[var(--custom-text-muted)]">
-                      {currentLot.bidders} participants online
+                      {chatParticipantCount} messages • {isChatFetching ? 'Updating…' : 'Live'}
                     </p>
                   </div>
                   <button
@@ -1256,34 +1342,73 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
                 </div>
 
                 {/* Chat Messages */}
-                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3">
-                  {/* Example messages */}
-                  <div className="bg-[var(--custom-bg-secondary)] p-2 md:p-3 rounded-lg">
-                    <p className="text-xs text-[var(--custom-bright-blue)] font-semibold">User123</p>
-                    <p className="text-xs md:text-sm text-[var(--custom-text-secondary)]">Great item!</p>
-                  </div>
-                  <div className="bg-[var(--custom-bg-secondary)] p-2 md:p-3 rounded-lg">
-                    <p className="text-xs text-[var(--custom-cream-yellow)] font-semibold">Bidder42</p>
-                    <p className="text-xs md:text-sm text-[var(--custom-text-secondary)]">Going for this one</p>
-                  </div>
-                  <div className="bg-[var(--custom-bg-secondary)] p-2 md:p-3 rounded-lg">
-                    <p className="text-xs text-[var(--custom-bright-blue)] font-semibold">User123</p>
-                    <p className="text-xs md:text-sm text-[var(--custom-text-secondary)]">Good luck everyone!</p>
-                  </div>
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2">
+                  {chatMessages.length === 0 && (
+                    <p className="text-xs text-[var(--custom-text-muted)] italic text-center">No messages yet. Start the conversation!</p>
+                  )}
+                  {chatMessages.map((chat) => {
+                    const isOwn = currentUserId && chat.uid === currentUserId
+                    const avatarUrl = resolveAvatarUrl(chat.sender)
+                    return (
+                      <div
+                        key={chat.chat_id ?? `${chat.sent_at}-${chat.uid}`}
+                        className={`flex items-end gap-1.5 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+                      >
+                        <div className="flex-shrink-0">
+                          <Image
+                            src={avatarUrl}
+                            alt={chat.sender?.username ?? 'Guest avatar'}
+                            className="h-7 w-7 rounded-full object-cover border border-[var(--custom-border-color)]"
+                            width={28}
+                            height={28}
+                          />
+                        </div>
+                        <div className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
+                          <div
+                            className={`rounded-2xl px-3 py-2 shadow-sm ${
+                              isOwn
+                                ? 'bg-[var(--custom-bright-blue)] text-white rounded-br-md'
+                                : 'bg-[var(--custom-bg-secondary)] text-[var(--custom-text-primary)] border border-[var(--custom-border-color)] rounded-bl-md'
+                            }`}
+                          >
+                            <p className="text-[10px] font-semibold mb-0.5 opacity-90">
+                              {chat.sender?.username ?? 'Guest'}
+                            </p>
+                            <p className="text-sm break-words leading-relaxed">
+                              {chat.message}
+                            </p>
+                          </div>
+                          <span className={`text-[9px] text-[var(--custom-text-muted)] mt-0.5 px-2 ${isOwn ? 'text-right' : 'text-left'}`}>
+                            {formatChatTimestamp(chat.sent_at)}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <div ref={chatMessagesEndRef} />
                 </div>
 
                 {/* Chat Input */}
                 <div className="p-3 md:p-4 border-t border-[var(--custom-border-color)]">
-                  <div className="flex gap-2">
+                  <form className="flex gap-2" onSubmit={handleChatSubmit}>
                     <input
                       type="text"
+                      value={chatInput}
+                      onChange={(event) => setChatInput(event.target.value)}
                       placeholder="Type a message..."
                       className="flex-1 px-2 md:px-3 py-2 bg-[var(--custom-bg-secondary)] border border-[var(--custom-border-color)] rounded-lg text-xs md:text-sm text-[var(--custom-text-primary)] focus:outline-none focus:border-[var(--custom-bright-blue)]"
                     />
-                    <button className="px-3 md:px-4 py-2 bg-[var(--custom-bright-blue)] hover:bg-[var(--custom-ocean-blue)] text-white rounded-lg font-semibold transition-all text-xs md:text-sm">
-                      Send
+                    <button
+                      type="submit"
+                      disabled={isSendingChat || !chatInput.trim()}
+                      className="px-3 md:px-4 py-2 bg-[var(--custom-bright-blue)] hover:bg-[var(--custom-ocean-blue)] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-all text-xs md:text-sm"
+                    >
+                      {isSendingChat ? 'Sending…' : 'Send'}
                     </button>
-                  </div>
+                  </form>
+                  {chatFeedback && (
+                    <p className="mt-2 text-[11px] md:text-xs text-[var(--custom-cream-yellow)]">{chatFeedback}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1309,5 +1434,18 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
     </ModalContext.Provider>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

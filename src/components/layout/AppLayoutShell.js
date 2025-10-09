@@ -14,7 +14,7 @@ const isFullScreenRoute = (pathname) => {
   return FULLSCREEN_PATH_MATCHERS.some((matcher) => matcher.test(pathname))
 }
 
-export default function AppLayoutShell({ session, children }) {
+export default function AppLayoutShell({ isAuthed = false, children }) {
   const pathname = usePathname()
 
   const showFullScreen = useMemo(() => isFullScreenRoute(pathname), [pathname])
@@ -29,7 +29,7 @@ export default function AppLayoutShell({ session, children }) {
 
   return (
     <>
-      <Navbar isAuthed={!!session} />
+      <Navbar isAuthed={Boolean(isAuthed)} />
       <div className="container mx-auto min-h-dvh pt-16">
         {children}
       </div>

@@ -7,7 +7,7 @@ import Providers from '@/app/providers'
 import AppLayoutShell from '@/components/layout/AppLayoutShell'
 
 /* Import Supabase Server For Session */
-import { supabaseServer } from '@/utils/supabase/server'
+import { getServerUser } from '@/utils/auth'
 
 const inter = Inter({
   variable: '--font-inter',
@@ -17,14 +17,13 @@ const inter = Inter({
 })
 
 export default async function RootLayout({ children }) {
-  const sb = await supabaseServer()
-  const { data: { session } } = await sb.auth.getSession()
+  const user = await getServerUser()
 
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased bg-linear-(--custom-body-bg) bg-no-repeat text-(--custom-text-primary) leading-[1.6]`}>
         <Providers>
-          <AppLayoutShell session={session}>
+          <AppLayoutShell isAuthed={Boolean(user)}>
             {children}
           </AppLayoutShell>
         </Providers>

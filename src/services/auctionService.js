@@ -9,6 +9,7 @@ import {
   delAuctionById
 } from '@/repositories/auctionRepo'
 import { retrieveItemsByAuction, retrieveItemById } from '@/repositories/itemRepo'
+import { retrieveAuctionChats, insertAuctionChat } from '@/repositories/auctionChatRepo'
 import {
   retrieveCurrentBidsByAuction,
   retrieveCurrentBidByItem,
@@ -194,4 +195,23 @@ export async function placeBidForItem({ aid, iid, bidderId, amount }) {
     bid_datetime: new Date().toISOString()
   }
   return upsertCurrentBid(payload)
+}
+
+export async function getAuctionChatMessages(aid, { limit = 120 } = {}) {
+  if (!aid) throw new Error('Missing auction id')
+  return retrieveAuctionChats(aid, { limit })
+}
+
+export async function postAuctionChatMessage({ aid, uid, message }) {
+  if (!aid || !uid) {
+    throw new Error('Missing auction or user id')
+  }
+  if (!message || !message.trim()) {
+    throw new Error('Message cannot be empty')
+  }
+  return insertAuctionChat({
+    aid,
+    uid,
+    message: message.trim()
+  })
 }

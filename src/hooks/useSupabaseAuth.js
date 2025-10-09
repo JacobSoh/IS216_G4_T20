@@ -25,22 +25,37 @@ export function useSupabaseAuth(initialAuthed = false) {
         const sb = sbRef.current;
         let lastAuthState = Boolean(initialAuthed);
 
-        // Initial session check
-        sb.auth.getSession().then(({ data: { session } }) => {
-            if (cancelled) return;
-            const next = !!session;
-            setIsAuthed(next);
-            lastAuthState = next;
+        const syncUser = async () => {
+            try {
+                const { data: { user }, error } = await sb.auth.getUser();
+                if (cancelled) return lastAuthState;
+                if (error && error.message?.includes('Auth session missing')) {
+                    setIsAuthed(false);
+                    return false;
+                }
+                if (error) throw error;
+                const next = Boolean(user);
+                setIsAuthed(next);
+                return next;
+            } catch (e) {
+                if (!cancelled) {
+                    setIsAuthed(false);
+                }
+                return false;
+            }
+        };
+
+        syncUser().then((value) => {
+            if (!cancelled) {
+                lastAuthState = Boolean(value);
+            }
         });
 
-        // Auth state listener
-        const { data: { subscription } } = sb.auth.onAuthStateChange((evt, session) => {
-            const next = !!session;
-            setIsAuthed(next);
-
-            if ((evt === 'SIGNED_IN' || evt === 'SIGNED_OUT') && lastAuthState !== next) {
-                lastAuthState = next;
-                router.refresh(); // sync server components
+        const { data: { subscription } } = sb.auth.onAuthStateChange(async () => {
+            const next = await syncUser();
+            if (!cancelled && lastAuthState !== next) {
+                lastAuthState = Boolean(next);
+                router.refresh();
             }
         });
 

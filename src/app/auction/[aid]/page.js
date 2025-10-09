@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 
 import AuctionHouse3D from '@/components/auction/AuctionHouse3D'
-import { getAuctionLiveState } from '@/services/auctionService'
+import { getAuctionLiveState, getAuctionChatMessages } from '@/services/auctionService'
 import { getServerUser } from '@/utils/auth'
 
 export default async function AuctionViewerPage({ params }) {
@@ -10,7 +10,11 @@ export default async function AuctionViewerPage({ params }) {
     notFound()
   }
 
-  const [snapshot, user] = await Promise.all([getAuctionLiveState(aid), getServerUser()])
+  const [snapshot, chatMessages, user] = await Promise.all([
+    getAuctionLiveState(aid),
+    getAuctionChatMessages(aid, { limit: 200 }),
+    getServerUser()
+  ])
   if (!snapshot) {
     notFound()
   }
@@ -25,7 +29,12 @@ export default async function AuctionViewerPage({ params }) {
 
   return (
     <div className="h-screen w-full bg-[var(--custom-bg-primary)]">
-      <AuctionHouse3D aid={aid} initialLiveData={snapshot} />
+      <AuctionHouse3D
+        aid={aid}
+        initialLiveData={snapshot}
+        initialChatMessages={chatMessages}
+        currentUserId={user.id}
+      />
     </div>
   )
 }
