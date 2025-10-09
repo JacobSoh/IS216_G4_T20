@@ -37,7 +37,8 @@ export default function AuthFormComponent({
     showLoading,
     error,
     onSubmit,
-    isLogin = true
+    isLogin = true,
+    nextUrl
 }) {
     const [form, dispatch] = useReducer(formDataReducer, initialFormData);
 
@@ -130,7 +131,11 @@ export default function AuthFormComponent({
                         </Button>
                     </form>
 
-                    <SwitchLink isLogin={isLogin} />
+                    {error && (
+                        <p className="mt-4 text-center text-sm text-red-400">{error}</p>
+                    )}
+
+                    <SwitchLink isLogin={isLogin} nextUrl={nextUrl} />
                 </div>
             </div>
         </div>

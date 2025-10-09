@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useRef, useEffect, useState, createContext, useContext } from 'react'
+import { Suspense, useRef, useEffect, useState, useMemo, createContext, useContext } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   OrbitControls,
@@ -18,7 +18,79 @@ import {
 } from '@react-three/drei'
 import * as THREE from 'three'
 import Link from 'next/link'
+import { useAuctionLive } from '@/hooks/useAuctionLive'
 import AuctionScreen, { ModalContext } from './AuctionScreen'
+import { axiosBrowserClient } from '@/utils/axios/client'
+
+const pad = (value) => String(Math.max(0, Math.floor(value))).padStart(2, '0')
+
+const formatTimeRemaining = (endTime) => {
+  if (!endTime) return '--:--:--'
+  const diff = endTime.getTime() - Date.now()
+  if (diff <= 0) return '00:00:00'
+  const totalSeconds = Math.floor(diff / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+}
+
+const buildLotFromSnapshot = (snapshot) => {
+  if (!snapshot) {
+    return {
+      id: null,
+      name: 'Pending Reveal',
+      currentBid: 0,
+      timeRemaining: '--:--:--',
+      bidders: 0,
+      activeItem: null,
+      nextItem: null,
+      auctionName: '',
+      imageUrl: null,
+      minBid: 0,
+      hasBid: false,
+      auctionEndsAt: null,
+      auctionStartsAt: null
+    }
+  }
+  const auction = snapshot.auction ?? {}
+  const items = snapshot.items ?? []
+  const active = snapshot.activeItem ?? null
+  const next = snapshot.nextItem ?? null
+  const bidderCount = items.reduce((acc, item) => {
+    const hasBidder = Boolean(item.current_bid?.uid)
+    return acc + (hasBidder ? 1 : 0)
+  }, 0)
+  const activeBid = active?.current_bid ?? null
+  const endDate = auction.end_time ? new Date(auction.end_time) : null
+  const minBid = active?.min_bid ?? 0
+  return {
+    id: active?.iid ?? null,
+    name: active?.title ?? 'Upcoming Lot',
+    currentBid: activeBid?.current_price ?? minBid,
+    timeRemaining: formatTimeRemaining(endDate),
+    bidders: bidderCount,
+    activeItem: active,
+    nextItem: next,
+    auctionName: auction.name ?? '',
+    imageUrl: active?.imageUrl ?? null,
+    minBid,
+    hasBid: Boolean(activeBid),
+    auctionEndsAt: auction.end_time ?? null,
+    auctionStartsAt: auction.start_time ?? null
+  }
+}
+
+const TIER_CONFIG = [
+  { name: 'orchestra', y: -3, z: 5, rows: 8, seatsPerRow: 16, platformHeight: 0.5 },
+  { name: 'mezzanine', y: 0, z: 15, rows: 6, seatsPerRow: 14, platformHeight: 0.8 },
+  { name: 'balcony', y: 4, z: 23, rows: 4, seatsPerRow: 12, platformHeight: 1.0 }
+]
+
+const SEAT_COLOR_BY_TIER = ['#8B0000', '#B22222', '#A0522D']
+const OCCUPANT_PALETTE = ['#f4c1c1', '#b5d6ff', '#f5dea3', '#c7f9cc', '#d5b5ff', '#f7e7ce']
+const ACCENT_PALETTE = ['#352315', '#52311c', '#101010', '#6b3e24', '#8a4b32']
+const PLACEHOLDER_IMAGE = '/images/auction-placeholder.jpg'
 function GrandStage() {
   const stageRef = useRef()
   const screenRef = useRef()
@@ -400,84 +472,135 @@ function GrandTheatre() {
 }
 
 function TheatreTieredSeating() {
-  const seats = []
+  const tiers = TIER_CONFIG
+  const seatColorByTier = SEAT_COLOR_BY_TIER
+  const occupantPalette = OCCUPANT_PALETTE
+  const accentPalette = ACCENT_PALETTE
 
-  // Create proper tiered platform seating like real theatres
-  const tiers = [
-    { name: "orchestra", y: -3, z: 5, rows: 8, seatsPerRow: 16, platformHeight: 0.5 },
-    { name: "mezzanine", y: 0, z: 15, rows: 6, seatsPerRow: 14, platformHeight: 0.8 },
-    { name: "balcony", y: 4, z: 23, rows: 4, seatsPerRow: 12, platformHeight: 1.0 }
-  ]
+  const { seatMeta, viewerSeatKey } = useMemo(() => {
+    const viewerPosition = new THREE.Vector3(0, 7, 27)
+    const meta = []
 
-  tiers.forEach((tier, tierIndex) => {
-    // Create the platform for this tier
-    seats.push(
-      <Box
-        key={`platform-${tier.name}`}
-        args={[tier.seatsPerRow * 1.5 + 4, tier.platformHeight, tier.rows * 2 + 2]}
-        position={[0, tier.y - tier.platformHeight/2, tier.z + tier.rows]}
-      >
-        <meshStandardMaterial
-          color="#3D2817"
-          roughness={0.4}
-          metalness={0.1}
-        />
-      </Box>
-    )
+    tiers.forEach((tier, tierIndex) => {
+      for (let row = 0; row < tier.rows; row++) {
+        for (let seat = 0; seat < tier.seatsPerRow; seat++) {
+          const seatX = (seat - tier.seatsPerRow / 2 + 0.5) * 1.5
+          const seatZ = tier.z + row * 2
+          const seatY = tier.y
+          const seatKey = `${tier.name}-${row}-${seat}`
 
-    // Create rows of seats on the platform
-    for (let row = 0; row < tier.rows; row++) {
-      for (let seat = 0; seat < tier.seatsPerRow; seat++) {
-        const seatX = (seat - tier.seatsPerRow/2 + 0.5) * 1.5
-        const seatZ = tier.z + row * 2
-        const seatY = tier.y
-
-        // All seats are now filled - user sits in one of them
-
-        const seatKey = `${tier.name}-${row}-${seat}`
-
-        seats.push(
-          <group
-            key={seatKey}
-            position={[seatX, seatY, seatZ]}
-          >
-            {/* Seat Back */}
-            <Box args={[0.8, 1.6, 0.12]} position={[0, 0.8, 0.3]}>
-              <meshStandardMaterial
-                color={tierIndex === 0 ? "#8B0000" : tierIndex === 1 ? "#B22222" : "#A0522D"}
-                roughness={0.5}
-              />
-            </Box>
-
-            {/* Seat Cushion */}
-            <Box args={[0.8, 0.15, 0.8]} position={[0, 0.075, 0]}>
-              <meshStandardMaterial
-                color={tierIndex === 0 ? "#8B0000" : tierIndex === 1 ? "#B22222" : "#A0522D"}
-                roughness={0.6}
-              />
-            </Box>
-
-            {/* Armrests */}
-            {[-0.5, 0.5].map((armSide, i) => (
-              <Box
-                key={i}
-                args={[0.12, 0.5, 0.6]}
-                position={[armSide, 0.3, 0]}
-              >
-                <meshStandardMaterial
-                  color="#8B4513"
-                  roughness={0.3}
-                  metalness={0.2}
-                />
-              </Box>
-            ))}
-          </group>
-        )
+          meta.push({
+            key: seatKey,
+            tierIndex,
+            position: [seatX, seatY, seatZ]
+          })
+        }
       }
-    }
+    })
+
+    let closestSeatKey = null
+    let minDistance = Infinity
+    meta.forEach((seat) => {
+      const seatVec = new THREE.Vector3(...seat.position)
+      const distance = seatVec.distanceTo(viewerPosition)
+      if (distance < minDistance) {
+        minDistance = distance
+        closestSeatKey = seat.key
+      }
+    })
+
+    return { seatMeta: meta, viewerSeatKey: closestSeatKey }
+  }, [tiers])
+
+  const occupantAssignments = useMemo(() => {
+    const assignments = new Map()
+    seatMeta.forEach((seat) => {
+      if (seat.key === viewerSeatKey) return
+
+      if (Math.random() < 0.5) {
+        const bodyColor = occupantPalette[Math.floor(Math.random() * occupantPalette.length)]
+        const accentColor = accentPalette[Math.floor(Math.random() * accentPalette.length)]
+        assignments.set(seat.key, { bodyColor, accentColor })
+      }
+    })
+    return assignments
+  }, [seatMeta, viewerSeatKey, occupantPalette, accentPalette])
+
+  const platforms = tiers.map((tier) => (
+    <Box
+      key={`platform-${tier.name}`}
+      args={[tier.seatsPerRow * 1.5 + 4, tier.platformHeight, tier.rows * 2 + 2]}
+      position={[0, tier.y - tier.platformHeight / 2, tier.z + tier.rows]}
+    >
+      <meshStandardMaterial
+        color="#3D2817"
+        roughness={0.4}
+        metalness={0.1}
+      />
+    </Box>
+  ))
+
+  const seatGroups = seatMeta.map((seat) => {
+    const seatColor = seatColorByTier[seat.tierIndex] || seatColorByTier[0]
+    const occupant = occupantAssignments.get(seat.key)
+
+    return (
+      <group
+        key={seat.key}
+        position={seat.position}
+      >
+        {/* Seat Back */}
+        <Box args={[0.8, 1.6, 0.12]} position={[0, 0.8, 0.3]}>
+          <meshStandardMaterial
+            color={seatColor}
+            roughness={0.5}
+          />
+        </Box>
+
+        {/* Seat Cushion */}
+        <Box args={[0.8, 0.15, 0.8]} position={[0, 0.075, 0]}>
+          <meshStandardMaterial
+            color={seatColor}
+            roughness={0.6}
+          />
+        </Box>
+
+        {/* Armrests */}
+        {[-0.5, 0.5].map((armSide, i) => (
+          <Box
+            key={i}
+            args={[0.12, 0.5, 0.6]}
+            position={[armSide, 0.3, 0]}
+          >
+            <meshStandardMaterial
+              color="#8B4513"
+              roughness={0.3}
+              metalness={0.2}
+            />
+          </Box>
+        ))}
+
+        {occupant && (
+          <group position={[0, 0.2, -0.05]}>
+            <Cylinder args={[0.16, 0.18, 0.95]} position={[0, 0.6, -0.08]}>
+              <meshStandardMaterial color={occupant.bodyColor} roughness={0.5} />
+            </Cylinder>
+            <Sphere args={[0.2]} position={[0, 1.1, -0.1]}>
+              <meshStandardMaterial color={occupant.bodyColor} roughness={0.4} />
+            </Sphere>
+            <Box args={[0.35, 0.18, 0.12]} position={[0, 0.82, -0.05]}>
+              <meshStandardMaterial color={occupant.bodyColor} roughness={0.4} />
+            </Box>
+            <Sphere args={[0.22]} position={[0, 1.24, -0.12]}>
+              <meshStandardMaterial color={occupant.accentColor} roughness={0.6} metalness={0.1} />
+            </Sphere>
+          </group>
+        )}
+      </group>
+    )
   })
 
-  return <group>{seats}</group>
+  return <group>{[...platforms, ...seatGroups]}</group>
 }
 
 function LockedSeatController() {
@@ -782,23 +905,79 @@ function TheatreLighting() {
   )
 }
 
-export default function AuctionHouse3D() {
-  const [isLoading, setIsLoading] = useState(true)
+export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 }) {
+  const { snapshot, isFetching, refresh } = useAuctionLive(aid, initialLiveData, pollingMs)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isBidPanelOpen, setIsBidPanelOpen] = useState(false)
   const [isChatPanelOpen, setIsChatPanelOpen] = useState(false)
-  const [currentLot, setCurrentLot] = useState({
-    id: 1,
-    name: "Vintage Watch Collection",
-    currentBid: 2500,
-    timeRemaining: "00:05:42",
-    bidders: 12
-  })
+  const [currentLot, setCurrentLot] = useState(() => buildLotFromSnapshot(initialLiveData))
+  const [lotItems, setLotItems] = useState(initialLiveData?.items ?? [])
+  const [bidAmount, setBidAmount] = useState('')
+  const [bidFeedback, setBidFeedback] = useState(null)
+  const [isBidding, setIsBidding] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000)
-    return () => clearTimeout(timer)
-  }, [])
+    setCurrentLot(buildLotFromSnapshot(snapshot))
+    setLotItems(snapshot?.items ?? [])
+  }, [snapshot])
+
+  useEffect(() => {
+    if (!snapshot?.auction?.end_time) return undefined
+    const endTime = new Date(snapshot.auction.end_time)
+    const updateTicker = () => {
+      setCurrentLot((prev) => ({
+        ...prev,
+        timeRemaining: formatTimeRemaining(endTime)
+      }))
+    }
+    updateTicker()
+    const id = window.setInterval(updateTicker, 1000)
+    return () => window.clearInterval(id)
+  }, [snapshot?.auction?.end_time])
+
+  useEffect(() => {
+    if (!bidFeedback) return undefined
+    const id = window.setTimeout(() => setBidFeedback(null), 3500)
+    return () => window.clearTimeout(id)
+  }, [bidFeedback])
+
+  const handleBidSubmit = async () => {
+    if (!aid || !currentLot.activeItem?.iid) return
+    const parsedAmount = Number(bidAmount)
+    const minimumRequired = currentLot.hasBid ? currentLot.currentBid + 1 : currentLot.minBid
+    if (Number.isNaN(parsedAmount) || parsedAmount < minimumRequired) {
+      setBidFeedback(`Enter at least ${minimumRequired.toLocaleString()}`)
+      return
+    }
+
+    try {
+      setIsBidding(true)
+      await axiosBrowserClient.post(`/api/auctions/${aid}/bid`, {
+        iid: currentLot.activeItem.iid,
+        amount: parsedAmount
+      })
+      setBidFeedback('Bid placed successfully')
+      setBidAmount('')
+      refresh?.()
+    } catch (error) {
+      setBidFeedback(error?.message ?? 'Unable to place bid')
+    } finally {
+      setIsBidding(false)
+    }
+  }
+
+  const isLoading = !currentLot || !initialLiveData && !snapshot
+
+  const lotBidValue = useMemo(() => {
+    return Number(currentLot.currentBid ?? 0)
+  }, [currentLot.currentBid])
+  const minBidValue = useMemo(() => Number(currentLot.minBid ?? 0), [currentLot.minBid])
+  const displayPriceLabel = currentLot.hasBid ? 'Current Bid' : 'Minimum Bid'
+  const displayPriceValue = currentLot.hasBid ? lotBidValue : minBidValue
+  const nextBidMinimum = useMemo(() => {
+    return currentLot.hasBid ? lotBidValue + 1 : minBidValue
+  }, [currentLot.hasBid, lotBidValue, minBidValue])
+  const activeImageUrl = currentLot.imageUrl ?? currentLot.activeItem?.imageUrl ?? PLACEHOLDER_IMAGE
 
   if (isLoading) {
     return (
@@ -812,7 +991,7 @@ export default function AuctionHouse3D() {
   }
 
   return (
-    <ModalContext.Provider value={{ isModalOpen, setIsModalOpen, currentLot }}>
+    <ModalContext.Provider value={{ isModalOpen, setIsModalOpen, currentLot, items: lotItems, nextItem: currentLot.nextItem }}>
       <div className="w-full h-screen bg-[var(--custom-bg-primary)] relative">
         {/* 3D Canvas Layer */}
         <div className="absolute inset-0 z-0" style={{ visibility: isModalOpen ? 'hidden' : 'visible' }}>
@@ -856,11 +1035,14 @@ export default function AuctionHouse3D() {
           <div className="absolute top-6 right-6 text-[var(--custom-text-primary)] z-10">
             <div className="bg-[var(--custom-bg-tertiary)] p-4 rounded-xl border border-[var(--custom-border-color)] backdrop-blur-sm">
               <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium">LIVE AUCTION</span>
+                <div className={`w-3 h-3 ${isFetching ? 'bg-yellow-400 animate-ping' : 'bg-green-500 animate-pulse'} rounded-full`}></div>
+                <span className="text-sm font-medium uppercase tracking-wide">Live Auction</span>
               </div>
               <p className="text-[var(--custom-text-muted)] text-xs mt-1">
-                {currentLot.bidders} Active Bidders
+                {lotBidValue.toLocaleString('en-US', { minimumFractionDigits: 0 })} USD · {currentLot.timeRemaining}
+              </p>
+              <p className="text-[var(--custom-text-muted)] text-xs">
+                {currentLot.auctionName || 'Live Lot'} · {currentLot.bidders} active bidders
               </p>
             </div>
           </div>
@@ -908,7 +1090,7 @@ export default function AuctionHouse3D() {
                   <div className="bg-[var(--custom-bg-secondary)] p-3 md:p-4 rounded-lg">
                     <p className="text-[var(--custom-text-muted)] text-xs md:text-sm">Current Bid</p>
                     <p className="text-xl md:text-2xl font-bold text-[var(--custom-cream-yellow)]">
-                      ${currentLot.currentBid.toLocaleString()}
+                      ${lotBidValue.toLocaleString()}
                     </p>
                   </div>
 
@@ -920,8 +1102,8 @@ export default function AuctionHouse3D() {
                     <input
                       type="number"
                       step="2"
-                      min={currentLot.currentBid + 2}
-                      placeholder={`Min: $${(currentLot.currentBid + 2).toLocaleString()}`}
+                      min={Math.max(0, lotBidValue + 2)}
+                      placeholder={`Min: $${(lotBidValue + 2).toLocaleString()}`}
                       className="w-full px-3 md:px-4 py-2 md:py-3 bg-[var(--custom-bg-secondary)] border border-[var(--custom-border-color)] rounded-lg text-[var(--custom-text-primary)] text-sm md:text-base focus:outline-none focus:border-[var(--custom-bright-blue)]"
                     />
                   </div>
