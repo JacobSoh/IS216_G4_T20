@@ -4,11 +4,13 @@ import AuthFormComponent from '@/components/AuthFormComponent';
 import { axiosBrowserClient } from '@/utils/axios/client';
 import { useRouter } from 'next/navigation';
 import { useAlert } from '@/context/AlertContext';
+import { useModal } from '@/context/ModalContext';
 
-export default function LoginPage() {
-    const { showAlert } = useAlert();
+export default function Register() {
     const [error, setError] = useState('');
     const [showLoading, setShowLoading] = useState(false);
+    const { showAlert } = useAlert();
+    const { closeModal } = useModal();
     const router = useRouter();
 
     async function onSubmit(e) {
