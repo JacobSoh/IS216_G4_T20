@@ -1,5 +1,6 @@
-'use client'
+﻿'use client'
 
+import Link from 'next/link'
 import { Suspense, useRef, useEffect, useState, useMemo, createContext, useContext } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
@@ -17,9 +18,8 @@ import {
   useTexture
 } from '@react-three/drei'
 import * as THREE from 'three'
-import Link from 'next/link'
 import { useAuctionLive } from '@/hooks/useAuctionLive'
-import AuctionScreen, { ModalContext } from './AuctionScreen'
+import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen'
 import { axiosBrowserClient } from '@/utils/axios/client'
 
 const pad = (value) => String(Math.max(0, Math.floor(value))).padStart(2, '0')
@@ -90,7 +90,6 @@ const TIER_CONFIG = [
 const SEAT_COLOR_BY_TIER = ['#8B0000', '#B22222', '#A0522D']
 const OCCUPANT_PALETTE = ['#f4c1c1', '#b5d6ff', '#f5dea3', '#c7f9cc', '#d5b5ff', '#f7e7ce']
 const ACCENT_PALETTE = ['#352315', '#52311c', '#101010', '#6b3e24', '#8a4b32']
-const PLACEHOLDER_IMAGE = '/images/auction-placeholder.jpg'
 function GrandStage() {
   const stageRef = useRef()
   const screenRef = useRef()
@@ -171,37 +170,25 @@ function GrandStage() {
         </Box>
       </group>
 
-      {/* Massive Auction Screen - Even Bigger */}
-      <group position={[0, 4, -3.5]}>
-        <RoundedBox
-          ref={screenRef}
-          args={[28, 16, 0.3]}
-          radius={0.2}
-        >
-          <meshStandardMaterial
-            color="#000015"
-            emissive="#001122"
-            emissiveIntensity={0.4}
-          />
+      {/* Stage Screen */}
+      <group position={[0, 3.6, -4.2]}>
+        <RoundedBox ref={screenRef} args={[13.2, 6.4, 0.2]} radius={0.16}>
+          <meshStandardMaterial color="#060b16" emissive="#0b1426" emissiveIntensity={0.32} />
         </RoundedBox>
 
         {/* Ornate Screen Frame */}
-        <RoundedBox
-          args={[29, 17, 0.2]}
-          radius={0.3}
-          position={[0, 0, -0.15]}
-        >
+        <RoundedBox args={[13.8, 7, 0.12]} radius={0.22} position={[0, 0, -0.12]}>
           <meshStandardMaterial
             color="#3d2f1f"
-            metalness={0.2}
-            roughness={0.5}
+            metalness={0.28}
+            roughness={0.4}
             emissive="#DAA520"
-            emissiveIntensity={0.05}
+            emissiveIntensity={0.06}
           />
         </RoundedBox>
 
-        {/* Enhanced Auction Screen - Even Bigger */}
-        <AuctionScreen position={[0, 0, 0.16]} scale={[3.5, 3.5, 1]} />
+        {/* Enhanced Auction Screen */}
+        <AuctionScreen position={[0, 1, 0.1]} scale={[1.1, 1.1, 1]} />
       </group>
 
       {/* Auctioneer Podium - Further Left on Stage */}
@@ -977,7 +964,7 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
   const nextBidMinimum = useMemo(() => {
     return currentLot.hasBid ? lotBidValue + 1 : minBidValue
   }, [currentLot.hasBid, lotBidValue, minBidValue])
-  const activeImageUrl = currentLot.imageUrl ?? currentLot.activeItem?.imageUrl ?? PLACEHOLDER_IMAGE
+  const modalLotData = useMemo(() => buildScreenLot(currentLot, currentLot.nextItem), [currentLot, currentLot.nextItem])
 
   if (isLoading) {
     return (
@@ -1178,167 +1165,14 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
       {/* Fullscreen Modal - Outside Canvas */}
       {isModalOpen && (
         <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-            boxSizing: 'border-box'
-          }}
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-[rgba(0,0,0,0.85)] p-4 md:p-8"
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            style={{
-              width: '90vw',
-              height: '90vh',
-              maxWidth: '1200px',
-              maxHeight: '800px',
-              backgroundColor: '#0a0f1a',
-              border: '3px solid #33A1E0',
-              borderRadius: '12px',
-              padding: '40px',
-              fontFamily: 'system-ui, sans-serif',
-              color: '#ffffff',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              position: 'relative'
-            }}
-            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-5xl"
+            onClick={(event) => event.stopPropagation()}
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setIsModalOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                background: '#b2292d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                fontSize: '20px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              ✕
-            </button>
-
-            {/* Header */}
-            <div style={{
-              textAlign: 'center',
-              borderBottom: '2px solid #1e3548',
-              paddingBottom: '30px',
-              marginBottom: '30px'
-            }}>
-              <h1 style={{
-                fontSize: '48px',
-                fontWeight: 'bold',
-                color: '#fff9af',
-                margin: '0 0 10px 0'
-              }}>
-                LIVE AUCTION
-              </h1>
-              <p style={{
-                fontSize: '18px',
-                color: '#b8c5d1',
-                margin: 0
-              }}>
-                Lot #{currentLot.id} • {currentLot.bidders} Active Bidders
-              </p>
-            </div>
-
-            {/* Main Content */}
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              textAlign: 'center'
-            }}>
-              <h2 style={{
-                fontSize: '48px',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                margin: '0 0 40px 0'
-              }}>
-                {currentLot.name}
-              </h2>
-
-              <div style={{
-                display: 'flex',
-                gap: '80px',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexWrap: 'wrap'
-              }}>
-                <div>
-                  <p style={{
-                    fontSize: '24px',
-                    color: '#8a9ba8',
-                    margin: '0 0 10px 0'
-                  }}>
-                    Current Bid
-                  </p>
-                  <p style={{
-                    fontSize: '72px',
-                    fontWeight: 'bold',
-                    color: '#fff9af',
-                    margin: 0
-                  }}>
-                    ${currentLot.currentBid.toLocaleString()}
-                  </p>
-                </div>
-
-                <div>
-                  <p style={{
-                    fontSize: '24px',
-                    color: '#8a9ba8',
-                    margin: '0 0 10px 0'
-                  }}>
-                    Time Remaining
-                  </p>
-                  <p style={{
-                    fontSize: '56px',
-                    fontWeight: 'bold',
-                    color: '#b2292d',
-                    margin: 0,
-                    fontFamily: 'monospace'
-                  }}>
-                    {currentLot.timeRemaining}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{
-              borderTop: '2px solid #1e3548',
-              paddingTop: '30px',
-              textAlign: 'center'
-            }}>
-              <p style={{
-                fontSize: '24px',
-                color: '#33A1E0',
-                margin: 0,
-                fontWeight: 'bold'
-              }}>
-                🎯 Interactive bidding interface - Click outside to close
-              </p>
-            </div>
+            <AuctionScreenCard lotData={modalLotData} variant="modal" onClose={() => setIsModalOpen(false)} />
           </div>
         </div>
       )}
@@ -1346,3 +1180,5 @@ export default function AuctionHouse3D({ aid, initialLiveData, pollingMs = 7000 
     </ModalContext.Provider>
   )
 }
+
+

@@ -1,39 +1,358 @@
 'use client'
 
 import { useContext, useMemo, createContext } from 'react'
+import Image from 'next/image'
 import { Html } from '@react-three/drei'
 
-// This context is provided by AuctionHouse3D
-const ModalContext = createContext()
+export const ModalContext = createContext()
+const PLACEHOLDER_IMAGE = '/images/auction-placeholder.jpg'
 
-export default function AuctionScreen({ position = [0, 4, -3.5], scale = [1, 1, 1] }) {
+const formatNumber = (value) => {
+  if (value === undefined || value === null) return '--'
+  return Number(value).toLocaleString()
+}
+
+const cn = (...classes) => classes.filter(Boolean).join(' ')
+
+export const buildScreenLot = (currentLot = {}, nextItem = null) => {
+  const lotLabel = currentLot?.id ? `Lot #${currentLot.id}` : 'Lot TBD'
+  const imageUrl = currentLot?.imageUrl ?? currentLot?.activeItem?.imageUrl ?? PLACEHOLDER_IMAGE
+  const hasBid = Boolean(currentLot?.hasBid)
+  const priceLabel = currentLot?.displayPriceLabel ?? (hasBid ? 'Current Bid' : 'Minimum Bid')
+  const priceValue = formatNumber(currentLot?.displayPriceValue ?? currentLot?.currentBid)
+  const minBidLabel = hasBid ? 'Next Minimum Bid' : 'Opens At'
+  const minBidValue = formatNumber(currentLot?.nextBidMinimum ?? currentLot?.minBid)
+  const biddersLabel = `${formatNumber(currentLot?.bidders)} active bidders`
+  const nextLotTitle = nextItem?.title ?? 'Preview coming soon'
+  const nextLotImage = nextItem?.imageUrl ?? PLACEHOLDER_IMAGE
+
+  return {
+    lotLabel,
+    auctionName: currentLot?.auctionName || 'Grand Evening Sale',
+    imageUrl,
+    timeRemaining: currentLot?.timeRemaining ?? '--:--:--',
+    priceLabel,
+    priceValue,
+    minBidLabel,
+    minBidValue,
+    biddersLabel,
+    title: currentLot?.name ?? 'Upcoming lot',
+    nextLotTitle,
+    nextLotImage,
+    currentBidRaw: Number(currentLot?.currentBid ?? 0),
+    timeRemainingRaw: currentLot?.timeRemaining ?? '--:--:--'
+  }
+}
+
+function StageAuctionCard({ lotData, onClick }) {
+  const {
+    auctionName,
+    lotLabel,
+    imageUrl,
+    title,
+    priceLabel,
+    priceValue,
+    minBidLabel,
+    minBidValue,
+    timeRemaining,
+    biddersLabel,
+    nextLotTitle,
+    nextLotImage
+  } = lotData
+
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        width: '820px',
+        height: '460px',
+        backgroundColor: '#050910',
+        border: '2px solid rgba(255, 255, 255, 0.14)',
+        borderRadius: '18px',
+        padding: '18px',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        color: '#f1f5f9',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.45)',
+        cursor: onClick ? 'pointer' : 'default',
+        pointerEvents: 'auto',
+        userSelect: 'none'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span style={{ fontSize: '12px', letterSpacing: '0.18em', color: '#6dd6ff', textTransform: 'uppercase' }}>
+            Live Auction
+          </span>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 700 }}>{auctionName}</h2>
+          <span style={{ fontSize: '11px', letterSpacing: '0.12em', color: '#94a3b8', textTransform: 'uppercase' }}>
+            {lotLabel}
+          </span>
+        </div>
+        <div
+          style={{
+            background: 'rgba(109, 214, 255, 0.18)',
+            borderRadius: '999px',
+            padding: '6px 14px',
+            fontSize: '11px',
+            color: '#6dd6ff',
+            textTransform: 'uppercase',
+            letterSpacing: '0.12em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span
+            style={{
+              display: 'inline-block',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#6dd6ff'
+            }}
+          />
+          {timeRemaining} remaining
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
+        <div
+          style={{
+            flex: 1.08,
+            borderRadius: '14px',
+            overflow: 'hidden',
+            position: 'relative',
+            background: '#0c121f',
+            minHeight: 0
+          }}
+        >
+          <Image
+            src={imageUrl}
+            alt={title}
+            width={420}
+            height={260}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: '10px 14px',
+              background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(5,9,16,0.9) 65%, rgba(5,9,16,1) 100%)'
+            }}
+          >
+            <span style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#9ab6ff', textTransform: 'uppercase' }}>
+              {lotLabel}
+            </span>
+            <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: 600 }}>{title}</p>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
+          <div
+            style={{
+              background: 'rgba(15, 24, 39, 0.92)',
+              borderRadius: '14px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              border: '1px solid rgba(109, 214, 255, 0.12)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase' }}>{priceLabel}</span>
+              <span style={{ fontSize: '26px', fontWeight: 700, color: '#fff9af' }}>${priceValue}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#9ab6ff' }}>
+              <span>{minBidLabel}</span>
+              <span>${minBidValue}</span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: '10px',
+              background: 'rgba(12, 18, 31, 0.92)',
+              borderRadius: '14px',
+              padding: '12px',
+              border: '1px solid rgba(148, 163, 184, 0.15)'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Time Remaining</span>
+              <span style={{ fontSize: '16px', fontWeight: 600 }}>{timeRemaining}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Bidders</span>
+              <span style={{ fontSize: '16px', fontWeight: 600 }}>{biddersLabel}</span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: '10px',
+              alignItems: 'center',
+              background: 'rgba(8, 12, 21, 0.92)',
+              borderRadius: '12px',
+              padding: '10px',
+              border: '1px dashed rgba(148, 163, 184, 0.25)'
+            }}
+          >
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                background: '#111827',
+                flexShrink: 0
+              }}
+            >
+              <Image
+                src={nextLotImage}
+                alt="Upcoming lot preview"
+                width={56}
+                height={56}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Next Up</span>
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>{nextLotTitle}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ModalAuctionCard({ lotData, onClick, onClose }) {
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        'relative flex h-full max-h-[90vh] flex-col gap-4 overflow-y-auto rounded-3xl border border-white/10 bg-[#050910]/95 px-5 py-6 shadow-2xl backdrop-blur-md transition-all sm:p-7 lg:p-8',
+        'w-full max-w-[1100px]'
+      )}
+      style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.55)' }}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3 pr-1">
+        <div className="flex flex-col gap-1">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6dd6ff]">Live Auction</span>
+          <h2 className="text-lg font-semibold leading-tight text-slate-100 md:text-xl lg:text-2xl">
+            {lotData.auctionName}
+          </h2>
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{lotData.lotLabel}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-full bg-[rgba(109,214,255,0.18)] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#6dd6ff]">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[#6dd6ff]" />
+            {lotData.timeRemaining} left
+          </div>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onClose?.()
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          >
+            <span className="sr-only">Close modal</span>
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" className="h-4.5 w-4.5">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M4.5 4.5l11 11m0-11l-11 11" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-4 lg:flex-row lg:gap-5">
+        <div className="relative flex-1 overflow-hidden rounded-2xl bg-[#0c121f] min-h-[220px] sm:min-h-[320px]">
+          <Image
+            src={lotData.imageUrl}
+            alt={lotData.title}
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 600px"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#050910] via-[#050910]/75 to-transparent px-4 pb-4 pt-10">
+            <span className="text-[10px] uppercase tracking-[0.22em] text-[#9ab6ff]">{lotData.lotLabel}</span>
+            <p className="mt-1 text-lg font-semibold sm:text-xl">{lotData.title}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-1 flex-col gap-3">
+          <div className="rounded-2xl border border-cyan-200/15 bg-[#0f1827]/95 p-4 shadow-inner">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                {lotData.priceLabel}
+              </span>
+              <span className="text-2xl font-bold text-[#fff9af] sm:text-3xl">${lotData.priceValue}</span>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between text-xs text-[#9ab6ff] sm:text-sm">
+              <span>{lotData.minBidLabel}</span>
+              <span className="font-semibold">${lotData.minBidValue}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-500/20 bg-[#0c121f]/95 p-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[#94a3b8]">Time Remaining</p>
+              <p className="text-base font-semibold sm:text-lg">{lotData.timeRemaining}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[#94a3b8]">Bidders</p>
+              <p className="text-base font-semibold sm:text-lg">{lotData.biddersLabel}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-2xl border border-dashed border-slate-500/40 bg-[#080c15]/95 p-3">
+            <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-[#111827]">
+              <Image
+                src={lotData.nextLotImage}
+                alt="Upcoming lot preview"
+                fill
+                sizes="56px"
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="flex flex-1 flex-col">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-[#94a3b8]">Next Up</span>
+              <span className="text-sm font-semibold leading-snug sm:text-base">{lotData.nextLotTitle}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function AuctionScreenCard({ lotData, onClick, onClose, variant = 'stage' }) {
+  if (variant === 'modal') {
+    return <ModalAuctionCard lotData={lotData} onClick={onClick} onClose={onClose} />
+  }
+  return <StageAuctionCard lotData={lotData} onClick={onClick} />
+}
+
+export default function AuctionScreen({ position = [0, 0, 0], scale = [1, 1, 1] }) {
   const modalContext = useContext(ModalContext)
   if (!modalContext) {
     console.error('AuctionScreen must be used within ModalContext.Provider')
   }
 
-  const {
-    setIsModalOpen = () => {},
-    currentLot = {},
-    nextItem = null,
-    items = []
-  } = modalContext ?? {}
+  const { setIsModalOpen = () => {}, currentLot = {}, nextItem = null } = modalContext ?? {}
 
-  const lotLabel = useMemo(() => {
-    if (!currentLot?.id) return 'Lot —'
-    return `Lot #${currentLot.id}`
-  }, [currentLot])
-
-  const currentBidDisplay = useMemo(() => {
-    const bid = Number(currentLot?.currentBid ?? 0)
-    return bid.toLocaleString()
-  }, [currentLot])
-
-  const nextLotPreview = useMemo(() => {
-    if (nextItem) return nextItem
-    if (!items?.length) return null
-    return items.find((item) => item?.iid !== currentLot?.id) ?? null
-  }, [currentLot, items, nextItem])
+  const lotData = useMemo(() => buildScreenLot(currentLot, nextItem), [currentLot, nextItem])
 
   const handleModalToggle = () => {
     setIsModalOpen((prev) => !prev)
@@ -41,165 +360,9 @@ export default function AuctionScreen({ position = [0, 4, -3.5], scale = [1, 1, 
 
   return (
     <group position={position} scale={scale}>
-      <Html transform position={[0, 0, 0.11]}>
-        <div
-          onClick={handleModalToggle}
-          style={{
-            width: '800px',
-            height: '450px',
-            backgroundColor: '#0a0f1a',
-            border: '3px solid #33A1E0',
-            borderRadius: '12px',
-            padding: '20px',
-            fontFamily: 'system-ui, sans-serif',
-            color: '#ffffff',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            pointerEvents: 'auto',
-            userSelect: 'none'
-          }}
-        >
-          <div
-            style={{
-              textAlign: 'center',
-              borderBottom: '2px solid #1e3548',
-              paddingBottom: '15px',
-              marginBottom: '15px'
-            }}
-          >
-            <h1
-              style={{
-                fontSize: '36px',
-                fontWeight: 'bold',
-                color: '#fff9af',
-                margin: '0 0 5px 0'
-              }}
-            >
-              LIVE AUCTION
-            </h1>
-            <p
-              style={{
-                fontSize: '14px',
-                color: '#b8c5d1',
-                margin: 0
-              }}
-            >
-              {lotLabel} · {currentLot?.bidders ?? 0} active bidders
-            </p>
-          </div>
-
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              textAlign: 'center'
-            }}
-          >
-            <h2
-              style={{
-                fontSize: '32px',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                margin: '0 0 20px 0'
-              }}
-            >
-              {currentLot?.name ?? 'Upcoming lot'}
-            </h2>
-
-            <div
-              style={{
-                display: 'flex',
-                gap: '40px',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexWrap: 'wrap'
-              }}
-            >
-              <div>
-                <p
-                  style={{
-                    fontSize: '14px',
-                    color: '#8a9ba8',
-                    margin: '0 0 5px 0'
-                  }}
-                >
-                  Current Bid
-                </p>
-                <p
-                  style={{
-                    fontSize: '42px',
-                    fontWeight: 'bold',
-                    color: '#fff9af',
-                    margin: 0
-                  }}
-                >
-                  ${currentBidDisplay}
-                </p>
-              </div>
-
-              <div>
-                <p
-                  style={{
-                    fontSize: '14px',
-                    color: '#8a9ba8',
-                    margin: '0 0 5px 0'
-                  }}
-                >
-                  Time Remaining
-                </p>
-                <p
-                  style={{
-                    fontSize: '32px',
-                    fontWeight: 'bold',
-                    color: '#b2292d',
-                    margin: 0,
-                    fontFamily: 'monospace'
-                  }}
-                >
-                  {currentLot?.timeRemaining ?? '--:--:--'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            style={{
-              borderTop: '2px solid #1e3548',
-              paddingTop: '15px',
-              textAlign: 'center'
-            }}
-          >
-            <p
-              style={{
-                fontSize: '20px',
-                color: '#33A1E0',
-                margin: '0 0 6px 0',
-                fontWeight: 'bold'
-              }}
-            >
-              dYZ_ Tap to expand auction details
-            </p>
-            {nextLotPreview && (
-              <p
-                style={{
-                  fontSize: '14px',
-                  color: '#b8c5d1',
-                  margin: 0
-                }}
-              >
-                Next up: {nextLotPreview.title}
-              </p>
-            )}
-          </div>
-        </div>
+      <Html transform position={[0, 0, 0.1]}>
+        <AuctionScreenCard lotData={lotData} onClick={handleModalToggle} variant="stage" />
       </Html>
     </group>
   )
 }
-
-export { ModalContext }

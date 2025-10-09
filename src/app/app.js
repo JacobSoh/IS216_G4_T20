@@ -18,7 +18,7 @@ const inter = Inter({
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
-  const isAuctionPage = pathname === '/auction';
+  const isAuctionPage = pathname?.startsWith('/auction');
 
   return (
     <html lang='en'>
