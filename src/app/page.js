@@ -166,7 +166,6 @@ export default function HomePage() {
         <div className={`absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-br ${colors[theme]} rounded-full blur-3xl animate-float`} />
         <div className={`absolute top-1/2 right-1/4 w-96 h-96 bg-gradient-to-br ${colors[theme]} rounded-full blur-3xl animate-float-delayed`} />
         <div className={`absolute bottom-1/4 left-1/3 w-80 h-80 bg-gradient-to-br ${colors[theme]} rounded-full blur-3xl animate-float-slow`} />
->>>>>>> javen
       </div>
     )
   }
@@ -178,7 +177,7 @@ export default function HomePage() {
     <div className="relative bg-gray-50 text-gray-800">
       <main>
         {/* Hero Section */}
-        <section ref={el => sectionsRef.current[0] = el} className="relative flex flex-col items-center justify-center pt-42 min-h-[150vh] overflow-hidden bg-gradient-to-b from-orange-100 to-yellow-50">
+        <section ref={el => sectionsRef.current[0] = el} className="relative flex flex-col items-center justify-center pt-0 min-h-[150vh] overflow-hidden bg-gradient-to-b from-orange-100 to-yellow-50">
           <FloatingShapes theme="orange" />
           <div className={`relative z-10 px-6 text-center max-w-3xl transition-all duration-700 ${visibleSections.has(0) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
             <h1 className="text-7xl md:text-8xl font-bold mb-6 text-orange-900 font-serif">BidHub</h1>
@@ -187,7 +186,7 @@ export default function HomePage() {
         </section>
 
         {/* How It Works Section */}
-        <section ref={el => sectionsRef.current[1] = el} className="relative flex items-center justify-center pt-20 min-h-[150vh] overflow-hidden bg-gradient-to-b from-yellow-50 to-[#fefce8]">
+        <section ref={el => sectionsRef.current[1] = el} className="relative flex items-center justify-center pt-0 min-h-[150vh] overflow-hidden bg-gradient-to-b from-yellow-50 to-[#fefce8]">
           <FloatingShapes theme="yellow" />
           <div className={`relative z-10 text-center px-6 max-w-4xl transition-all duration-700 ${visibleSections.has(1) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
             <h2 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6">How It Works</h2>
@@ -196,9 +195,9 @@ export default function HomePage() {
         </section>
 
         {/* Flow Steps Section */}
-        <section ref={el => sectionsRef.current[2] = el} className="relative pt-20 pb-20 min-h-[250vh] bg-gradient-to-b from-[#fefce8] to-[#fff5e1]">
+        <section ref={el => sectionsRef.current[2] = el} className="relative pt-0 pb-20 min-h-[250vh] bg-gradient-to-b from-[#fefce8] to-[#fff5e1]">
           <FloatingShapes theme="beige" />
-          <div className="relative z-10 max-w-6xl mx-auto py-12 space-y-12">
+          <div className="relative z-10 max-w-6xl mx-auto py-0 space-y-12">
             {steps.map((s, i) => (
               <div key={i} ref={el => stepsRef.current[i] = el}>
                 <FlowStep
