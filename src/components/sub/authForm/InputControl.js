@@ -5,7 +5,7 @@ import { Input, Field, Label, Transition } from '@headlessui/react';
 import {
     Error,
     PasswordCriteria
-} from '@/components/authForm/index';
+} from '@/components/sub/authForm/index';
 
 export default function InputControl({
     labelText='',

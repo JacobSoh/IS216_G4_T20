@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Transition } from '@headlessui/react';
 import { useAlert } from '@/context/AlertContext';
-import AlertBanner from '@/components/alert/banner';
+import AlertBanner from '@/components/sub/alert/banner';
 
 export default function GlobalAlert() {
 	const { alert, hideAlert } = useAlert();

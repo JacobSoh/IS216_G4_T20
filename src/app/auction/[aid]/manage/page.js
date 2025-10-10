@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 
-import AuctionManagePanel from '@/components/auction/AuctionManagePanel'
+import AuctionManagePanel from '@/components/sub/auction/AuctionManagePanel'
 import { getAuctionLiveState } from '@/services/auctionService'
 import { getServerUser } from '@/utils/auth'
 

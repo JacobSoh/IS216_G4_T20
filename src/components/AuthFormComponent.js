@@ -6,7 +6,7 @@ import {
 	Header,
 	InputControl,
 	SwitchLink,
-} from '@/components/authForm';
+} from '@/components/sub/authForm';
 import Spinner from '@/components/SpinnerComponent';
 import { useAuthForm } from '@/hooks/useAuthForm';
 

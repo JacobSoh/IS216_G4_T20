@@ -4,7 +4,7 @@ import '@/styles/globals.css'
 
 /* Importing Components */
 import Providers from '@/app/providers'
-import AppLayoutShell from '@/components/layout/AppLayoutShell'
+import AppLayoutShell from '@/components/sub/layout/AppLayoutShell'
 
 /* Import Supabase Server For Session */
 import { getServerUser } from '@/utils/auth'

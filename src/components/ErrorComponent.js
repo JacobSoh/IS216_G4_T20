@@ -4,7 +4,7 @@ import {
     Eyes,
     ErrorMsg,
     ErrorBtn
-} from '@/components/error/index';
+} from '@/components/sub/error/index';
 
 export default function Error({ status, error, reset }) {
     
