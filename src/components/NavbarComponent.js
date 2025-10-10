@@ -17,7 +17,7 @@ const NAV_ITEMS = [
 	{ label: 'Categories', href: '/categories', button: false },
 	{ label: 'How It Works', href: '/how_it_works', button: false },
 	{ label: 'About', href: '/about', button: false },
-	{ label: 'Contact', href: '/contact', button: false },
+	{ label: 'Profile', href: '/profile_page', button: false },
 	{ label: 'Login', href: '/login', button: false, hideWhenAuthed: true },
 	{ label: 'Join Us', href: '/register', button: true, hideWhenAuthed: true },
 	{ label: 'Logout', action: 'logout', button: true, onlyWhenAuthed: true },
