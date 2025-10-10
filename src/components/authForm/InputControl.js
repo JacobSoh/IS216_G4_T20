@@ -43,7 +43,7 @@ export default function InputControl({
         >
             <Label className='block text-sm/6 font-medium text-white' htmlFor={id}>
                 {labelText}
-                {isRequired && <span className='ms-2 items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 inset-ring inset-ring-red-400/20'>Required</span>}
+                {isRequired && !isLogin && <span className='ms-2 items-center rounded-md bg-red-400/10 px-2 py-1 text-xs font-medium text-red-400 inset-ring inset-ring-red-400/20'>Required</span>}
                 :
             </Label>
             <Input
