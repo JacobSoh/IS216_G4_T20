@@ -177,29 +177,56 @@ export default function HomePage() {
     <div className="relative bg-gray-50 text-gray-800">
       <main>
         {/* Hero Section */}
-        <section ref={el => sectionsRef.current[0] = el} className="relative flex flex-col items-center justify-center pt-0 min-h-[150vh] overflow-hidden bg-gradient-to-b from-orange-100 to-yellow-50">
+        <section
+          ref={(el) => (sectionsRef.current[0] = el)}
+          className="relative flex flex-col items-center justify-center min-h-[100vh] overflow-hidden bg-gradient-to-b from-orange-100 via-yellow-50 to-amber-50"
+        >
           <FloatingShapes theme="orange" />
-          <div className={`relative z-10 px-6 text-center max-w-3xl transition-all duration-700 ${visibleSections.has(0) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
-            <h1 className="text-7xl md:text-8xl font-bold mb-6 text-orange-900 font-serif">BidHub</h1>
-            <p className="text-xl md:text-2xl text-gray-700 mb-8">Live auctions. Real-time bidding. Premium collectibles from anywhere.</p>
+          <div
+            className={`relative z-10 px-6 text-center max-w-3xl transition-all duration-700 ${visibleSections.has(0)
+                ? 'opacity-100 translate-y-0 scale-100'
+                : 'opacity-0 translate-y-8 scale-95'
+              }`}
+          >
+            <h1 className="text-7xl md:text-8xl font-bold mb-6 text-orange-900 font-serif">
+              BidHub
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-700 mb-8">
+              Live auctions. Real-time bidding. Premium collectibles from anywhere.
+            </p>
           </div>
         </section>
 
         {/* How It Works Section */}
-        <section ref={el => sectionsRef.current[1] = el} className="relative flex items-center justify-center pt-0 min-h-[150vh] overflow-hidden bg-gradient-to-b from-yellow-50 to-[#fefce8]">
+        <section
+          ref={(el) => (sectionsRef.current[1] = el)}
+          className="relative flex flex-col items-center justify-center min-h-[180vh] overflow-hidden bg-gradient-to-b from-amber-50 via-yellow-100 to-orange-50"
+        >
           <FloatingShapes theme="yellow" />
-          <div className={`relative z-10 text-center px-6 max-w-4xl transition-all duration-700 ${visibleSections.has(1) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
-            <h2 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6">How It Works</h2>
-            <p className="text-xl text-gray-600">Follow these simple steps to start winning auctions</p>
+          <div
+            className={`relative z-10 text-center px-6 max-w-4xl transition-all duration-700 ${visibleSections.has(1)
+                ? 'opacity-100 translate-y-0 scale-100'
+                : 'opacity-0 translate-y-8 scale-95'
+              }`}
+          >
+            <h2 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6">
+              How It Works
+            </h2>
+            <p className="text-xl text-gray-600 mb-10">
+              Follow these simple steps to start winning auctions
+            </p>
           </div>
         </section>
 
         {/* Flow Steps Section */}
-        <section ref={el => sectionsRef.current[2] = el} className="relative pt-0 pb-20 min-h-[250vh] bg-gradient-to-b from-[#fefce8] to-[#fff5e1]">
+        <section
+          ref={(el) => (sectionsRef.current[2] = el)}
+          className="relative py-32 bg-gradient-to-b from-orange-50 via-amber-50 to-orange-100"
+        >
           <FloatingShapes theme="beige" />
-          <div className="relative z-10 max-w-6xl mx-auto py-0 space-y-12">
+          <div className="relative z-10 max-w-6xl mx-auto space-y-16">
             {steps.map((s, i) => (
-              <div key={i} ref={el => stepsRef.current[i] = el}>
+              <div key={i} ref={(el) => (stepsRef.current[i] = el)}>
                 <FlowStep
                   icon={s.icon}
                   label={s.label}
@@ -211,6 +238,28 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {/* Welcome Section */}
+        <section
+          ref={(el) => (sectionsRef.current[3] = el)}
+          className="relative flex flex-col items-center justify-center min-h-[100vh] overflow-hidden bg-gradient-to-b from-orange-100 via-orange-50 to-[#fff5e1]"
+        >
+          <FloatingShapes theme="welcome" />
+          <div
+            className={`relative z-10 px-6 text-center max-w-3xl transition-all duration-700 ${visibleSections.has(3)
+                ? 'opacity-100 translate-y-0 scale-100'
+                : 'opacity-0 translate-y-8 scale-95'
+              }`}
+          >
+            <h1 className="text-7xl md:text-8xl font-bold mb-6 text-orange-600 font-serif">
+              Welcome!
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-700 mb-8">
+              Start bidding and winning.
+            </p>
+          </div>
+        </section>
+
 
         {/* Featured Auctions Section */}
         <section ref={featuredRef} className="min-h-screen relative pt-10 bg-gradient-to-b from-[#fff5e1] to-[#ffefea]">
