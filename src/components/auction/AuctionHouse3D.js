@@ -1,6 +1,8 @@
-'use client'
+﻿'use client'
 
-import { Suspense, useRef, useEffect, useState, createContext, useContext } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { Suspense, useRef, useEffect, useState, useMemo, createContext, useContext } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   OrbitControls,
@@ -17,8 +19,110 @@ import {
   useTexture
 } from '@react-three/drei'
 import * as THREE from 'three'
-import Link from 'next/link'
-import AuctionScreen, { ModalContext } from './AuctionScreen'
+import { useAuctionLive } from '@/hooks/useAuctionLive'
+import { useAuctionChat } from '@/hooks/useAuctionChat'
+import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen'
+import { axiosBrowserClient } from '@/utils/axios/client'
+import { buildStoragePublicUrl } from '@/utils/storage'
+
+const pad = (value) => String(Math.max(0, Math.floor(value))).padStart(2, '0')
+
+const formatTimeRemaining = (endTime) => {
+  if (!endTime) return '--:--:--'
+  const diff = endTime.getTime() - Date.now()
+  if (diff <= 0) return '00:00:00'
+  const totalSeconds = Math.floor(diff / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+}
+
+const formatChatTimestamp = (value) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const resolveAvatarUrl = (sender) => {
+  if (!sender) {
+    return DEFAULT_AVATAR
+  }
+  const bucket = sender.avatar_bucket || 'avatar'
+  const objectPath = sender.object_path || 'default.png'
+  return (
+    buildStoragePublicUrl({
+      bucket,
+      objectPath
+    }) || DEFAULT_AVATAR
+  )
+}
+
+const DEFAULT_AVATAR = '/images/avatar-placeholder.png'
+
+const buildLotFromSnapshot = (snapshot) => {
+  if (!snapshot) {
+    return {
+      id: null,
+      name: 'Pending Reveal',
+      currentBid: 0,
+      timeRemaining: '--:--:--',
+      bidders: 0,
+      activeItem: null,
+      nextItem: null,
+      auctionName: '',
+      imageUrl: null,
+      minBid: 0,
+      hasBid: false,
+      auctionEndsAt: null,
+      auctionStartsAt: null
+    }
+  }
+  const auction = snapshot.auction ?? {}
+  const items = snapshot.items ?? []
+  const active = snapshot.activeItem ?? null
+  const next = snapshot.nextItem ?? null
+  const bidderCount = items.reduce((acc, item) => {
+    const hasBidder = Boolean(item.current_bid?.uid)
+    return acc + (hasBidder ? 1 : 0)
+  }, 0)
+  const activeBid = active?.current_bid ?? null
+  const endDate = auction.end_time ? new Date(auction.end_time) : null
+  const minBid = Number(active?.min_bid ?? 0)
+  const bidIncrement = Number.isFinite(Number(active?.bid_increment)) && Number(active?.bid_increment) > 0
+    ? Number(active?.bid_increment)
+    : 0.01
+  const currentBidValue = Number(activeBid?.current_price ?? 0)
+  const nextBidMinimum = currentBidValue + bidIncrement
+  return {
+    id: active?.iid ?? null,
+    name: active?.title ?? 'Upcoming Lot',
+    currentBid: activeBid?.current_price ?? minBid,
+    timeRemaining: formatTimeRemaining(endDate),
+    bidders: bidderCount,
+    activeItem: active,
+    nextItem: next,
+    auctionName: auction.name ?? '',
+    imageUrl: active?.imageUrl ?? null,
+    minBid,
+    bidIncrement,
+    nextBidMinimum,
+    hasBid: Boolean(activeBid),
+    auctionEndsAt: auction.end_time ?? null,
+    auctionStartsAt: auction.start_time ?? null
+  }
+}
+
+const TIER_CONFIG = [
+  { name: 'orchestra', y: -3, z: 5, rows: 8, seatsPerRow: 16, platformHeight: 0.5 },
+  { name: 'mezzanine', y: 0, z: 15, rows: 6, seatsPerRow: 14, platformHeight: 0.8 },
+  { name: 'balcony', y: 4, z: 23, rows: 4, seatsPerRow: 12, platformHeight: 1.0 }
+]
+
+const SEAT_COLOR_BY_TIER = ['#8B0000', '#B22222', '#A0522D']
+const OCCUPANT_PALETTE = ['#f4c1c1', '#b5d6ff', '#f5dea3', '#c7f9cc', '#d5b5ff', '#f7e7ce']
+const ACCENT_PALETTE = ['#352315', '#52311c', '#101010', '#6b3e24', '#8a4b32']
 function GrandStage() {
   const stageRef = useRef()
   const screenRef = useRef()
@@ -99,37 +203,25 @@ function GrandStage() {
         </Box>
       </group>
 
-      {/* Massive Auction Screen - Even Bigger */}
-      <group position={[0, 4, -3.5]}>
-        <RoundedBox
-          ref={screenRef}
-          args={[28, 16, 0.3]}
-          radius={0.2}
-        >
-          <meshStandardMaterial
-            color="#000015"
-            emissive="#001122"
-            emissiveIntensity={0.4}
-          />
+      {/* Stage Screen */}
+      <group position={[0, 3.6, -4.2]}>
+        <RoundedBox ref={screenRef} args={[13.2, 6.4, 0.2]} radius={0.16}>
+          <meshStandardMaterial color="#060b16" emissive="#0b1426" emissiveIntensity={0.32} />
         </RoundedBox>
 
         {/* Ornate Screen Frame */}
-        <RoundedBox
-          args={[29, 17, 0.2]}
-          radius={0.3}
-          position={[0, 0, -0.15]}
-        >
+        <RoundedBox args={[13.8, 7, 0.12]} radius={0.22} position={[0, 0, -0.12]}>
           <meshStandardMaterial
             color="#3d2f1f"
-            metalness={0.2}
-            roughness={0.5}
+            metalness={0.28}
+            roughness={0.4}
             emissive="#DAA520"
-            emissiveIntensity={0.05}
+            emissiveIntensity={0.06}
           />
         </RoundedBox>
 
-        {/* Enhanced Auction Screen - Even Bigger */}
-        <AuctionScreen position={[0, 0, 0.16]} scale={[3.5, 3.5, 1]} />
+        {/* Enhanced Auction Screen */}
+        <AuctionScreen position={[0, 1, 0.1]} scale={[1.1, 1.1, 1]} />
       </group>
 
       {/* Auctioneer Podium - Further Left on Stage */}
@@ -400,84 +492,135 @@ function GrandTheatre() {
 }
 
 function TheatreTieredSeating() {
-  const seats = []
+  const tiers = TIER_CONFIG
+  const seatColorByTier = SEAT_COLOR_BY_TIER
+  const occupantPalette = OCCUPANT_PALETTE
+  const accentPalette = ACCENT_PALETTE
 
-  // Create proper tiered platform seating like real theatres
-  const tiers = [
-    { name: "orchestra", y: -3, z: 5, rows: 8, seatsPerRow: 16, platformHeight: 0.5 },
-    { name: "mezzanine", y: 0, z: 15, rows: 6, seatsPerRow: 14, platformHeight: 0.8 },
-    { name: "balcony", y: 4, z: 23, rows: 4, seatsPerRow: 12, platformHeight: 1.0 }
-  ]
+  const { seatMeta, viewerSeatKey } = useMemo(() => {
+    const viewerPosition = new THREE.Vector3(0, 7, 27)
+    const meta = []
 
-  tiers.forEach((tier, tierIndex) => {
-    // Create the platform for this tier
-    seats.push(
-      <Box
-        key={`platform-${tier.name}`}
-        args={[tier.seatsPerRow * 1.5 + 4, tier.platformHeight, tier.rows * 2 + 2]}
-        position={[0, tier.y - tier.platformHeight/2, tier.z + tier.rows]}
-      >
-        <meshStandardMaterial
-          color="#3D2817"
-          roughness={0.4}
-          metalness={0.1}
-        />
-      </Box>
-    )
+    tiers.forEach((tier, tierIndex) => {
+      for (let row = 0; row < tier.rows; row++) {
+        for (let seat = 0; seat < tier.seatsPerRow; seat++) {
+          const seatX = (seat - tier.seatsPerRow / 2 + 0.5) * 1.5
+          const seatZ = tier.z + row * 2
+          const seatY = tier.y
+          const seatKey = `${tier.name}-${row}-${seat}`
 
-    // Create rows of seats on the platform
-    for (let row = 0; row < tier.rows; row++) {
-      for (let seat = 0; seat < tier.seatsPerRow; seat++) {
-        const seatX = (seat - tier.seatsPerRow/2 + 0.5) * 1.5
-        const seatZ = tier.z + row * 2
-        const seatY = tier.y
-
-        // All seats are now filled - user sits in one of them
-
-        const seatKey = `${tier.name}-${row}-${seat}`
-
-        seats.push(
-          <group
-            key={seatKey}
-            position={[seatX, seatY, seatZ]}
-          >
-            {/* Seat Back */}
-            <Box args={[0.8, 1.6, 0.12]} position={[0, 0.8, 0.3]}>
-              <meshStandardMaterial
-                color={tierIndex === 0 ? "#8B0000" : tierIndex === 1 ? "#B22222" : "#A0522D"}
-                roughness={0.5}
-              />
-            </Box>
-
-            {/* Seat Cushion */}
-            <Box args={[0.8, 0.15, 0.8]} position={[0, 0.075, 0]}>
-              <meshStandardMaterial
-                color={tierIndex === 0 ? "#8B0000" : tierIndex === 1 ? "#B22222" : "#A0522D"}
-                roughness={0.6}
-              />
-            </Box>
-
-            {/* Armrests */}
-            {[-0.5, 0.5].map((armSide, i) => (
-              <Box
-                key={i}
-                args={[0.12, 0.5, 0.6]}
-                position={[armSide, 0.3, 0]}
-              >
-                <meshStandardMaterial
-                  color="#8B4513"
-                  roughness={0.3}
-                  metalness={0.2}
-                />
-              </Box>
-            ))}
-          </group>
-        )
+          meta.push({
+            key: seatKey,
+            tierIndex,
+            position: [seatX, seatY, seatZ]
+          })
+        }
       }
-    }
+    })
+
+    let closestSeatKey = null
+    let minDistance = Infinity
+    meta.forEach((seat) => {
+      const seatVec = new THREE.Vector3(...seat.position)
+      const distance = seatVec.distanceTo(viewerPosition)
+      if (distance < minDistance) {
+        minDistance = distance
+        closestSeatKey = seat.key
+      }
+    })
+
+    return { seatMeta: meta, viewerSeatKey: closestSeatKey }
+  }, [tiers])
+
+  const occupantAssignments = useMemo(() => {
+    const assignments = new Map()
+    seatMeta.forEach((seat) => {
+      if (seat.key === viewerSeatKey) return
+
+      if (Math.random() < 0.5) {
+        const bodyColor = occupantPalette[Math.floor(Math.random() * occupantPalette.length)]
+        const accentColor = accentPalette[Math.floor(Math.random() * accentPalette.length)]
+        assignments.set(seat.key, { bodyColor, accentColor })
+      }
+    })
+    return assignments
+  }, [seatMeta, viewerSeatKey, occupantPalette, accentPalette])
+
+  const platforms = tiers.map((tier) => (
+    <Box
+      key={`platform-${tier.name}`}
+      args={[tier.seatsPerRow * 1.5 + 4, tier.platformHeight, tier.rows * 2 + 2]}
+      position={[0, tier.y - tier.platformHeight / 2, tier.z + tier.rows]}
+    >
+      <meshStandardMaterial
+        color="#3D2817"
+        roughness={0.4}
+        metalness={0.1}
+      />
+    </Box>
+  ))
+
+  const seatGroups = seatMeta.map((seat) => {
+    const seatColor = seatColorByTier[seat.tierIndex] || seatColorByTier[0]
+    const occupant = occupantAssignments.get(seat.key)
+
+    return (
+      <group
+        key={seat.key}
+        position={seat.position}
+      >
+        {/* Seat Back */}
+        <Box args={[0.8, 1.6, 0.12]} position={[0, 0.8, 0.3]}>
+          <meshStandardMaterial
+            color={seatColor}
+            roughness={0.5}
+          />
+        </Box>
+
+        {/* Seat Cushion */}
+        <Box args={[0.8, 0.15, 0.8]} position={[0, 0.075, 0]}>
+          <meshStandardMaterial
+            color={seatColor}
+            roughness={0.6}
+          />
+        </Box>
+
+        {/* Armrests */}
+        {[-0.5, 0.5].map((armSide, i) => (
+          <Box
+            key={i}
+            args={[0.12, 0.5, 0.6]}
+            position={[armSide, 0.3, 0]}
+          >
+            <meshStandardMaterial
+              color="#8B4513"
+              roughness={0.3}
+              metalness={0.2}
+            />
+          </Box>
+        ))}
+
+        {occupant && (
+          <group position={[0, 0.2, -0.05]}>
+            <Cylinder args={[0.16, 0.18, 0.95]} position={[0, 0.6, -0.08]}>
+              <meshStandardMaterial color={occupant.bodyColor} roughness={0.5} />
+            </Cylinder>
+            <Sphere args={[0.2]} position={[0, 1.1, -0.1]}>
+              <meshStandardMaterial color={occupant.bodyColor} roughness={0.4} />
+            </Sphere>
+            <Box args={[0.35, 0.18, 0.12]} position={[0, 0.82, -0.05]}>
+              <meshStandardMaterial color={occupant.bodyColor} roughness={0.4} />
+            </Box>
+            <Sphere args={[0.22]} position={[0, 1.24, -0.12]}>
+              <meshStandardMaterial color={occupant.accentColor} roughness={0.6} metalness={0.1} />
+            </Sphere>
+          </group>
+        )}
+      </group>
+    )
   })
 
-  return <group>{seats}</group>
+  return <group>{[...platforms, ...seatGroups]}</group>
 }
 
 function LockedSeatController() {
@@ -492,54 +635,66 @@ function LockedSeatController() {
     camera.lookAt(targetPosition.current)
     setIsLocked(true)
 
-    // Prevent any position changes
-    const originalSetPosition = camera.position.set.bind(camera.position)
+    // Prevent any position changes via external controls
+    const originalSet = camera.position.set
     camera.position.set = (x, y, z) => {
-      // Only allow the fixed position
-      return originalSetPosition(
+      return originalSet.call(
+        camera.position,
         fixedPosition.current.x,
         fixedPosition.current.y,
         fixedPosition.current.z
       )
     }
 
-    // Handle mouse/touch rotation manually
+    // Handle pointer-based rotation manually (mouse + touch)
     let isDragging = false
-    let previousMousePosition = { x: 0, y: 0 }
+    let previousPointerPosition = { x: 0, y: 0 }
     let rotation = { x: 0, y: 0 }
+    let hasDragged = false
+    let suppressClick = false
+    let activePointerId = null
 
-    const handleMouseDown = (event) => {
+    const previousTouchAction = gl.domElement.style.touchAction
+    const previousUserSelect = gl.domElement.style.userSelect
+    gl.domElement.style.touchAction = 'none'
+    gl.domElement.style.userSelect = 'none'
+
+    const isWithinCanvas = (clientX, clientY) => {
+      const rect = gl.domElement.getBoundingClientRect()
+      return (
+        clientX >= rect.left &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom
+      )
+    }
+
+    const startDrag = (clientX, clientY, pointerId = null) => {
       isDragging = true
-      previousMousePosition = {
-        x: event.clientX,
-        y: event.clientY
-      }
+      hasDragged = false
+      activePointerId = pointerId
+      previousPointerPosition = { x: clientX, y: clientY }
     }
 
-    const handleMouseUp = () => {
-      isDragging = false
-    }
-
-    const handleMouseMove = (event) => {
+    const updateDrag = (clientX, clientY) => {
       if (!isDragging) return
 
       const deltaMove = {
-        x: event.clientX - previousMousePosition.x,
-        y: event.clientY - previousMousePosition.y
+        x: clientX - previousPointerPosition.x,
+        y: clientY - previousPointerPosition.y
       }
 
-      // Convert mouse movement to rotation (inverted for natural feel)
-      rotation.y += deltaMove.x * 0.002 // Horizontal rotation
-      rotation.x += deltaMove.y * 0.002 // Vertical rotation
+      rotation.y += deltaMove.x * 0.002
+      rotation.x += deltaMove.y * 0.002
 
-      // Allow full 360-degree horizontal rotation, limited vertical
-      // rotation.y can be unlimited for full horizontal rotation
-      rotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, rotation.x))  // 60° up/down
+      if (!hasDragged && (Math.abs(deltaMove.x) > 1 || Math.abs(deltaMove.y) > 1)) {
+        hasDragged = true
+      }
 
-      // Apply rotation while keeping position fixed
+      rotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, rotation.x))
+
       camera.position.copy(fixedPosition.current)
 
-      // Calculate new look target based on rotation
       const spherical = new THREE.Spherical()
       spherical.setFromVector3(targetPosition.current.clone().sub(fixedPosition.current))
       spherical.theta += rotation.y
@@ -549,21 +704,100 @@ function LockedSeatController() {
       newTarget.setFromSpherical(spherical).add(fixedPosition.current)
       camera.lookAt(newTarget)
 
-      previousMousePosition = {
-        x: event.clientX,
-        y: event.clientY
+      previousPointerPosition = { x: clientX, y: clientY }
+    }
+
+    const endDrag = () => {
+      if (!isDragging) return
+      isDragging = false
+      activePointerId = null
+
+      if (hasDragged) {
+        suppressClick = true
+        setTimeout(() => { suppressClick = false }, 0)
       }
     }
 
-    // Add event listeners
-    gl.domElement.addEventListener('mousedown', handleMouseDown)
-    document.addEventListener('mouseup', handleMouseUp)
-    document.addEventListener('mousemove', handleMouseMove)
+    const handlePointerDown = (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return
+      if (!isWithinCanvas(event.clientX, event.clientY)) return
+
+      if (event.pointerType !== 'mouse') {
+        event.preventDefault()
+      }
+      startDrag(event.clientX, event.clientY, event.pointerId)
+    }
+
+    const handlePointerMove = (event) => {
+      if (!isDragging) return
+      if (activePointerId !== null && event.pointerId !== activePointerId) return
+      if (event.pointerType !== 'mouse') {
+        event.preventDefault()
+      }
+      updateDrag(event.clientX, event.clientY)
+    }
+
+    const handlePointerUp = (event) => {
+      if (activePointerId !== null && event.pointerId !== activePointerId) return
+      endDrag()
+    }
+
+    const handlePointerCancel = (event) => {
+      if (activePointerId !== null && event.pointerId !== activePointerId) return
+      isDragging = false
+      activePointerId = null
+    }
+
+    const handleMouseDown = (event) => {
+      if (event.button !== 0) return
+      if (!isWithinCanvas(event.clientX, event.clientY)) return
+      startDrag(event.clientX, event.clientY)
+    }
+
+    const handleMouseMove = (event) => {
+      updateDrag(event.clientX, event.clientY)
+    }
+
+    const handleMouseUp = () => {
+      endDrag()
+    }
+
+    const handleClickCapture = (event) => {
+      if (!suppressClick) return
+      suppressClick = false
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    const supportsPointerEvents = typeof window !== 'undefined' && 'onpointerdown' in window
+
+    if (supportsPointerEvents) {
+      document.addEventListener('pointerdown', handlePointerDown)
+      document.addEventListener('pointermove', handlePointerMove)
+      document.addEventListener('pointerup', handlePointerUp)
+      document.addEventListener('pointercancel', handlePointerCancel)
+    } else {
+      document.addEventListener('mousedown', handleMouseDown)
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+    document.addEventListener('click', handleClickCapture, true)
 
     return () => {
-      gl.domElement.removeEventListener('mousedown', handleMouseDown)
-      document.removeEventListener('mouseup', handleMouseUp)
-      document.removeEventListener('mousemove', handleMouseMove)
+      if (supportsPointerEvents) {
+        document.removeEventListener('pointerdown', handlePointerDown)
+        document.removeEventListener('pointermove', handlePointerMove)
+        document.removeEventListener('pointerup', handlePointerUp)
+        document.removeEventListener('pointercancel', handlePointerCancel)
+      } else {
+        document.removeEventListener('mousedown', handleMouseDown)
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+      document.removeEventListener('click', handleClickCapture, true)
+      camera.position.set = originalSet
+      gl.domElement.style.touchAction = previousTouchAction
+      gl.domElement.style.userSelect = previousUserSelect
     }
   }, [camera, gl])
 
@@ -691,23 +925,200 @@ function TheatreLighting() {
   )
 }
 
-export default function AuctionHouse3D() {
-  const [isLoading, setIsLoading] = useState(true)
+export default function AuctionHouse3D({
+  aid,
+  initialLiveData,
+  initialChatMessages = [],
+  currentUserId = null,
+  pollingMs = 7000
+}) {
+  const { snapshot, isFetching, refresh } = useAuctionLive(aid, initialLiveData, pollingMs)
+  const chatPollMs = Math.max(3000, pollingMs || 5000)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isBidPanelOpen, setIsBidPanelOpen] = useState(false)
   const [isChatPanelOpen, setIsChatPanelOpen] = useState(false)
-  const [currentLot, setCurrentLot] = useState({
-    id: 1,
-    name: "Vintage Watch Collection",
-    currentBid: 2500,
-    timeRemaining: "00:05:42",
-    bidders: 12
-  })
+  const [currentLot, setCurrentLot] = useState(() => buildLotFromSnapshot(initialLiveData))
+  const [lotItems, setLotItems] = useState(initialLiveData?.items ?? [])
+  const [bidAmount, setBidAmount] = useState('')
+  const [bidFeedback, setBidFeedback] = useState(null)
+  const [isBidding, setIsBidding] = useState(false)
+  const [nowTs, setNowTs] = useState(() => Date.now())
+  const {
+    messages: chatMessages,
+    isFetching: isChatFetching,
+    setMessages: setChatMessages,
+    refresh: refreshChat
+  } = useAuctionChat(aid, initialChatMessages, { enabled: true, pollInterval: chatPollMs })
+  const [chatInput, setChatInput] = useState('')
+  const [chatFeedback, setChatFeedback] = useState(null)
+  const [isSendingChat, setIsSendingChat] = useState(false)
+  const chatMessagesEndRef = useRef(null)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000)
-    return () => clearTimeout(timer)
-  }, [])
+    setCurrentLot(buildLotFromSnapshot(snapshot))
+    setLotItems(snapshot?.items ?? [])
+  }, [snapshot])
+
+  useEffect(() => {
+    if (!snapshot?.auction?.end_time) return undefined
+    const endTime = new Date(snapshot.auction.end_time)
+    const updateTicker = () => {
+      setCurrentLot((prev) => ({
+        ...prev,
+        timeRemaining: formatTimeRemaining(endTime)
+      }))
+    }
+    updateTicker()
+    const id = window.setInterval(updateTicker, 1000)
+    return () => window.clearInterval(id)
+  }, [snapshot?.auction?.end_time])
+
+useEffect(() => {
+  if (!bidFeedback) return undefined
+  const id = window.setTimeout(() => setBidFeedback(null), 3500)
+  return () => window.clearTimeout(id)
+}, [bidFeedback])
+
+useEffect(() => {
+  const id = window.setInterval(() => setNowTs(Date.now()), 1000)
+  return () => window.clearInterval(id)
+}, [])
+
+useEffect(() => {
+  if (isChatPanelOpen) {
+    refreshChat()
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isChatPanelOpen])
+
+useEffect(() => {
+  if (!chatFeedback) return undefined
+  const id = window.setTimeout(() => setChatFeedback(null), 3000)
+  return () => window.clearTimeout(id)
+}, [chatFeedback])
+
+useEffect(() => {
+  if (chatMessagesEndRef.current) {
+    chatMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+  }
+}, [chatMessages])
+
+  const handleBidSubmit = async () => {
+    if (!aid || !currentLot.activeItem?.iid) return
+    const parsedAmount = Number(bidAmount)
+    const minimumRequired = currentLot.nextBidMinimum ?? currentLot.minBid ?? 0
+    if (Number.isNaN(parsedAmount) || parsedAmount < minimumRequired) {
+      setBidFeedback(`Enter at least $${minimumRequired.toFixed(2)}`)
+      return
+    }
+
+    try {
+      setIsBidding(true)
+      await axiosBrowserClient.post(`/api/auctions/${aid}/bid`, {
+        iid: currentLot.activeItem.iid,
+        amount: parsedAmount
+      })
+      const nextRequired = parsedAmount + bidIncrementValue
+      setCurrentLot((prev) => {
+        if (!prev) {
+          return prev
+        }
+        const updatedActiveItem = prev.activeItem
+          ? {
+              ...prev.activeItem,
+              current_bid: {
+                ...(prev.activeItem.current_bid ?? {}),
+                current_price: parsedAmount
+              }
+            }
+          : prev.activeItem
+        return {
+          ...prev,
+          hasBid: true,
+          currentBid: parsedAmount,
+          displayPriceValue: parsedAmount,
+          displayPriceLabel: 'Current Bid',
+          nextBidMinimum: nextRequired,
+          activeItem: updatedActiveItem
+        }
+      })
+      setLotItems((prevItems) =>
+        prevItems.map((item) =>
+          item.iid === currentLot.activeItem?.iid
+            ? {
+                ...item,
+                current_bid: {
+                  ...(item.current_bid ?? {}),
+                  current_price: parsedAmount
+                }
+              }
+            : item
+        )
+      )
+      setBidFeedback('Bid placed successfully')
+      setBidAmount(nextRequired.toFixed(2))
+      refresh?.()
+    } catch (error) {
+      setBidFeedback(error?.message ?? 'Unable to place bid')
+    } finally {
+      setIsBidding(false)
+    }
+  }
+
+  const isLoading = !currentLot || !initialLiveData && !snapshot
+
+  const handleChatSubmit = async (event) => {
+    if (event?.preventDefault) {
+      event.preventDefault()
+    }
+    if (!aid || !chatInput.trim()) {
+      return
+    }
+    try {
+      setIsSendingChat(true)
+      await axiosBrowserClient.post(`/api/auctions/${aid}/chat`, {
+        message: chatInput.trim()
+      })
+      setChatInput('')
+      setChatFeedback('Message sent')
+      // Refresh to get the latest messages from server including the new one
+      await refreshChat?.()
+    } catch (error) {
+      setChatFeedback(error?.message ?? 'Unable to send message')
+    } finally {
+      setIsSendingChat(false)
+    }
+  }
+
+  const lotBidValue = useMemo(() => Number(currentLot.currentBid ?? 0), [currentLot.currentBid])
+  const minBidValue = useMemo(() => Number(currentLot.minBid ?? 0), [currentLot.minBid])
+  const bidIncrementValue = useMemo(
+    () => (Number.isFinite(Number(currentLot.bidIncrement)) && Number(currentLot.bidIncrement) > 0 ? Number(currentLot.bidIncrement) : 0.01),
+    [currentLot.bidIncrement]
+  )
+  const nextBidMinimum = useMemo(() => {
+    return lotBidValue + bidIncrementValue
+  }, [lotBidValue, bidIncrementValue])
+  const modalLotData = useMemo(() => buildScreenLot(currentLot, currentLot.nextItem), [currentLot, currentLot.nextItem])
+  const auctionStart = useMemo(
+    () => (currentLot.auctionStartsAt ? new Date(currentLot.auctionStartsAt) : null),
+    [currentLot.auctionStartsAt]
+  )
+  const auctionEnd = useMemo(
+    () => (currentLot.auctionEndsAt ? new Date(currentLot.auctionEndsAt) : null),
+    [currentLot.auctionEndsAt]
+  )
+  const isBeforeStart = auctionStart ? nowTs < auctionStart.getTime() : false
+  const isAfterEnd = auctionEnd ? nowTs > auctionEnd.getTime() : false
+  const chatParticipantCount = chatMessages.length
+
+  useEffect(() => {
+    if (!isBidPanelOpen) return undefined
+    if (!bidAmount) {
+      setBidAmount(nextBidMinimum.toFixed(2))
+    }
+    return undefined
+  }, [isBidPanelOpen, nextBidMinimum, bidAmount])
 
   if (isLoading) {
     return (
@@ -720,8 +1131,50 @@ export default function AuctionHouse3D() {
     )
   }
 
+  if (isBeforeStart) {
+    return (
+      <div className="w-full h-screen bg-[var(--custom-bg-primary)] flex flex-col items-center justify-center px-6 text-center gap-6">
+        <div className="space-y-4 max-w-xl">
+          <p className="text-xs uppercase tracking-[0.32em] text-[var(--custom-bright-blue)]">Auction Preview</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-[var(--custom-text-primary)]">Auction starting soon</h1>
+          <p className="text-[var(--custom-text-secondary)]">
+            The house opens at{' '}
+            {auctionStart?.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}.{" "}
+            Grab a seat and check back shortly.
+          </p>
+        </div>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 rounded-xl border border-[var(--custom-border-color)] px-5 py-3 text-sm font-semibold text-[var(--custom-text-primary)] hover:bg-[var(--custom-bg-secondary)] transition"
+        >
+          Return Home
+        </Link>
+      </div>
+    )
+  }
+
+  if (isAfterEnd) {
+    return (
+      <div className="w-full h-screen bg-[var(--custom-bg-primary)] flex flex-col items-center justify-center px-6 text-center gap-6">
+        <div className="space-y-4 max-w-xl">
+          <p className="text-xs uppercase tracking-[0.32em] text-[var(--custom-bright-blue)]">Auction Closed</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-[var(--custom-text-primary)]">This auction has ended</h1>
+          <p className="text-[var(--custom-text-secondary)]">
+            This auction has ended, feel free to explore other auctions.
+          </p>
+        </div>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 rounded-xl border border-[var(--custom-border-color)] px-5 py-3 text-sm font-semibold text-[var(--custom-text-primary)] hover:bg-[var(--custom-bg-secondary)] transition"
+        >
+          Return Home
+        </Link>
+      </div>
+    )
+  }
+
   return (
-    <ModalContext.Provider value={{ isModalOpen, setIsModalOpen, currentLot }}>
+    <ModalContext.Provider value={{ isModalOpen, setIsModalOpen, currentLot, items: lotItems, nextItem: currentLot.nextItem }}>
       <div className="w-full h-screen bg-[var(--custom-bg-primary)] relative">
         {/* 3D Canvas Layer */}
         <div className="absolute inset-0 z-0" style={{ visibility: isModalOpen ? 'hidden' : 'visible' }}>
@@ -765,11 +1218,14 @@ export default function AuctionHouse3D() {
           <div className="absolute top-6 right-6 text-[var(--custom-text-primary)] z-10">
             <div className="bg-[var(--custom-bg-tertiary)] p-4 rounded-xl border border-[var(--custom-border-color)] backdrop-blur-sm">
               <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium">LIVE AUCTION</span>
+                <div className={`w-3 h-3 ${isFetching ? 'bg-yellow-400 animate-ping' : 'bg-green-500 animate-pulse'} rounded-full`}></div>
+                <span className="text-sm font-medium uppercase tracking-wide">Live Auction</span>
               </div>
               <p className="text-[var(--custom-text-muted)] text-xs mt-1">
-                {currentLot.bidders} Active Bidders
+                Time remaining: {currentLot.timeRemaining}
+              </p>
+              <p className="text-[var(--custom-text-muted)] text-xs">
+                {currentLot.auctionName || 'Live Lot'} · {currentLot.bidders} active bidders
               </p>
             </div>
           </div>
@@ -814,31 +1270,50 @@ export default function AuctionHouse3D() {
 
                 <div className="space-y-4">
                   {/* Current Bid Info */}
-                  <div className="bg-[var(--custom-bg-secondary)] p-3 md:p-4 rounded-lg">
-                    <p className="text-[var(--custom-text-muted)] text-xs md:text-sm">Current Bid</p>
-                    <p className="text-xl md:text-2xl font-bold text-[var(--custom-cream-yellow)]">
-                      ${currentLot.currentBid.toLocaleString()}
-                    </p>
+                  <div className="bg-[var(--custom-bg-secondary)] p-3 md:p-4 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[var(--custom-text-muted)] text-xs md:text-sm uppercase tracking-wide">Current Bid</p>
+                        <p className="text-xl md:text-2xl font-bold text-[var(--custom-cream-yellow)]">${lotBidValue.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[var(--custom-text-muted)] text-xs md:text-sm uppercase tracking-wide">Min Increment</p>
+                        <p className="text-lg font-semibold text-[var(--custom-bright-blue)]">${bidIncrementValue.toFixed(2)}</p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Bid Input */}
                   <div>
                     <label className="text-xs md:text-sm text-[var(--custom-text-secondary)] mb-2 block">
-                      Your Bid Amount (Min increment: $2)
+                      Your Bid Amount
                     </label>
                     <input
                       type="number"
-                      step="2"
-                      min={currentLot.currentBid + 2}
-                      placeholder={`Min: $${(currentLot.currentBid + 2).toLocaleString()}`}
+                      inputMode="decimal"
+                      step={bidIncrementValue}
+                      min={nextBidMinimum}
+                      value={bidAmount}
+                      onChange={(event) => setBidAmount(event.target.value)}
+                      placeholder={`Min: $${nextBidMinimum.toFixed(2)}`}
                       className="w-full px-3 md:px-4 py-2 md:py-3 bg-[var(--custom-bg-secondary)] border border-[var(--custom-border-color)] rounded-lg text-[var(--custom-text-primary)] text-sm md:text-base focus:outline-none focus:border-[var(--custom-bright-blue)]"
                     />
+                    <p className="mt-2 text-[11px] md:text-xs text-[var(--custom-text-muted)]">
+                      Enter in increments of ${bidIncrementValue.toFixed(2)}.
+                    </p>
                   </div>
 
                   {/* Place Bid Button */}
-                  <button className="w-full py-3 md:py-4 bg-[var(--custom-accent-red)] hover:bg-[#8b1f22] text-white font-bold rounded-lg transition-all text-sm md:text-base">
-                    Place Bid
+                  <button
+                    onClick={handleBidSubmit}
+                    disabled={isBidding}
+                    className="w-full py-3 md:py-4 bg-[var(--custom-accent-red)] hover:bg-[#8b1f22] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all text-sm md:text-base"
+                  >
+                    {isBidding ? 'Submitting...' : 'Place Bid'}
                   </button>
+                  {bidFeedback && (
+                    <p className="text-xs md:text-sm text-[var(--custom-cream-yellow)]">{bidFeedback}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -855,7 +1330,7 @@ export default function AuctionHouse3D() {
                       💬 Live Chat
                     </h3>
                     <p className="text-xs text-[var(--custom-text-muted)]">
-                      {currentLot.bidders} participants online
+                      {chatParticipantCount} messages • {isChatFetching ? 'Updating…' : 'Live'}
                     </p>
                   </div>
                   <button
@@ -867,34 +1342,73 @@ export default function AuctionHouse3D() {
                 </div>
 
                 {/* Chat Messages */}
-                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3">
-                  {/* Example messages */}
-                  <div className="bg-[var(--custom-bg-secondary)] p-2 md:p-3 rounded-lg">
-                    <p className="text-xs text-[var(--custom-bright-blue)] font-semibold">User123</p>
-                    <p className="text-xs md:text-sm text-[var(--custom-text-secondary)]">Great item!</p>
-                  </div>
-                  <div className="bg-[var(--custom-bg-secondary)] p-2 md:p-3 rounded-lg">
-                    <p className="text-xs text-[var(--custom-cream-yellow)] font-semibold">Bidder42</p>
-                    <p className="text-xs md:text-sm text-[var(--custom-text-secondary)]">Going for this one</p>
-                  </div>
-                  <div className="bg-[var(--custom-bg-secondary)] p-2 md:p-3 rounded-lg">
-                    <p className="text-xs text-[var(--custom-bright-blue)] font-semibold">User123</p>
-                    <p className="text-xs md:text-sm text-[var(--custom-text-secondary)]">Good luck everyone!</p>
-                  </div>
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2">
+                  {chatMessages.length === 0 && (
+                    <p className="text-xs text-[var(--custom-text-muted)] italic text-center">No messages yet. Start the conversation!</p>
+                  )}
+                  {chatMessages.map((chat) => {
+                    const isOwn = currentUserId && chat.uid === currentUserId
+                    const avatarUrl = resolveAvatarUrl(chat.sender)
+                    return (
+                      <div
+                        key={chat.chat_id ?? `${chat.sent_at}-${chat.uid}`}
+                        className={`flex items-end gap-1.5 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+                      >
+                        <div className="flex-shrink-0">
+                          <Image
+                            src={avatarUrl}
+                            alt={chat.sender?.username ?? 'Guest avatar'}
+                            className="h-7 w-7 rounded-full object-cover border border-[var(--custom-border-color)]"
+                            width={28}
+                            height={28}
+                          />
+                        </div>
+                        <div className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
+                          <div
+                            className={`rounded-2xl px-3 py-2 shadow-sm ${
+                              isOwn
+                                ? 'bg-[var(--custom-bright-blue)] text-white rounded-br-md'
+                                : 'bg-[var(--custom-bg-secondary)] text-[var(--custom-text-primary)] border border-[var(--custom-border-color)] rounded-bl-md'
+                            }`}
+                          >
+                            <p className="text-[10px] font-semibold mb-0.5 opacity-90">
+                              {chat.sender?.username ?? 'Guest'}
+                            </p>
+                            <p className="text-sm break-words leading-relaxed">
+                              {chat.message}
+                            </p>
+                          </div>
+                          <span className={`text-[9px] text-[var(--custom-text-muted)] mt-0.5 px-2 ${isOwn ? 'text-right' : 'text-left'}`}>
+                            {formatChatTimestamp(chat.sent_at)}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <div ref={chatMessagesEndRef} />
                 </div>
 
                 {/* Chat Input */}
                 <div className="p-3 md:p-4 border-t border-[var(--custom-border-color)]">
-                  <div className="flex gap-2">
+                  <form className="flex gap-2" onSubmit={handleChatSubmit}>
                     <input
                       type="text"
+                      value={chatInput}
+                      onChange={(event) => setChatInput(event.target.value)}
                       placeholder="Type a message..."
                       className="flex-1 px-2 md:px-3 py-2 bg-[var(--custom-bg-secondary)] border border-[var(--custom-border-color)] rounded-lg text-xs md:text-sm text-[var(--custom-text-primary)] focus:outline-none focus:border-[var(--custom-bright-blue)]"
                     />
-                    <button className="px-3 md:px-4 py-2 bg-[var(--custom-bright-blue)] hover:bg-[var(--custom-ocean-blue)] text-white rounded-lg font-semibold transition-all text-xs md:text-sm">
-                      Send
+                    <button
+                      type="submit"
+                      disabled={isSendingChat || !chatInput.trim()}
+                      className="px-3 md:px-4 py-2 bg-[var(--custom-bright-blue)] hover:bg-[var(--custom-ocean-blue)] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-all text-xs md:text-sm"
+                    >
+                      {isSendingChat ? 'Sending…' : 'Send'}
                     </button>
-                  </div>
+                  </form>
+                  {chatFeedback && (
+                    <p className="mt-2 text-[11px] md:text-xs text-[var(--custom-cream-yellow)]">{chatFeedback}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -905,167 +1419,14 @@ export default function AuctionHouse3D() {
       {/* Fullscreen Modal - Outside Canvas */}
       {isModalOpen && (
         <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-            boxSizing: 'border-box'
-          }}
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-[rgba(0,0,0,0.85)] p-4 md:p-8"
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            style={{
-              width: '90vw',
-              height: '90vh',
-              maxWidth: '1200px',
-              maxHeight: '800px',
-              backgroundColor: '#0a0f1a',
-              border: '3px solid #33A1E0',
-              borderRadius: '12px',
-              padding: '40px',
-              fontFamily: 'system-ui, sans-serif',
-              color: '#ffffff',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              position: 'relative'
-            }}
-            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-5xl"
+            onClick={(event) => event.stopPropagation()}
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setIsModalOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                background: '#b2292d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                fontSize: '20px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              ✕
-            </button>
-
-            {/* Header */}
-            <div style={{
-              textAlign: 'center',
-              borderBottom: '2px solid #1e3548',
-              paddingBottom: '30px',
-              marginBottom: '30px'
-            }}>
-              <h1 style={{
-                fontSize: '48px',
-                fontWeight: 'bold',
-                color: '#fff9af',
-                margin: '0 0 10px 0'
-              }}>
-                LIVE AUCTION
-              </h1>
-              <p style={{
-                fontSize: '18px',
-                color: '#b8c5d1',
-                margin: 0
-              }}>
-                Lot #{currentLot.id} • {currentLot.bidders} Active Bidders
-              </p>
-            </div>
-
-            {/* Main Content */}
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              textAlign: 'center'
-            }}>
-              <h2 style={{
-                fontSize: '48px',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                margin: '0 0 40px 0'
-              }}>
-                {currentLot.name}
-              </h2>
-
-              <div style={{
-                display: 'flex',
-                gap: '80px',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexWrap: 'wrap'
-              }}>
-                <div>
-                  <p style={{
-                    fontSize: '24px',
-                    color: '#8a9ba8',
-                    margin: '0 0 10px 0'
-                  }}>
-                    Current Bid
-                  </p>
-                  <p style={{
-                    fontSize: '72px',
-                    fontWeight: 'bold',
-                    color: '#fff9af',
-                    margin: 0
-                  }}>
-                    ${currentLot.currentBid.toLocaleString()}
-                  </p>
-                </div>
-
-                <div>
-                  <p style={{
-                    fontSize: '24px',
-                    color: '#8a9ba8',
-                    margin: '0 0 10px 0'
-                  }}>
-                    Time Remaining
-                  </p>
-                  <p style={{
-                    fontSize: '56px',
-                    fontWeight: 'bold',
-                    color: '#b2292d',
-                    margin: 0,
-                    fontFamily: 'monospace'
-                  }}>
-                    {currentLot.timeRemaining}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{
-              borderTop: '2px solid #1e3548',
-              paddingTop: '30px',
-              textAlign: 'center'
-            }}>
-              <p style={{
-                fontSize: '24px',
-                color: '#33A1E0',
-                margin: 0,
-                fontWeight: 'bold'
-              }}>
-                🎯 Interactive bidding interface - Click outside to close
-              </p>
-            </div>
+            <AuctionScreenCard lotData={modalLotData} variant="modal" onClose={() => setIsModalOpen(false)} />
           </div>
         </div>
       )}
@@ -1073,3 +1434,18 @@ export default function AuctionHouse3D() {
     </ModalContext.Provider>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
