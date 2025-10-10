@@ -8,7 +8,7 @@ const ModalContext = createContext();
 export function ModalProvider({ children }) {
     const [modal, setModal] = useState(null);
 
-    const openModal = useCallback(({content,title='',titleClassName="text-base font-semibold text-gray-100"}) => {
+    const openModal = useCallback(({content,title='',titleClassName="text-2xl font-bold tracking-tight text-(--custom-cream-yellow)"}) => {
         setModal({content, title, titleClassName});
     }, []);
 

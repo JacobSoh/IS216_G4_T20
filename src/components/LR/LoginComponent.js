@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import AuthFormComponent from '@/components/AuthFormComponent';
+import AuthFormComponent from '@/components/Auth/AuthForm';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useAlert } from '@/context/AlertContext';
@@ -47,5 +47,5 @@ export default function Login() {
         return router.push('/');
     };
 
-    return <AuthFormComponent showLoading={showLoading} onSubmit={onSubmit} />;
+    return <AuthFormComponent showLoading={showLoading}/>;
 };

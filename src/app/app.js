@@ -5,9 +5,10 @@ import '@/styles/globals.css'
 /* Importing Components */
 import Providers from '@/app/providers'
 import AppLayoutShell from '@/components/sub/layout/AppLayoutShell'
+import { cookies } from 'next/headers'
 
-/* Import Supabase Server For Session */
-import { getServerUser } from '@/utils/auth'
+// /* Import Supabase Server For Session */
+// import { getServerUser } from '@/utils/auth'
 
 const inter = Inter({
   variable: '--font-inter',
@@ -16,14 +17,12 @@ const inter = Inter({
   adjustFontFallback: true
 })
 
-export default async function RootLayout({ children }) {
-  const user = await getServerUser()
-
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased bg-linear-(--custom-body-bg) bg-no-repeat text-(--custom-text-primary) leading-[1.6]`}>
         <Providers>
-          <AppLayoutShell isAuthed={Boolean(user)}>
+          <AppLayoutShell>
             {children}
           </AppLayoutShell>
         </Providers>

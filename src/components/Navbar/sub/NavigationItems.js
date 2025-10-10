@@ -6,8 +6,10 @@ import { useAlert } from '@/context/AlertContext';
 import { useModal } from '@/context/ModalContext';
 import { memo } from 'react';
 import { useIsActive } from '@/hooks/useIsActive';
-import Login from '@/components/LoginComponent';
-import Register from '@/components/RegisterComponent';
+import {
+    Login,
+    Register
+} from '@/components/LR/index';
 
 
 // -------------------------
@@ -20,8 +22,7 @@ const styles = {
     inactive: 'text-gray-300 hover:bg-white/5 hover:text-white',
     active: 'bg-gray-900 text-white',
     cta: 'bg-(--custom-accent-red) text-white hover:bg-red-800',
-    xta: 'hover:bg-white/5',
-    title: 'text-2xl font-bold tracking-tight text-(--custom-cream-yellow)'
+    xta: 'hover:bg-white/5'
 };
 
 // -------------------------
@@ -30,10 +31,10 @@ const styles = {
 async function handleAction(action, showAlert, openModal, logout) {
     switch (action) {
         case 'login':
-            openModal({ content: <Login />, title: "BidHub", titleClassName: styles.title });
+            openModal({ content: <Login />, title: "BidHub" });
             break;
         case 'register':
-            openModal({ content: <Register />, title: "BidHub", titleClassName: styles.title });
+            openModal({ content: <Register />, title: "BidHub" });
             break;
         case 'logout':
             await logout?.();

@@ -4,7 +4,7 @@ import {
     FooterLink,
     FooterTop,
     FooterBottom
-} from '@/components/sub/footer';
+} from '@/components/Footer/sub/index';
 
 export default function Footer() {
     return (

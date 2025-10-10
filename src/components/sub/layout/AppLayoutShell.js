@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react'
 import { usePathname } from 'next/navigation'
-import Navbar from '@/components/NavbarComponent'
-import Footer from '@/components/FooterComponent'
+import Navbar from '@/components/Navbar/NavbarComponent'
+import Footer from '@/components/Footer/FooterComponent'
 
 const FULLSCREEN_PATH_MATCHERS = [
   /^\/auction\/.+/

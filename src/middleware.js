@@ -21,6 +21,7 @@ export async function middleware(req) {
     }
 
     const isProtected =
+        pathname.startsWith('/auction') ||
         pathname.startsWith('/dashboard') ||
         pathname.startsWith('/account') ||
         pathname.startsWith('/sell');

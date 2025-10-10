@@ -6,14 +6,15 @@ import {
 	Header,
 	InputControl,
 	SwitchLink,
-} from '@/components/sub/authForm';
+} from '@/components/Auth/sub';
 import Spinner from '@/components/SpinnerComponent';
 import { useAuthForm } from '@/hooks/useAuthForm';
 
 export default function AuthFormComponent({
 	showLoading,
 	error,
-	onSubmit,
+	action = '#',
+	method = 'POST',
 	isLogin = true,
 }) {
 	// whether to validate "empties" (you asked to do it on hover/focus)
@@ -33,7 +34,7 @@ export default function AuthFormComponent({
 			<div className="flex flex-col justify-center py-5">
 				<h2 className='text-center text-2xl/9 font-bold tracking-tight text-white'>{isLogin?'Login to your account!':'Register your account today!'}{/*Register your account today!*/}</h2>
 				<div className="mt-4 mx-auto w-full">
-					<form onSubmit={onSubmit} className="space-y-6">
+					<form action={action} method={method} className="space-y-6">
 						<InputControl
 							labelText="Email"
 							formName="email"

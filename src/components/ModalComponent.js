@@ -7,7 +7,7 @@ import { Fragment } from 'react';
 export default function Modal({ isOpen, onClose, title, titleClassName, children }) {
     return (
         <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-50" onClose={onClose}>
+            <Dialog as="div" className="relative z-10" onClose={onClose}>
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
                 <div className="fixed inset-0 overflow-y-auto">
                     <div className='flex min-h-full items-center justify-center p-4'>

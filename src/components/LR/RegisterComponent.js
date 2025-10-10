@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import AuthFormComponent from '@/components/AuthFormComponent';
+import AuthFormComponent from '@/components/Auth/AuthForm';
 import { axiosBrowserClient } from '@/utils/axios/client';
 import { useRouter } from 'next/navigation';
 import { useAlert } from '@/context/AlertContext';
