@@ -1,30 +1,40 @@
 // middleware.js
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/utils/supabase/server';
-import { useAlert } from '@/context/AlertContext';
 
 export async function middleware(req) {
     const res = NextResponse.next();
-    const sb = supabaseServer();
-    
-    const { data: { session } } = await (await sb).auth.getSession();
+    const sb = await supabaseServer();
 
-    const { pathname, search } = req.nextUrl;
-    
+    const { data: { user }, error } = await sb.auth.getUser();
+    if (error && !error.message?.includes('Auth session missing')) {
+        console.error('Supabase auth error in middleware:', error);
+    };
+
+    const isAuthed = Boolean(user);
+    const { pathname } = req.nextUrl;
+
     const isAuthPage = pathname === '/login' || pathname === '/register';
 
-    // Signed-in users shouldn't see auth pages
-    if (session && isAuthPage) {
+    if (isAuthed && isAuthPage) {
         return NextResponse.redirect(new URL('/', req.url));
-    }
+    };
 
-    // Protect these sections
+    const set = (k, v, maxAge = 10) =>
+        res.cookies.set(k, String(v), {
+        path: '/',
+        maxAge,               // seconds
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        });
+
     const isProtected =
+        pathname.startsWith('/auction') ||
         pathname.startsWith('/dashboard') ||
         pathname.startsWith('/account') ||
         pathname.startsWith('/sell');
 
-    if (isProtected && !session) {
+    if (isProtected && !isAuthed) {
         const loginUrl = new URL('/login', req.url);
         return NextResponse.redirect(loginUrl);
     }
@@ -33,5 +43,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-    matcher: ['/dashboard/:path*', '/account/:path*', '/sell/:path*', '/login', '/register'],
+    matcher: ['/auction/:path*','/dashboard/:path*', '/account/:path*', '/sell/:path*'],
 };

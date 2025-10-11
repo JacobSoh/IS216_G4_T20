@@ -1,54 +1,82 @@
+// hooks/useSupabaseAuth.js
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabaseBrowser } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { supabaseBrowser } from '@/utils/supabase/client';
+import { useInitialAuthed } from '@/app/providers';
 
-/**
- * Global Supabase auth state manager
- * Syncs `isAuthed` with session and handles onAuthStateChange
- */
-export function useSupabaseAuth(initialAuthed = false) {
-    const [isAuthed, setIsAuthed] = useState(Boolean(initialAuthed));
+export function useSupabaseAuth(initialAuthedProp) {
+    const initialFromCtx = useInitialAuthed();
+    const initialAuthed = initialAuthedProp ?? initialFromCtx ?? false;
+
+    const [isAuthed, setIsAuthed] = useState(initialAuthed);
+    const [ready, setReady] = useState(false);
+
     const sbRef = useRef(null);
-    const router = useRouter();
+    const didInit = useRef(false);
+    const lastAuth = useRef(!!initialAuthed);
+    const lastRefreshAt = useRef(0);
 
+    const router = useRouter();
     if (!sbRef.current) sbRef.current = supabaseBrowser();
+
+    const safeRefresh = useCallback(() => {
+        const now = Date.now();
+        if (now - lastRefreshAt.current > 800) {
+            lastRefreshAt.current = now;
+            router.refresh();
+        }
+    }, [router]);
 
     const logout = useCallback(async () => {
         await sbRef.current.auth.signOut();
         setIsAuthed(false);
-    }, []);
+        safeRefresh();
+    }, [safeRefresh]);
 
     useEffect(() => {
-        let cancelled = false;
+        let mounted = true;
         const sb = sbRef.current;
-        let lastAuthState = Boolean(initialAuthed);
 
-        // Initial session check
-        sb.auth.getSession().then(({ data: { session } }) => {
-            if (cancelled) return;
-            const next = !!session;
-            setIsAuthed(next);
-            lastAuthState = next;
-        });
+        // 1) Instant local read (no network)
+        (async () => {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!mounted) return;
+            setIsAuthed(!!session?.user);
+            setReady(true);
 
-        // Auth state listener
-        const { data: { subscription } } = sb.auth.onAuthStateChange((evt, session) => {
-            const next = !!session;
-            setIsAuthed(next);
+            // 2) Background verify (handles revoked tokens)
+            try {
+                const { data: { user } } = await sb.auth.getUser();
+                if (!mounted) return;
+                setIsAuthed(!!user);
+            } catch { /* ignore */ }
+        })();
 
-            if ((evt === 'SIGNED_IN' || evt === 'SIGNED_OUT') && lastAuthState !== next) {
-                lastAuthState = next;
-                router.refresh(); // sync server components
+        // 3) Live updates, debounced refresh
+        const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+            const next = !!session?.user;
+
+            if (!didInit.current) {
+                didInit.current = true;
+                lastAuth.current = next;
+                setIsAuthed(next);
+                return;
+            }
+
+            if (lastAuth.current !== next) {
+                lastAuth.current = next;
+                setIsAuthed(next);
+                safeRefresh();
             }
         });
 
         return () => {
-            cancelled = true;
+            mounted = false;
             subscription?.unsubscribe();
         };
-    }, [initialAuthed, router]);
+    }, [safeRefresh]);
 
-    return { isAuthed, logout };
+    return { isAuthed, ready, logout };
 }
