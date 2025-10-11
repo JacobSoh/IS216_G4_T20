@@ -1,6 +1,6 @@
 /* Importing Style or Fonts */
-import { Inter } from 'next/font/google'
-import '@/styles/globals.css'
+import { Inter } from 'next/font/google';
+import '@/styles/globals.css';
 
 /* Importing Components */
 import Providers from '@/app/providers'
@@ -9,6 +9,9 @@ import { supabaseServer } from '@/utils/supabase/server'
 
 // /* Import Supabase Server For Session */
 // import { getServerUser } from '@/utils/auth'
+
+/* Import Session Context */
+import { SessionProvider } from '@/context/SessionContext';
 
 const inter = Inter({
 	variable: '--font-inter',
