@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAlert } from '@/context/AlertContext';
 import { useModal } from '@/context/ModalContext';
 import { supabaseBrowser } from '@/utils/supabase/client';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+// import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 export default function ProtectedLink({ href, ModalComponent, children }) {
     const { isAuthed } = useSupabaseAuth();

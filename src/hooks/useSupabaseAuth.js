@@ -19,7 +19,6 @@ export function useSupabaseAuth(initialAuthedProp) {
     const logout = useCallback(async () => {
         await sbRef.current.auth.signOut();
         setIsAuthed(false);
-        router.refresh();
     }, [router]);
 
     useEffect(() => {
