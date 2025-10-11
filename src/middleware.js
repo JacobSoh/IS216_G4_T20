@@ -29,19 +29,20 @@ export async function middleware(req) {
         });
 
     const isProtected =
-        pathname.startsWith('/auction') ||
-        pathname.startsWith('/dashboard') ||
-        pathname.startsWith('/account') ||
-        pathname.startsWith('/sell');
+        pathname.startsWith('/profile') ||
+        pathname.startsWith('/auction');
 
     if (isProtected && !isAuthed) {
-        const loginUrl = new URL('/login', req.url);
-        return NextResponse.redirect(loginUrl);
+        const loginUrl = new URL('/', req.url);
+        return NextResponse.redirect(loginUrl, {status: 302});
     }
 
     return res;
 }
 
 export const config = {
-    matcher: ['/auction/:path*','/dashboard/:path*', '/account/:path*', '/sell/:path*'],
+    matcher: [
+        '/auction/:path*',
+        '/profile/:path*'
+    ],
 };

@@ -4,6 +4,10 @@ import '@/styles/globals.css';
 
 /* Importing Components */
 import Providers from '@/app/providers';
+import { supabaseServer } from '@/utils/supabase/server';
+
+/* Import Session Context */
+import { SessionProvider } from '@/context/SessionContext';
 
 const inter = Inter({
 	variable: '--font-inter',
@@ -13,10 +17,14 @@ const inter = Inter({
 })
 
 export default async function RootLayout({ children }) {
+
+	const sb = await supabaseServer();
+	const { data: { session } } = await sb.auth.getSession();
+
 	return (
 		<html lang="en">
 			<body className={`${inter.variable} antialiased bg-linear-(--custom-body-bg) bg-no-repeat text-(--custom-text-primary) leading-[1.6]`}>
-				<Providers initialAuthed={!!user}>
+				<Providers initialAuthed={!!session}>
 					{children}
 				</Providers>
 			</body>

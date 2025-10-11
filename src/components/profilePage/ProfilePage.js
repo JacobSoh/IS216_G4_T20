@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from '@/utils/supabase/client';
-import { useSession } from '@/context/SessionContext';
 import PopulateReviews from './Reviews';
 import Listings from './Listings';
 import Settings from './Settings';
@@ -26,8 +25,7 @@ function getTimeAgo(dateString) {
     return 'Today';
 }
 
-export default function ProfilePage() {
-    const session = useSession();
+export default function ProfilePage({ session }) {
     const [tab, setTab] = useState("Listings");
     const [userid, setUserid] = useState("");
     const [username, setUsername] = useState("");

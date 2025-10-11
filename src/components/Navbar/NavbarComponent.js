@@ -30,6 +30,17 @@ const NAV_ITEMS = [
 		href: '/contact',
 	},
 	{
+		label: 'Profile',		
+		href: '/profile',
+		onlyWhenAuthed: true,
+	},
+	{
+		label: 'Logout',
+		notRed: false,
+		onlyWhenAuthed: true,
+		action: 'logout'
+	},
+	{
 		label: 'Login',
 		notRed: true,
 		hideWhenAuthed: true,
@@ -40,13 +51,7 @@ const NAV_ITEMS = [
 		notRed: false,
 		hideWhenAuthed: true,
 		action: 'register'
-	},
-	{
-		label: 'Logout',
-		notRed: false,
-		onlyWhenAuthed: true,
-		action: 'logout'
-	},
+	}
 ];
 
 // ------------------------------
