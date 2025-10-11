@@ -1,23 +1,32 @@
 // app/providers.jsx
+'use client';
+import { createContext, useContext } from 'react';
 import { AlertProvider } from '@/context/AlertContext';
 import { ModalProvider } from '@/context/ModalContext';
 import GlobalAlert from '@/components/Alert/GlobalAlert';
+import Navbar from '@/components/Navbar/NavbarComponent';
+import Footer from '@/components/Footer/FooterComponent';
+import { usePathname } from 'next/navigation';
 
-import { cookies } from 'next/headers';
+const InitialAuthContext = createContext(false);
+export const useInitialAuthed = () => useContext(InitialAuthContext);
 
-export default async function Providers({ children }) {
-  const c = await cookies();
-  const openModal = c.get('open_modal')?.value ?? null;      // "login" | "auction" | null
-  const nextPath = c.get('next_path')?.value ?? null;
-
-  console.log(openModal);
+export default function Providers({ initialAuthed, children }) {
+  const pathname = usePathname();
+  const fullScreen = pathname.startsWith('/auction');
 
   return (
-    <AlertProvider>
-      <ModalProvider>
-        <GlobalAlert />
-        {children}
-      </ModalProvider>
-    </AlertProvider>
+    <InitialAuthContext.Provider value={initialAuthed}>
+      <AlertProvider>
+        <ModalProvider>
+          <GlobalAlert />
+          <Navbar fullScreen={fullScreen} />
+          <div className={`container mx-auto min-h-dvh ${fullScreen ? '' : 'pt-16'}`}>
+            {children}
+          </div>
+          <Footer fullScreen={fullScreen} />
+        </ModalProvider>
+      </AlertProvider>
+    </InitialAuthContext.Provider>
   );
 }

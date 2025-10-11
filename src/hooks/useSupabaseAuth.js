@@ -1,69 +1,58 @@
+// hooks/useSupabaseAuth.js
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabaseBrowser } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { supabaseBrowser } from '@/utils/supabase/client';
+import { useInitialAuthed } from '@/app/providers';
 
-/**
- * Global Supabase auth state manager
- * Syncs `isAuthed` with session and handles onAuthStateChange
- */
-export function useSupabaseAuth(initialAuthed = false) {
+export function useSupabaseAuth(initialAuthedProp) {
+    const initialFromCtx = useInitialAuthed();
+    const initialAuthed = initialAuthedProp ?? initialFromCtx ?? false;
+
     const [isAuthed, setIsAuthed] = useState(initialAuthed);
+    const [ready, setReady] = useState(false);
     const sbRef = useRef(null);
     const router = useRouter();
-
     if (!sbRef.current) sbRef.current = supabaseBrowser();
 
     const logout = useCallback(async () => {
         await sbRef.current.auth.signOut();
         setIsAuthed(false);
-    }, []);
+        router.refresh();
+    }, [router]);
 
     useEffect(() => {
-        let cancelled = false;
+        let mounted = true;
         const sb = sbRef.current;
-        let lastAuthState = Boolean(initialAuthed);
 
-        const syncUser = async () => {
+        // Instant local read
+        (async () => {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!mounted) return;
+            setIsAuthed(!!session?.user);
+            setReady(true);
+
+            // Background verify
             try {
-                const { data: { user }, error } = await sb.auth.getUser();
-                if (cancelled) return lastAuthState;
-                if (error && error.message?.includes('Auth session missing')) {
-                    setIsAuthed(false);
-                    return false;
-                }
-                if (error) throw error;
-                const next = Boolean(user);
-                setIsAuthed(next);
-                return next;
-            } catch (e) {
-                if (!cancelled) {
-                    setIsAuthed(false);
-                }
-                return false;
-            }
-        };
+                const { data: { user } } = await sb.auth.getUser();
+                if (!mounted) return;
+                setIsAuthed(!!user);
+            } catch { }
+        })();
 
-        syncUser().then((value) => {
-            if (!cancelled) {
-                lastAuthState = Boolean(value);
-            }
-        });
-
-        const { data: { subscription } } = sb.auth.onAuthStateChange(async () => {
-            const next = await syncUser();
-            if (!cancelled && lastAuthState !== next) {
-                lastAuthState = Boolean(next);
+        const { data: { subscription } } =
+            sb.auth.onAuthStateChange((_evt, session) => {
+                if (!mounted) return;
+                setIsAuthed(!!session?.user);
                 router.refresh();
-            }
-        });
+            });
 
         return () => {
-            cancelled = true;
+            mounted = false;
             subscription?.unsubscribe();
         };
-    }, [initialAuthed, router]);
+    }, [router]);
 
-    return { isAuthed, logout };
+    return { isAuthed, ready, logout };
 }

@@ -9,7 +9,7 @@ export async function middleware(req) {
     const { data: { user }, error } = await sb.auth.getUser();
     if (error && !error.message?.includes('Auth session missing')) {
         console.error('Supabase auth error in middleware:', error);
-    }
+    };
 
     const isAuthed = Boolean(user);
     const { pathname } = req.nextUrl;
@@ -18,7 +18,15 @@ export async function middleware(req) {
 
     if (isAuthed && isAuthPage) {
         return NextResponse.redirect(new URL('/', req.url));
-    }
+    };
+
+    const set = (k, v, maxAge = 10) =>
+        res.cookies.set(k, String(v), {
+        path: '/',
+        maxAge,               // seconds
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        });
 
     const isProtected =
         pathname.startsWith('/auction') ||
@@ -35,5 +43,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-    matcher: ['/dashboard/:path*', '/account/:path*', '/sell/:path*', '/login', '/register'],
+    matcher: ['/auction/:path*','/dashboard/:path*', '/account/:path*', '/sell/:path*'],
 };

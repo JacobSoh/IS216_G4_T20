@@ -6,9 +6,9 @@ import {
     FooterBottom
 } from '@/components/Footer/sub/index';
 
-export default function Footer() {
+export default function Footer({ fullScreen }) {
     return (
-        <footer className='z-10 bg-gray-800'>
+        <footer className={`${fullScreen?'hidden':'z-10 bg-gray-800'}`}>
             <div className='py-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 
                         [@media(max-width:29rem)]:hidden'>
                 <div

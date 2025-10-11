@@ -52,8 +52,8 @@ const NAV_ITEMS = [
 // ------------------------------
 // Main Navbar Component
 // ------------------------------
-export default function Navbar({ isAuthed: initialAuthed = false }) {
-	const { isAuthed, logout } = useSupabaseAuth(initialAuthed);
+export default function Navbar({ fullScreen }) {
+	const { isAuthed, ready, logout } = useSupabaseAuth();
 	const router = useRouter();
 
 	// Memoize visible nav items
@@ -68,7 +68,7 @@ export default function Navbar({ isAuthed: initialAuthed = false }) {
 	);
 
 	return (
-		<Disclosure as="nav" className="fixed inset-x-0 top-0 z-50 bg-gray-800">
+		<Disclosure as="nav" className={`${fullScreen?'hidden':'fixed inset-x-0 top-0 z-50 bg-gray-800'}`}>
 			<div className="mx-auto max-w-7xl px-2 md:px-6 lg:px-8">
 				<div className="relative flex h-16 items-center justify-between">
 					<MobileMenu />
