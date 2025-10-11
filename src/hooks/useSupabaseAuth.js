@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
  * Syncs `isAuthed` with session and handles onAuthStateChange
  */
 export function useSupabaseAuth(initialAuthed = false) {
-    const [isAuthed, setIsAuthed] = useState(Boolean(initialAuthed));
+    const [isAuthed, setIsAuthed] = useState(initialAuthed);
     const sbRef = useRef(null);
     const router = useRouter();
 

@@ -6,12 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { MobileMenu, NavItems } from '@/components/Navbar/sub/index';
-
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
-// ------------------------------
-// Nav Items Config
-// ------------------------------
 const NAV_ITEMS = [
 	{
 		label: 'Live Auctions',

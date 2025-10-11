@@ -13,22 +13,13 @@ export default function Login() {
     const router = useRouter();
     const sb = supabaseBrowser();
 
-    useEffect(() => {
-        const raw = sessionStorage.getItem('flash');
-        if (raw) {
-            const { message, variant = 'info' } = JSON.parse(raw);
-            showAlert({message, variant});
-            sessionStorage.removeItem('flash');
-        };
-    }, [showAlert]);
-
     async function onSubmit(e) {
         e.preventDefault();
         setShowLoading(true);
 
         const form = new FormData(e.currentTarget);
 
-        const { data, error } = await (await sb).auth.signInWithPassword({
+        const { data, error } = await sb.auth.signInWithPassword({
             email: form.get('email'),
             password: form.get('password')
         });
@@ -37,15 +28,12 @@ export default function Login() {
 
         if (error) {
             showAlert({ message: error.message, variant: 'danger' });
-            return window.scrollTo({ top: 0, behavior: 'smooth' })
+            return window.scrollTo({ top: 0, behavior: 'smooth' });
         };
-        sessionStorage.setItem('flash', JSON.stringify({
-            message: 'Login successfully!',
-            variant: 'success',
-        }));
+        showAlert({ message: "Login Successfully!", variant: 'success' });
         closeModal();
-        return router.push('/');
+        return;
     };
 
-    return <AuthFormComponent showLoading={showLoading}/>;
+    return <AuthFormComponent showLoading={showLoading} onSubmit={onSubmit}/>;
 };

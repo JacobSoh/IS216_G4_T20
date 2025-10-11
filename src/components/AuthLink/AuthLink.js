@@ -1,11 +1,13 @@
-// components/ProtectedLink.jsx
+'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAlert } from '@/context/AlertContext';
 import { useModal } from '@/context/ModalContext';
 import { supabaseBrowser } from '@/utils/supabase/client';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 export default function ProtectedLink({ href, ModalComponent, children }) {
+    const { isAuthed } = useSupabaseAuth();
     const router = useRouter();
     const { openModal } = useModal();
     const { showAlert } = useAlert();
@@ -14,22 +16,15 @@ export default function ProtectedLink({ href, ModalComponent, children }) {
     async function onClick(e) {
         // Always intercept click; only allow if authed
         e.preventDefault();
-
-        const { data: { session } } = await sb.auth.getSession();
-
-        if (!session) {
-            sessionStorage.setItem('next_path', href);
-            
+        if (!isAuthed) {
             showAlert({message: 'Please Login First!', variant: 'warning'});
-            openModal({content: ModalComponent,title: 'Login', className: 'text-2xl font-bold tracking-tight text-(--custom-cream-yellow)'});
+            openModal({content: <ModalComponent/>,title: 'Login'});
             return;
-        }
-
-        // user authed → perform the navigation
+        };
+        console.log(href);
         router.push(href);
     }
 
-    // Use <Link> for semantics/SEO but block nav onClick when not authed
     return (
         <Link href={href} onClick={onClick}>
             {children}

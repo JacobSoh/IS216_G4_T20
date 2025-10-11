@@ -5,12 +5,16 @@ import { axiosBrowserClient } from '@/utils/axios/client';
 import { useRouter } from 'next/navigation';
 import { useAlert } from '@/context/AlertContext';
 import { useModal } from '@/context/ModalContext';
+import {
+    Login
+} from '@/components/LR/index';
+
 
 export default function Register() {
     const [error, setError] = useState('');
     const [showLoading, setShowLoading] = useState(false);
     const { showAlert } = useAlert();
-    const { closeModal } = useModal();
+    const { openModal, closeModal } = useModal();
     const router = useRouter();
 
     async function onSubmit(e) {
@@ -24,19 +28,13 @@ export default function Register() {
             const res = await axiosBrowserClient.post('/auth/register', {
                 email: form.get('email').trim(),
                 password: form.get('password'),
-                options: {
-                    data: {
-                        username: form.get('username')
-                    },
-                    emailRedirectTo: `${window.location.origin}/api/auth/verify`
-                },
+                username: form.get('username'),
             });
             if (res.status !== 200) return showAlert({ message: 'Something went wrong.', variant: 'danger' });
-            sessionStorage.setItem('flash', JSON.stringify({
-                message: 'Registration complete! Please log in.',
-                variant: 'success',
-            }));
-            return router.push('/login');
+            closeModal();
+            requestAnimationFrame(() => {
+                openModal({content: Login, title: 'BidHub'});
+            })
         } catch (err) {
             setShowLoading(false);
             return showAlert({ message: err, variant: 'danger' });

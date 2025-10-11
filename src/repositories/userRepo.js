@@ -11,7 +11,6 @@ export async function re(email, password, options) {
         password,
         options
     });
-    console.log(data, error);
     if ( error ) throw error;
     return data ?? null;
 };
