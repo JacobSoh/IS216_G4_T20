@@ -17,7 +17,8 @@ export default function InputControl({
     onChange,
     placeholder='',
     inputErr='',
-    isLogin=false
+    isLogin=false,
+    disabled=false
 }) {
     const id = useId();
     const [showPwdCriteria, setShowPwdCriteria] = useState(false);
@@ -56,6 +57,7 @@ export default function InputControl({
                 onChange={onChange}
                 placeholder={placeholder}
                 value={value ?? ''}
+                disabled={disabled}
             />
             {mounted && <Transition
                 show={showPwdCriteria}
