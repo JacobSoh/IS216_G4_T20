@@ -5,7 +5,7 @@ import {
 import { re } from '@/repositories/userRepo';
 
 export async function POST(req) {
-  const { email, password, username, redirectTo, profile, metadata } = await req.json()
+  const { email, password, username, redirectTo, profile, metadata } = await req.json();
   try {
     const result = await register({
       email,

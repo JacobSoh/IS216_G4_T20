@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Login
 } from '@/components/LR/index';
-import ProtectedLink from "@/components/AuthLink/AuthLink";
+import ProtectedLink from "@/components/ExtraLink/ProtectedLink";
 
 export default function Home() {
   const { showAlert } = useAlert();
