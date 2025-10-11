@@ -6,9 +6,6 @@ import '@/styles/globals.css';
 import Providers from '@/app/providers';
 import { supabaseServer } from '@/utils/supabase/server';
 
-/* Import Session Context */
-import { SessionProvider } from '@/context/SessionContext';
-
 const inter = Inter({
 	variable: '--font-inter',
 	subsets: ['latin'],

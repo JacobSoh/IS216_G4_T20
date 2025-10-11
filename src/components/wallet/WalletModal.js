@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { createTopUpPayment } from '@/utils/hitpay/client';
-import { useSession } from '@/context/SessionContext';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 export default function WalletModal({ isOpen, onClose }) {
-    const session = useSession();
-    const [tab, setTab] = useState('balance'); // 'balance', 'topup', 'withdraw'
+    const { isAuthed } = useSupabaseAuth();
+    const [session, setSession] = useState(null);
+    const [tab, setTab] = useState('balance');
     const [walletBalance, setWalletBalance] = useState(0);
     const [walletHeld, setWalletHeld] = useState(0);
     const [transactions, setTransactions] = useState([]);
@@ -23,9 +24,17 @@ export default function WalletModal({ isOpen, onClose }) {
         accountNumber: '',
         accountName: ''
     });
-    const supabase = supabaseBrowser();
 
+    const supabase = supabaseBrowser();
     const quickAmounts = [10, 50, 100, 200, 500];
+
+    useEffect(() => {
+        if (isAuthed) {
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                setSession(session);
+            });
+        }
+    }, [isAuthed, supabase]);
 
     useEffect(() => {
         if (!isOpen || !session?.user?.id) return;
@@ -33,7 +42,6 @@ export default function WalletModal({ isOpen, onClose }) {
         const fetchWalletData = async () => {
             setLoading(true);
 
-            // Fetch wallet balance
             const { data: profile } = await supabase
                 .from('profile')
                 .select('wallet_balance, wallet_held')
@@ -45,7 +53,6 @@ export default function WalletModal({ isOpen, onClose }) {
                 setWalletHeld(parseFloat(profile.wallet_held || 0));
             }
 
-            // Fetch recent transactions
             const { data: txData } = await supabase
                 .from('wallet_transaction')
                 .select('*')
@@ -64,6 +71,8 @@ export default function WalletModal({ isOpen, onClose }) {
     }, [isOpen, session, supabase]);
 
     const handleTopUp = async (amount) => {
+        if (!session) return;
+
         setTopUpLoading(true);
         setError(null);
         setSuccess(null);
@@ -88,6 +97,8 @@ export default function WalletModal({ isOpen, onClose }) {
     };
 
     const handleWithdraw = async () => {
+        if (!session) return;
+
         setWithdrawLoading(true);
         setError(null);
         setSuccess(null);
@@ -111,7 +122,6 @@ export default function WalletModal({ isOpen, onClose }) {
                 throw new Error('Please fill in all bank details');
             }
 
-            // Create withdrawal request
             const { error: txError } = await supabase
                 .from('wallet_transaction')
                 .insert({
@@ -125,7 +135,6 @@ export default function WalletModal({ isOpen, onClose }) {
 
             if (txError) throw txError;
 
-            // Deduct from wallet balance
             const { error: deductError } = await supabase
                 .from('profile')
                 .update({
@@ -139,11 +148,9 @@ export default function WalletModal({ isOpen, onClose }) {
             setWithdrawAmount('');
             setBankDetails({ bankName: '', accountNumber: '', accountName: '' });
 
-            // Refresh wallet data
             setTimeout(() => {
                 window.location.reload();
             }, 2000);
-
         } catch (err) {
             setError(err.message);
         } finally {
@@ -153,260 +160,199 @@ export default function WalletModal({ isOpen, onClose }) {
 
     if (!isOpen) return null;
 
+    // REST OF YOUR JSX STAYS THE SAME...
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4 overflow-y-auto">
-            <div className="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700 shadow-2xl">
                 {/* Header */}
-                <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-6 flex items-center justify-between rounded-t-2xl z-10">
+                <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-6 flex justify-between items-center z-10">
                     <h2 className="text-2xl font-bold text-white">My Wallet</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-white transition"
+                        className="text-gray-400 hover:text-white text-3xl leading-none"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        ×
                     </button>
                 </div>
 
-                {/* Balance Cards */}
-                <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-4 shadow-lg">
-                            <div className="text-green-100 text-xs mb-1">Available</div>
-                            <div className="text-2xl font-bold text-white">
-                                ${walletBalance.toFixed(2)}
-                            </div>
+                {/* Tabs */}
+                <div className="flex border-b border-gray-700">
+                    <button
+                        onClick={() => setTab('balance')}
+                        className={`flex-1 px-6 py-3 font-semibold transition ${tab === 'balance'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            }`}
+                    >
+                        Balance
+                    </button>
+                    <button
+                        onClick={() => setTab('topup')}
+                        className={`flex-1 px-6 py-3 font-semibold transition ${tab === 'topup'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            }`}
+                    >
+                        Top Up
+                    </button>
+                    <button
+                        onClick={() => setTab('withdraw')}
+                        className={`flex-1 px-6 py-3 font-semibold transition ${tab === 'withdraw'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            }`}
+                    >
+                        Withdraw
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                    {error && (
+                        <div className="mb-4 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400">
+                            {error}
                         </div>
+                    )}
 
-                        <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-4 shadow-lg">
-                            <div className="text-orange-100 text-xs mb-1">Held (Bids)</div>
-                            <div className="text-2xl font-bold text-white">
-                                ${walletHeld.toFixed(2)}
-                            </div>
+                    {success && (
+                        <div className="mb-4 p-4 bg-green-500/20 border border-green-500 rounded-lg text-green-400">
+                            {success}
                         </div>
-                    </div>
+                    )}
 
-                    {/* Tabs */}
-                    <div className="flex gap-2 border-b border-gray-700">
-                        <button
-                            onClick={() => setTab('balance')}
-                            className={`flex-1 px-4 py-2 font-semibold transition ${
-                                tab === 'balance'
-                                    ? 'border-b-2 border-blue-500 text-blue-400'
-                                    : 'text-gray-400 hover:text-gray-300'
-                            }`}
-                        >
-                            Balance
-                        </button>
-                        <button
-                            onClick={() => setTab('topup')}
-                            className={`flex-1 px-4 py-2 font-semibold transition ${
-                                tab === 'topup'
-                                    ? 'border-b-2 border-blue-500 text-blue-400'
-                                    : 'text-gray-400 hover:text-gray-300'
-                            }`}
-                        >
-                            Top Up
-                        </button>
-                        <button
-                            onClick={() => setTab('withdraw')}
-                            className={`flex-1 px-4 py-2 font-semibold transition ${
-                                tab === 'withdraw'
-                                    ? 'border-b-2 border-blue-500 text-blue-400'
-                                    : 'text-gray-400 hover:text-gray-300'
-                            }`}
-                        >
-                            Withdraw
-                        </button>
-                    </div>
-
-                    {/* Tab Content */}
                     {tab === 'balance' && (
                         <div>
-                            <h3 className="text-lg font-bold text-white mb-4">Recent Transactions</h3>
-                            {loading ? (
-                                <div className="text-center text-gray-400 py-8">Loading...</div>
-                            ) : transactions.length === 0 ? (
-                                <div className="text-center text-gray-400 py-8">No transactions yet</div>
-                            ) : (
-                                <div className="space-y-2">
-                                    {transactions.map((tx) => (
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div className="bg-gray-700 rounded-lg p-4">
+                                    <p className="text-gray-400 text-sm mb-1">Available Balance</p>
+                                    <p className="text-2xl font-bold text-green-400">
+                                        ${walletBalance.toFixed(2)}
+                                    </p>
+                                </div>
+                                <div className="bg-gray-700 rounded-lg p-4">
+                                    <p className="text-gray-400 text-sm mb-1">Held (Active Bids)</p>
+                                    <p className="text-2xl font-bold text-yellow-400">
+                                        ${walletHeld.toFixed(2)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <h3 className="text-lg font-semibold mb-3">Recent Transactions</h3>
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                                {transactions.length === 0 ? (
+                                    <p className="text-gray-400 text-center py-4">No transactions yet</p>
+                                ) : (
+                                    transactions.map((tx) => (
                                         <div
                                             key={tx.tid}
-                                            className="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
+                                            className="bg-gray-700 rounded-lg p-3 flex justify-between items-center"
                                         >
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-white font-medium capitalize text-sm">
-                                                    {tx.transaction_type}
-                                                </div>
-                                                <div className="text-gray-400 text-xs truncate">
-                                                    {tx.description}
-                                                </div>
-                                                <div className="text-gray-500 text-xs mt-1">
-                                                    {new Date(tx.created_at).toLocaleString()}
-                                                </div>
+                                            <div>
+                                                <p className="font-semibold">{tx.description}</p>
+                                                <p className="text-xs text-gray-400">
+                                                    {new Date(tx.created_at).toLocaleDateString()}
+                                                </p>
                                             </div>
-                                            <div className={`text-lg font-bold ml-3 ${
-                                                tx.transaction_type === 'topup' || tx.transaction_type === 'release'
-                                                    ? 'text-green-400'
-                                                    : tx.transaction_type === 'withdraw'
-                                                    ? 'text-red-400'
-                                                    : 'text-orange-400'
-                                            }`}>
-                                                {tx.transaction_type === 'topup' || tx.transaction_type === 'release' ? '+' : '-'}
-                                                ${parseFloat(tx.amount).toFixed(2)}
+                                            <div className="text-right">
+                                                <p className={`font-bold ${tx.transaction_type === 'topup' || tx.transaction_type === 'release'
+                                                        ? 'text-green-400'
+                                                        : 'text-red-400'
+                                                    }`}>
+                                                    {tx.transaction_type === 'topup' || tx.transaction_type === 'release' ? '+' : '-'}
+                                                    ${parseFloat(tx.amount).toFixed(2)}
+                                                </p>
+                                                <p className="text-xs text-gray-400 capitalize">{tx.status}</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                    ))
+                                )}
+                            </div>
                         </div>
                     )}
 
                     {tab === 'topup' && (
                         <div>
-                            <h3 className="text-lg font-bold text-white mb-4">Top Up Wallet</h3>
-
-                            <div className="mb-6">
-                                <div className="text-gray-400 text-sm mb-3">Quick Top-Up (SGD)</div>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {quickAmounts.map(amt => (
-                                        <button
-                                            key={amt}
-                                            onClick={() => handleTopUp(amt)}
-                                            disabled={topUpLoading}
-                                            className="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition disabled:opacity-50"
-                                        >
-                                            ${amt}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="block text-gray-400 text-sm mb-2">Custom Amount (SGD)</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        step="0.01"
-                                        value={topUpAmount}
-                                        onChange={(e) => setTopUpAmount(e.target.value)}
-                                        placeholder="Enter amount"
-                                        className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                                        disabled={topUpLoading}
-                                    />
+                            <h3 className="text-lg font-semibold mb-4">Top Up Your Wallet</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                                {quickAmounts.map((amt) => (
                                     <button
-                                        onClick={() => topUpAmount && handleTopUp(parseFloat(topUpAmount))}
-                                        disabled={topUpLoading || !topUpAmount || parseFloat(topUpAmount) <= 0}
-                                        className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition disabled:opacity-50"
+                                        key={amt}
+                                        onClick={() => handleTopUp(amt)}
+                                        disabled={topUpLoading}
+                                        className="px-6 py-4 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition disabled:opacity-50"
                                     >
-                                        {topUpLoading ? 'Processing...' : 'Top Up'}
+                                        ${amt}
                                     </button>
-                                </div>
+                                ))}
                             </div>
 
-                            {error && (
-                                <div className="bg-red-900/30 border border-red-500 text-red-400 px-4 py-3 rounded-lg text-sm">
-                                    {error}
-                                </div>
-                            )}
-
-                            <div className="text-gray-500 text-xs mt-4">
-                                💳 Powered by HitPay • Supports PayNow, Cards, and more
+                            <div className="flex gap-3">
+                                <input
+                                    type="number"
+                                    placeholder="Custom amount"
+                                    value={topUpAmount}
+                                    onChange={(e) => setTopUpAmount(e.target.value)}
+                                    className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                                />
+                                <button
+                                    onClick={() => handleTopUp(parseFloat(topUpAmount))}
+                                    disabled={topUpLoading || !topUpAmount || parseFloat(topUpAmount) <= 0}
+                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition disabled:opacity-50"
+                                >
+                                    {topUpLoading ? 'Processing...' : 'Top Up'}
+                                </button>
                             </div>
                         </div>
                     )}
 
                     {tab === 'withdraw' && (
                         <div>
-                            <h3 className="text-lg font-bold text-white mb-4">Withdraw Funds</h3>
+                            <h3 className="text-lg font-semibold mb-4">Withdraw Funds</h3>
+                            <p className="text-gray-400 mb-4">
+                                Available: ${walletBalance.toFixed(2)}
+                            </p>
 
                             <div className="space-y-4">
-                                <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Withdrawal Amount (SGD)</label>
-                                    <input
-                                        type="number"
-                                        min="10"
-                                        step="0.01"
-                                        value={withdrawAmount}
-                                        onChange={(e) => setWithdrawAmount(e.target.value)}
-                                        placeholder="Minimum $10"
-                                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                                        disabled={withdrawLoading}
-                                    />
-                                    <div className="text-gray-500 text-xs mt-1">
-                                        Available: ${walletBalance.toFixed(2)}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Bank Name</label>
-                                    <input
-                                        type="text"
-                                        value={bankDetails.bankName}
-                                        onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
-                                        placeholder="e.g., DBS, OCBC, UOB"
-                                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                                        disabled={withdrawLoading}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Account Number</label>
-                                    <input
-                                        type="text"
-                                        value={bankDetails.accountNumber}
-                                        onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-                                        placeholder="Enter bank account number"
-                                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                                        disabled={withdrawLoading}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Account Name</label>
-                                    <input
-                                        type="text"
-                                        value={bankDetails.accountName}
-                                        onChange={(e) => setBankDetails({...bankDetails, accountName: e.target.value})}
-                                        placeholder="Name as per bank account"
-                                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                                        disabled={withdrawLoading}
-                                    />
-                                </div>
-
+                                <input
+                                    type="text"
+                                    placeholder="Bank Name"
+                                    value={bankDetails.bankName}
+                                    onChange={(e) => setBankDetails({ ...bankDetails, bankName: e.target.value })}
+                                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Account Number"
+                                    value={bankDetails.accountNumber}
+                                    onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
+                                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Account Name"
+                                    value={bankDetails.accountName}
+                                    onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })}
+                                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Withdrawal Amount (Min $10)"
+                                    value={withdrawAmount}
+                                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                                />
                                 <button
                                     onClick={handleWithdraw}
-                                    disabled={withdrawLoading || !withdrawAmount || parseFloat(withdrawAmount) < 10}
-                                    className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition disabled:opacity-50"
+                                    disabled={withdrawLoading}
+                                    className="w-full px-6 py-3 bg-red-600 hover:bg-red-500 rounded-lg font-semibold transition disabled:opacity-50"
                                 >
                                     {withdrawLoading ? 'Processing...' : 'Request Withdrawal'}
                                 </button>
-
-                                {error && (
-                                    <div className="bg-red-900/30 border border-red-500 text-red-400 px-4 py-3 rounded-lg text-sm">
-                                        {error}
-                                    </div>
-                                )}
-
-                                {success && (
-                                    <div className="bg-green-900/30 border border-green-500 text-green-400 px-4 py-3 rounded-lg text-sm">
-                                        {success}
-                                    </div>
-                                )}
-
-                                <div className="bg-gray-700 p-4 rounded-lg">
-                                    <div className="text-gray-300 text-sm font-semibold mb-2">⚠️ Withdrawal Information</div>
-                                    <ul className="text-gray-400 text-xs space-y-1">
-                                        <li>• Minimum withdrawal: $10</li>
-                                        <li>• Processing time: 1-3 business days</li>
-                                        <li>• Withdrawals are processed to Singapore bank accounts only</li>
-                                        <li>• No withdrawal fees</li>
-                                    </ul>
-                                </div>
                             </div>
+
+                            <p className="text-xs text-gray-400 mt-4">
+                                * Withdrawals are processed within 1-3 business days
+                            </p>
                         </div>
                     )}
                 </div>
