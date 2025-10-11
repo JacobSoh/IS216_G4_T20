@@ -10,9 +10,6 @@ import Providers from '@/app/providers';
 /* Import Supabase Server For Session */
 import { supabaseServer } from '@/utils/supabase/server';
 
-/* Import Session Context */
-import { SessionProvider } from '@/context/SessionContext';
-
 const inter = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
@@ -22,21 +19,18 @@ const inter = Inter({
 
 export default async function RootLayout({ children }) {
   const sb = await supabaseServer();
-
   const { data: { session } } = await sb.auth.getSession();
+
   return (
-    <html lang='en' suppressHydrationWarning>
+    <html lang="en">
       <body
-        className={`${inter.variable} antialiased bg-linear-(--custom-body-bg) bg-no-repeat text-(--custom-text-primary) leading-[1.6]`}
-        suppressHydrationWarning
+        className={`${inter.variable} antialiased bg-[linear-gradient(var(--custom-body-bg))] bg-no-repeat text-[var(--custom-text-primary)] leading-1.6`}
       >
         <Providers>
           <Navbar isAuthed={!!session} />
-          <SessionProvider session={session}>
-            <div className='container min-h-dvh mx-auto pt-16'>
-              {children}
-            </div>
-          </SessionProvider>
+          <div className="container min-h-dvh mx-auto pt-16">
+            {children}
+          </div>
           <Footer />
         </Providers>
       </body>

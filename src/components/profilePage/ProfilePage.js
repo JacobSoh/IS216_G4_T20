@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from '@/utils/supabase/client';
-import { useSession } from '@/context/SessionContext';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import PopulateReviews from './Reviews';
 import Listings from './Listings';
 import Settings from './Settings';
@@ -11,11 +11,9 @@ import WalletModal from '@/components/wallet/WalletModal';
 // Helper function to calculate time ago
 function getTimeAgo(dateString) {
     if (!dateString) return 'Recently';
-
     const now = new Date();
     const past = new Date(dateString);
     const diffMs = now - past;
-
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const diffMonths = Math.floor(diffDays / 30);
     const diffYears = Math.floor(diffDays / 365);
@@ -27,7 +25,8 @@ function getTimeAgo(dateString) {
 }
 
 export default function ProfilePage() {
-    const session = useSession();
+    const { isAuthed } = useSupabaseAuth();
+    const [session, setSession] = useState(null);
     const [tab, setTab] = useState("Listings");
     const [userid, setUserid] = useState("");
     const [username, setUsername] = useState("");
@@ -44,12 +43,25 @@ export default function ProfilePage() {
     const [profileData, setProfileData] = useState(null);
     const [joinedDate, setJoinedDate] = useState('');
     const [walletBalance, setWalletBalance] = useState(0);
-    const [stats, setStats] = useState({
-        listed: 0,
-        sold: 0,
-        bought: 0
-    });
+    const [stats, setStats] = useState({ listed: 0, sold: 0, bought: 0 });
+
     const supabase = supabaseBrowser();
+
+    // Fetch session when isAuthed changes
+    useEffect(() => {
+        if (!isAuthed) {
+            setSession(null);
+            setUserid("");
+            setUsername("Unknown User");
+            setAvatarPath("");
+            setLoading(false);
+            return;
+        }
+
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+    }, [isAuthed, supabase]);
 
     useEffect(() => {
         if (!session || !session.user) {
@@ -93,6 +105,7 @@ export default function ProfilePage() {
             }
 
             const userId = session.user.id;
+
             const { data: reviews, error } = await supabase
                 .from('review')
                 .select('*')
@@ -113,6 +126,7 @@ export default function ProfilePage() {
             const reviewsWithUsernames = await Promise.all(
                 reviews.map(async (review) => {
                     totalStars += review.stars;
+
                     const { data: profileData } = await supabase
                         .from('profile')
                         .select('username, object_path')
@@ -151,18 +165,18 @@ export default function ProfilePage() {
             const { data: itemsData, error } = await supabase
                 .from('item')
                 .select(`
-                    iid,
-                    title,
-                    description,
-                    min_bid,
-                    item_bucket,
-                    object_path,
-                    auction:aid (
-                        aid,
-                        end_time,
-                        start_time
-                    )
-                `)
+          iid,
+          title,
+          description,
+          min_bid,
+          item_bucket,
+          object_path,
+          auction:aid (
+            aid,
+            end_time,
+            start_time
+          )
+        `)
                 .eq('oid', userId);
 
             if (error) {
@@ -198,7 +212,6 @@ export default function ProfilePage() {
 
             setItems(itemsWithBids);
 
-            // Calculate current listings (not ended yet)
             const now = new Date();
             const currentListings = itemsWithBids.filter(
                 item => new Date(item.auctionEndTime) > now
@@ -211,25 +224,22 @@ export default function ProfilePage() {
         fetchItems();
     }, [session, supabase]);
 
-    // Fetch sold and bought stats
     useEffect(() => {
         const fetchStats = async () => {
             if (!session || !session.user || !session.user.id) return;
 
             const userId = session.user.id;
 
-            // Count sold items (user was seller and auction ended with a bid)
             const { data: soldItems } = await supabase
                 .from('item')
                 .select(`
-                    iid,
-                    auction:aid (
-                        end_time
-                    )
-                `)
+          iid,
+          auction:aid (
+            end_time
+          )
+        `)
                 .eq('oid', userId);
 
-            // Filter sold items (ended auctions with bids)
             const soldWithBids = await Promise.all(
                 (soldItems || []).map(async (item) => {
                     const { data: bid } = await supabase
@@ -245,18 +255,17 @@ export default function ProfilePage() {
 
             const actualSold = soldWithBids.filter(item => item !== null).length;
 
-            // Count bought items (user won the bid on ended auctions)
             const { data: boughtItems } = await supabase
                 .from('current_bid')
                 .select(`
-                    iid,
-                    uid,
-                    item:iid (
-                        auction:aid (
-                            end_time
-                        )
-                    )
-                `)
+          iid,
+          uid,
+          item:iid (
+            auction:aid (
+              end_time
+            )
+          )
+        `)
                 .eq('uid', userId);
 
             const actualBought = (boughtItems || []).filter(
@@ -273,143 +282,148 @@ export default function ProfilePage() {
         fetchStats();
     }, [session, supabase]);
 
+    const handleShareProfile = () => {
+        if (typeof window === 'undefined' || !userid) return;
+
+        const shareUrl = `${window.location.origin}/user/${userid}`;
+
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert(`Profile link copied! Share this link:\n${shareUrl}`);
+        }).catch(() => {
+            alert(`Share this link:\n${shareUrl}`);
+        });
+    };
+
+    // REST OF YOUR COMPONENT JSX STAYS THE SAME...
     return (
-        <div className="pb-10 min-h-screen px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
             {/* Settings Modal */}
-            <Settings
-                isOpen={isSettingsOpen}
-                onClose={() => setIsSettingsOpen(false)}
-                userId={userid}
-                currentData={profileData}
-            />
+            {isSettingsOpen && (
+                <Settings
+                    isOpen={isSettingsOpen}
+                    onClose={() => setIsSettingsOpen(false)}
+                    userId={userid}
+                    currentData={profileData}
+                />
+            )}
 
             {/* Wallet Modal */}
-            <WalletModal
-                isOpen={isWalletOpen}
-                onClose={() => setIsWalletOpen(false)}
-            />
+            {isWalletOpen && (
+                <WalletModal
+                    isOpen={isWalletOpen}
+                    onClose={() => setIsWalletOpen(false)}
+                />
+            )}
 
-            {/* Profile Banner */}
-            <div className="w-full max-w-6xl bg-gradient-to-r from-gray-800 to-gray-700 rounded-2xl p-4 sm:p-6 lg:p-8 mx-auto mt-4 sm:mt-8 shadow-xl border border-gray-600">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-                    {/* Avatar and Name Section */}
-                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 flex-1">
-                        <div className="relative flex-shrink-0">
-                            <img
-                                src={
-                                    avatarPath
-                                        ? `https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/avatar/${avatarPath}`
-                                        : "/default-avatar.jpg"
-                                }
-                                alt="User Avatar"
-                                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-600 object-cover ring-4 ring-gray-600 shadow-lg"
-                            />
-                        </div>
-                        <div className="text-center sm:text-left">
-                            <div className="text-2xl sm:text-3xl font-bold text-white">
-                                {loading ? "Loading..." : username}
+            {/* Main Content */}
+            <div className="container mx-auto px-4 py-8 max-w-7xl">
+                {/* Profile Header */}
+                <div className="bg-gray-800 rounded-2xl p-6 sm:p-8 mb-6 shadow-2xl border border-gray-700">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                        {/* Avatar */}
+                        <div className="relative">
+                            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-blue-500 shadow-xl">
+                                <img
+                                    src={
+                                        avatarPath
+                                            ? `https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/avatar/${avatarPath}`
+                                            : "/default-avatar.jpg"
+                                    }
+                                    alt={username}
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
-                            <button className="text-sm mt-2 flex items-center justify-center sm:justify-start gap-2 text-gray-300 hover:text-white transition">
-                                Share <span>🔗</span>
-                            </button>
                         </div>
-                    </div>
 
-                    {/* Stats Section */}
-                    <div className="flex flex-col items-center sm:items-end justify-center text-center sm:text-right">
-                        <div className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-white">
-                            {isNaN(reviewStars) || reviewStars === 0 ? "No reviews" : reviewStars}
-                            <span className="text-yellow-400 text-2xl sm:text-3xl">⭐</span>
-                        </div>
-                        <div className="text-sm sm:text-base text-gray-300 mt-1">
-                            {stats.listed} Listed | {stats.sold} Sold | {stats.bought} Bought
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-400 mt-1">
-                            Joined {joinedDate}
-                        </div>
-                    </div>
+                        {/* Profile Info */}
+                        <div className="flex-1 text-center sm:text-left">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                                <h1 className="text-3xl sm:text-4xl font-bold">{username}</h1>
+                                <div className="flex items-center justify-center sm:justify-start gap-1">
+                                    <span className="text-2xl text-yellow-400">⭐</span>
+                                    <span className="text-xl font-semibold">{reviewStars}</span>
+                                </div>
+                            </div>
 
-                    {/* Setting Button */}
-                    <div className="w-full sm:w-auto mt-4 sm:mt-0">
-                        <button
-                            onClick={() => setIsSettingsOpen(true)}
-                            className="w-full sm:w-auto bg-gray-600 text-white px-6 py-2.5 rounded-xl font-semibold text-base hover:bg-gray-500 transition shadow-md"
-                        >
-                            Setting
-                        </button>
+                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-gray-400 text-sm mb-4">
+                                <span className="flex items-center gap-2">
+                                    <span className="font-semibold text-white">{stats.listed}</span> Listed
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <span className="font-semibold text-white">{stats.sold}</span> Sold
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <span className="font-semibold text-white">{stats.bought}</span> Bought
+                                </span>
+                                <span>Joined {joinedDate}</span>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
+                                <button
+                                    onClick={() => setIsWalletOpen(true)}
+                                    className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-lg font-semibold shadow-lg transition-all hover:shadow-green-500/50"
+                                >
+                                    💰 Wallet: ${walletBalance.toFixed(2)}
+                                </button>
+                                <button
+                                    onClick={() => setIsSettingsOpen(true)}
+                                    className="px-6 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold shadow-lg transition-all"
+                                >
+                                    ⚙️ Settings
+                                </button>
+                                <button
+                                    onClick={handleShareProfile}
+                                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold shadow-lg transition-all"
+                                >
+                                    🔗 Share Profile
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Tabs */}
-            <div className="max-w-6xl mx-auto mt-6 sm:mt-10">
-                <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
-                    {["Listings", "Analytics", "Reviews"].map(item => (
+                {/* Tabs */}
+                <div className="bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border border-gray-700">
+                    {/* Tab Headers */}
+                    <div className="flex border-b border-gray-700">
                         <button
-                            key={item}
-                            onClick={() => setTab(item)}
-                            className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl font-semibold text-sm sm:text-base transition-all ${
-                                tab === item
-                                    ? "bg-blue-600 text-white shadow-md"
-                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                            }`}
+                            onClick={() => setTab("Listings")}
+                            className={`flex-1 px-6 py-4 font-semibold transition-all ${tab === "Listings"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                                }`}
                         >
-                            {item}
+                            📦 Listings
                         </button>
-                    ))}
-                    {/* Wallet Button - Clickable */}
-                    <button
-                        onClick={() => setIsWalletOpen(true)}
-                        className="w-full sm:w-auto sm:ml-auto mt-2 sm:mt-0 px-4 sm:px-6 py-2.5 rounded-xl font-semibold text-sm sm:text-base bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-500 hover:to-green-600 shadow-md transition"
-                    >
-                        💰 Wallet: ${walletBalance.toFixed(2)}
-                    </button>
-                </div>
-            </div>
-
-            {/* Divider */}
-            <div className="max-w-6xl mx-auto mt-4 sm:mt-6 border-t-2 border-gray-700" />
-
-            {/* Tab Panels */}
-            <div className="mt-6 sm:mt-10 max-w-6xl mx-auto min-h-[400px]">
-                {tab === "Listings" && (
-                    <div className="w-full">
-                        {itemsLoading ? (
-                            <div className="flex items-center justify-center py-20">
-                                <div className="text-gray-400 text-lg sm:text-xl">Loading listings...</div>
-                            </div>
-                        ) : (
-                            <Listings items={items} />
-                        )}
+                        <button
+                            onClick={() => setTab("Reviews")}
+                            className={`flex-1 px-6 py-4 font-semibold transition-all ${tab === "Reviews"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                                }`}
+                        >
+                            ⭐ Reviews ({reviewData?.length || 0})
+                        </button>
                     </div>
-                )}
-                {tab === "Analytics" && (
-                    <div className="w-full flex items-center justify-center py-20">
-                        <div className="text-gray-400 text-lg sm:text-xl">Analytics Coming Soon</div>
-                    </div>
-                )}
-                {tab === "Reviews" && (
-                    <div className="w-full">
-                        {reviewError && (
-                            <div className="text-red-400 text-center py-10">
-                                Error: {reviewError.message}
-                            </div>
+
+                    {/* Tab Content */}
+                    <div className="p-6">
+                        {tab === "Listings" && (
+                            itemsLoading ? (
+                                <div className="flex justify-center py-20">
+                                    <div className="text-gray-400 text-xl">Loading listings...</div>
+                                </div>
+                            ) : (
+                                <Listings items={items} isPublicView={false} />
+                            )
                         )}
-                        {!reviewError && !reviewData && (
-                            <div className="flex items-center justify-center py-20">
-                                <div className="text-gray-400 text-lg sm:text-xl">Loading reviews...</div>
-                            </div>
-                        )}
-                        {!reviewError && reviewData && reviewData.length === 0 && (
-                            <div className="flex items-center justify-center py-20">
-                                <div className="text-gray-400 text-lg sm:text-xl">No reviews yet</div>
-                            </div>
-                        )}
-                        {!reviewError && reviewData && reviewData.length > 0 && (
+
+                        {tab === "Reviews" && (
                             <PopulateReviews reviews={formattedReviews} />
                         )}
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );
