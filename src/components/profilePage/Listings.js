@@ -1,502 +1,269 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from "react";
+import { Tab } from '@headlessui/react';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import Link from 'next/link';
+import Spinner from '@/components/SpinnerComponent';
 
-export default function Listings({ items, isPublicView = false }) {
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState(null);
-    const [auctionsData, setAuctionsData] = useState({});
+function classNames(...classes) {
+    return classes.filter(Boolean).join(' ');
+}
+
+// Helper functions
+const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)}`;
+
+const getTimeRemaining = (endTime) => {
+    if (!endTime) return 'Not started';
+    const now = new Date();
+    const end = new Date(endTime);
+    const diff = end - now;
+
+    if (diff <= 0) return 'Ended';
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days > 0) return `${days}d ${hours}h left`;
+    if (hours > 0) return `${hours}h ${minutes}m left`;
+    return `${minutes}m left`;
+};
+
+const filterItems = (items, filter) => {
+    const now = new Date();
+
+    if (filter === 'All') return items;
+    if (filter === 'Current') {
+        return items.filter(item =>
+            item.auction?.end_time && new Date(item.auction.end_time) > now
+        );
+    }
+    if (filter === 'Past') {
+        return items.filter(item =>
+            !item.auction?.end_time || new Date(item.auction.end_time) <= now
+        );
+    }
+    return items;
+};
+
+// Item Card Component
+function ItemCard({ item, currentBid, supabase }) {
+    const auction = item.auction;
+    const imageUrl = item.object_path
+        ? supabase.storage.from(item.item_bucket || 'item').getPublicUrl(item.object_path).data.publicUrl
+        : auction?.object_path
+            ? supabase.storage.from(auction.thumbnail_bucket || 'thumbnail').getPublicUrl(auction.object_path).data.publicUrl
+            : '/placeholder-image.jpg';
+
+    const isActive = auction?.end_time && new Date(auction.end_time) > new Date();
+    const timeRemaining = getTimeRemaining(auction?.end_time);
+
+    return (
+        <Link
+            href={`/auction/${item.aid}`}
+            className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow"
+        >
+            {/* Image */}
+            <div className="relative h-56 bg-gray-100">
+                <img
+                    src={imageUrl}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.src = '/placeholder-image.jpg'; }}
+                />
+                {/* Live Badge */}
+                <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold ${isActive ? 'bg-green-500 text-white' : 'bg-gray-700 text-white'
+                    }`}>
+                    {isActive ? '🟢 Live' : '🔴 Ended'}
+                </span>
+            </div>
+
+            {/* Content */}
+            <div className="p-4">
+                {/* Auction Name */}
+                <p className="text-xs text-gray-500 uppercase font-medium mb-2">
+                    {auction?.name || 'Auction'}
+                </p>
+
+                {/* Item Title */}
+                <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2">
+                    {item.title}
+                </h3>
+
+                {/* Pricing */}
+                <div className="space-y-2 mb-3">
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Current Bid</span>
+                        <span className="text-lg font-bold text-green-600">
+                            {formatCurrency(currentBid?.current_price || 0)}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">Min Bid</span>
+                        <span className="text-sm font-semibold text-gray-700">
+                            {formatCurrency(item.min_bid)}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-1 text-sm">
+                        <span>⏱️</span>
+                        <span className={`font-medium ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
+                            {timeRemaining}
+                        </span>
+                    </div>
+                    <span className="text-blue-600 text-sm font-semibold hover:underline">
+                        View →
+                    </span>
+                </div>
+            </div>
+        </Link>
+    );
+}
+
+export default function Listings({ userId }) {
     const supabase = supabaseBrowser();
+    const filterCategories = ['All', 'Current', 'Past'];
 
-    // Fetch auction details for all items
+    // Single state object
+    const [state, setState] = useState({
+        allItems: [],
+        currentBids: {},
+        loading: true
+    });
+
+    // Single useEffect
     useEffect(() => {
-        const fetchAuctionsData = async () => {
-            const auctionIds = [...new Set(items.map(item => item.aid).filter(Boolean))];
+        if (!userId) {
+            setState(prev => ({ ...prev, loading: false }));
+            return;
+        }
 
-            if (auctionIds.length === 0) return;
+        const fetchListings = async () => {
+            try {
+                // Fetch items
+                const { data: items, error } = await supabase
+                    .from('item')
+                    .select(`
+                        *,
+                        auction:aid (
+                            aid,
+                            name,
+                            end_time,
+                            thumbnail_bucket,
+                            object_path
+                        )
+                    `)
+                    .eq('oid', userId);
 
-            // Use "name" instead of "title" - that's the correct column name!
-            const { data, error } = await supabase
-                .from('auction')
-                .select('aid, name, end_time, thumbnail_bucket, object_path')
-                .in('aid', auctionIds);
+                if (error || !items) {
+                    setState(prev => ({ ...prev, loading: false }));
+                    return;
+                }
 
-            if (!error && data) {
-                const auctionsMap = {};
-                data.forEach(auction => {
-                    auctionsMap[auction.aid] = auction;
+                // Fetch current bids
+                const itemIds = items.map(item => item.iid);
+                let bidsMap = {};
+
+                if (itemIds.length > 0) {
+                    const { data: bids } = await supabase
+                        .from('current_bid')
+                        .select('iid, current_price')
+                        .in('iid', itemIds);
+
+                    if (bids) {
+                        bidsMap = bids.reduce((acc, bid) => {
+                            acc[bid.iid] = bid;
+                            return acc;
+                        }, {});
+                    }
+                }
+
+                setState({
+                    allItems: items,
+                    currentBids: bidsMap,
+                    loading: false
                 });
-                setAuctionsData(auctionsMap);
+
+            } catch (error) {
+                console.error('[Listings] Error:', error);
+                setState(prev => ({ ...prev, loading: false }));
             }
         };
 
-        if (items.length > 0) {
-            fetchAuctionsData();
-        }
-    }, [items, supabase]);
+        fetchListings();
+    }, [userId, supabase]);
 
-    if (!items || items.length === 0) {
+    if (state.loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <div className="text-gray-400 text-lg sm:text-xl">No listings yet</div>
+                <Spinner size="md" className="text-blue-500" />
             </div>
         );
     }
 
-    const formatDateTime = (dateString) => {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
 
-    const getAuctionStatus = (endTime) => {
-        if (!endTime) return 'Unknown';
-        const now = new Date();
-        const end = new Date(endTime);
-        return end > now ? 'Active' : 'Ended';
-    };
-
-    const getTimeRemaining = (endTime) => {
-        if (!endTime) return 'N/A';
-        const now = new Date();
-        const end = new Date(endTime);
-        const diff = end - now;
-
-        if (diff <= 0) return 'Ended';
-
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-        if (days > 0) return `${days}d ${hours}h`;
-        if (hours > 0) return `${hours}h ${minutes}m`;
-        return `${minutes}m`;
-    };
-
-    const handleEditClick = (item) => {
-        setSelectedItem(item);
-        setIsEditModalOpen(true);
-    };
+    if (!state.allItems || state.allItems.length === 0) {
+        return (
+            <div className="text-center py-20">
+                <div className="text-6xl mb-4">📦</div>
+                <p className="text-xl text-gray-500">No listings yet</p>
+            </div>
+        );
+    }
 
     return (
-        <>
-            {/* Edit Modal */}
-            {isEditModalOpen && selectedItem && (
-                <EditListingModal
-                    item={selectedItem}
-                    isOpen={isEditModalOpen}
-                    onClose={() => {
-                        setIsEditModalOpen(false);
-                        setSelectedItem(null);
-                    }}
-                />
-            )}
+        <Tab.Group>
+            {/* Filter Tabs */}
+            <Tab.List className="flex gap-2 mb-6">
+                {filterCategories.map((category) => (
+                    <Tab key={category} as={Fragment}>
+                        {({ selected }) => (
+                            <button
+                                className={classNames(
+                                    'px-5 py-2 rounded-lg text-sm font-semibold transition-all',
+                                    selected
+                                        ? 'bg-blue-600 text-white shadow-md'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                )}
+                            >
+                                {category}
+                            </button>
+                        )}
+                    </Tab>
+                ))}
+            </Tab.List>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {items.map((item) => {
-                    const status = getAuctionStatus(item.auctionEndTime);
-                    const imageUrl = item.objectPath
-                        ? `https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/${item.itemBucket}/${item.objectPath}`
-                        : '/placeholder-item.jpg';
-
-                    const auctionInfo = auctionsData[item.aid];
-
-                    // Use auction thumbnail from auction table - proper fallback chain
-                    let auctionThumbnail = imageUrl; // Fallback to item image
-                    let auctionTitle = 'View Auction'; // Default title
-
-                    if (auctionInfo) {
-                        // Try to get auction thumbnail
-                        if (auctionInfo.object_path && auctionInfo.thumbnail_bucket) {
-                            auctionThumbnail = `https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/${auctionInfo.thumbnail_bucket}/${auctionInfo.object_path}`;
-                        }
-
-                        // Set auction title from "name" column
-                        if (auctionInfo.name) {
-                            auctionTitle = auctionInfo.name;
-                        }
-                    }
-
-                    // Check if auction is still active
-                    const isAuctionActive = status === 'Active';
+            {/* Filtered Items */}
+            <Tab.Panels>
+                {filterCategories.map((category) => {
+                    const filteredItems = filterItems(state.allItems, category);
 
                     return (
-                        <div
-                            key={item.iid}
-                            className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:border-gray-600 transition-all hover:shadow-xl flex flex-col"
-                        >
-                            {/* Item Image */}
-                            <div className="relative h-48 bg-gray-700">
-                                <img
-                                    src={imageUrl}
-                                    alt={item.title}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        e.target.src = '/placeholder-item.jpg';
-                                    }}
-                                />
-                                {/* Status Badge */}
-                                <div
-                                    className={`absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                                        status === 'Active'
-                                            ? 'bg-green-600 text-white'
-                                            : 'bg-red-600 text-white'
-                                    }`}
-                                >
-                                    {status}
+                        <Tab.Panel key={category}>
+                            {filteredItems.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500">
+                                    No {category.toLowerCase()} listings
                                 </div>
-                            </div>
-
-                            {/* Item Details */}
-                            <div className="p-4 flex flex-col flex-grow">
-                                <h3 className="text-lg font-bold text-white mb-2 truncate">
-                                    {item.title}
-                                </h3>
-                                <p className="text-sm text-gray-400 mb-3 line-clamp-2 flex-grow">
-                                    {item.description || 'No description'}
-                                </p>
-
-                                {/* Bottom section */}
-                                <div className="mt-auto">
-                                    {/* Bid Info */}
-                                    <div className="space-y-2 mb-4">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs text-gray-500">Min Bid:</span>
-                                            <span className="text-sm font-semibold text-white">
-                                                ${item.minBid?.toFixed(2) || '0.00'}
-                                            </span>
-                                        </div>
-                                        {item.currentBid && (
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs text-gray-500">Current Bid:</span>
-                                                <span className="text-sm font-semibold text-green-400">
-                                                    ${item.currentBid.toFixed(2)}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Time Info */}
-                                    <div className="space-y-1 mb-4 text-xs text-gray-400">
-                                        {status === 'Active' && (
-                                            <div className="flex justify-between">
-                                                <span>Time Left:</span>
-                                                <span className="font-semibold text-yellow-400">
-                                                    {getTimeRemaining(item.auctionEndTime)}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div className="flex justify-between">
-                                            <span>Ends:</span>
-                                            <span>{formatDateTime(item.auctionEndTime)}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="space-y-2">
-                                        {/* View Auction Button - Show if aid exists and status is Active */}
-                                        {item.aid && isAuctionActive && (
-                                            <Link
-                                                href={`/auction/${item.aid}`}
-                                                className="flex items-center gap-3 w-full px-3 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition group"
-                                            >
-                                                <img
-                                                    src={auctionThumbnail}
-                                                    alt={auctionTitle}
-                                                    className="w-10 h-10 object-cover rounded flex-shrink-0"
-                                                    onError={(e) => {
-                                                        e.target.src = '/placeholder-item.jpg';
-                                                    }}
-                                                />
-                                                <div className="flex-1 text-left overflow-hidden min-w-0">
-                                                    <p className="text-xs text-gray-400">View Auction</p>
-                                                    <p className="text-sm font-bold truncate group-hover:text-blue-400 transition">
-                                                        {auctionTitle}
-                                                    </p>
-                                                </div>
-                                            </Link>
-                                        )}
-
-                                        {/* Edit Button - Only for owners */}
-                                        {!isPublicView && (
-                                            <button
-                                                onClick={() => handleEditClick(item)}
-                                                className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition"
-                                            >
-                                                Edit Listing
-                                            </button>
-                                        )}
-                                    </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {filteredItems.map(item => (
+                                        <ItemCard
+                                            key={item.iid}
+                                            item={item}
+                                            currentBid={state.currentBids[item.iid]}
+                                            supabase={supabase}
+                                        />
+                                    ))}
                                 </div>
-                            </div>
-                        </div>
+                            )}
+                        </Tab.Panel>
                     );
                 })}
-            </div>
-        </>
-    );
-}
-
-// Edit Listing Modal Component
-function EditListingModal({ item, isOpen, onClose }) {
-    const [formData, setFormData] = useState({
-        title: item.title || '',
-        description: item.description || '',
-        minBid: item.minBid || 0,
-    });
-    const [isSaving, setIsSaving] = useState(false);
-    const [auctionData, setAuctionData] = useState(null);
-    const [hasBids, setHasBids] = useState(false);
-    const [isLoadingBids, setIsLoadingBids] = useState(true);
-    const supabase = supabaseBrowser();
-
-    useEffect(() => {
-        const fetchAuctionData = async () => {
-            if (!item.aid) return;
-
-            // Use "name" instead of "title"
-            const { data, error } = await supabase
-                .from('auction')
-                .select('aid, name, start_time, end_time, thumbnail_bucket, object_path')
-                .eq('aid', item.aid)
-                .single();
-
-            if (!error && data) {
-                setAuctionData(data);
-            }
-        };
-
-        fetchAuctionData();
-    }, [item.aid, supabase]);
-
-    useEffect(() => {
-        const checkBids = async () => {
-            setIsLoadingBids(true);
-
-            const { data, error } = await supabase
-                .from('current_bid')
-                .select('iid')
-                .eq('iid', item.iid)
-                .maybeSingle();
-
-            if (!error && data) {
-                setHasBids(true);
-            } else {
-                setHasBids(false);
-            }
-
-            setIsLoadingBids(false);
-        };
-
-        checkBids();
-    }, [item.iid, supabase]);
-
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: name === 'minBid' ? parseFloat(value) || 0 : value
-        }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (hasBids && formData.minBid !== item.minBid) {
-            alert('Invalid action: Cannot change minimum bid after bids have been placed on this item.');
-            return;
-        }
-
-        setIsSaving(true);
-
-        try {
-            const { error } = await supabase
-                .from('item')
-                .update({
-                    title: formData.title,
-                    description: formData.description,
-                    min_bid: formData.minBid,
-                })
-                .eq('iid', item.iid);
-
-            if (error) {
-                console.error('Update error:', error);
-                alert('Failed to update item. Please try again.');
-            } else {
-                alert('Item updated successfully!');
-                window.location.reload();
-            }
-        } catch (error) {
-            console.error('Unexpected error:', error);
-            alert('An unexpected error occurred.');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    if (!isOpen) return null;
-
-    const auctionThumbnail = auctionData?.object_path
-        ? `https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/${auctionData.thumbnail_bucket}/${auctionData.object_path}`
-        : item.objectPath
-        ? `https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/${item.itemBucket}/${item.objectPath}`
-        : '/placeholder-item.jpg';
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700 shadow-2xl">
-                <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-6 flex justify-between items-center z-10">
-                    <h2 className="text-2xl font-bold text-white">Edit Listing</h2>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white text-3xl leading-none"
-                    >
-                        ×
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                    <div className="flex gap-4 items-start bg-gray-700 p-4 rounded-lg">
-                        <img
-                            src={
-                                item.objectPath
-                                    ? `https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/${item.itemBucket}/${item.objectPath}`
-                                    : '/placeholder-item.jpg'
-                            }
-                            alt={item.title}
-                            className="w-24 h-24 object-cover rounded-lg"
-                        />
-                        <div className="flex-1">
-                            <h3 className="font-bold text-white">{item.title}</h3>
-                            <p className="text-sm text-gray-400">Item ID: {item.iid}</p>
-                            {hasBids && (
-                                <p className="text-xs text-yellow-400 mt-1">
-                                    ⚠️ This item has active bids
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    {auctionData && (
-                        <Link
-                            href={`/auction/${item.aid}`}
-                            target="_blank"
-                            className="flex gap-4 items-center bg-gray-700 hover:bg-gray-600 p-4 rounded-lg transition group"
-                        >
-                            <img
-                                src={auctionThumbnail}
-                                alt="Auction"
-                                className="w-16 h-16 object-cover rounded-lg"
-                                onError={(e) => {
-                                    e.target.src = '/placeholder-item.jpg';
-                                }}
-                            />
-                            <div className="flex-1">
-                                <p className="text-sm font-semibold text-gray-400">Part of Auction</p>
-                                <p className="text-white font-bold group-hover:text-blue-400 transition">
-                                    {auctionData.name || `Auction #${item.aid}`}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                    Click to view auction page →
-                                </p>
-                            </div>
-                        </Link>
-                    )}
-
-                    <div>
-                        <label className="block text-sm font-semibold text-white mb-2">
-                            Title
-                        </label>
-                        <input
-                            type="text"
-                            name="title"
-                            value={formData.title}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-white mb-2">
-                            Description
-                        </label>
-                        <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            rows={4}
-                            className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500 resize-none"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-white mb-2">
-                            Minimum Bid ($)
-                            {hasBids && (
-                                <span className="text-xs text-red-400 ml-2">
-                                    (Cannot be changed - item has bids)
-                                </span>
-                            )}
-                        </label>
-                        <input
-                            type="number"
-                            name="minBid"
-                            value={formData.minBid}
-                            onChange={handleChange}
-                            step="0.01"
-                            min="0"
-                            disabled={hasBids}
-                            className={`w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500 ${
-                                hasBids ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                            required
-                        />
-                        {hasBids && (
-                            <p className="text-xs text-gray-400 mt-1">
-                                The minimum bid cannot be changed once bids have been placed.
-                            </p>
-                        )}
-                    </div>
-
-                    <div className="flex gap-3 pt-4">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSaving || isLoadingBids}
-                            className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isSaving ? 'Saving...' : isLoadingBids ? 'Loading...' : 'Save Changes'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+            </Tab.Panels>
+        </Tab.Group>
     );
 }

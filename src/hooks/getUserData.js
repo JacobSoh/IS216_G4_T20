@@ -4,25 +4,29 @@ import { supabaseBrowser } from "@/utils/supabase/client";
 
 export default async function getUser() {
     const sb = supabaseBrowser();
+
     try {
-        
-        const { data: {user} } = await sb.auth.getUser();
+        const { data: { user } } = await sb.auth.getUser();
+
         if (!user) {
-            throw new Error("User does not exists");
-        };
+            throw new Error("User does not exist");
+        }
 
-        const info = await axiosBrowserClient.get(`/api/profile/${user.id}`);
-        if (info.status !== 200 || !info.record) {
+        const response = await axiosBrowserClient.get(`/api/profile/${user.id}`);
+
+        // Axios client has interceptor that unwraps response.data
+        // So response is already {status: 200, record: {...}}
+        const profileData = response.record;
+
+        if (!profileData) {
+            console.error('[getUserData] Invalid response:', response);
             throw new Error("User profile unable to retrieve");
-        };
+        }
 
-        const info = await axiosBrowserClient.get(`/api/profile/${user.id}`);
-        if (info.status !== 200 || !info.record) {
-            throw new Error("User profile unable to retrieve");
-        };
+        return new User(user, profileData);
 
-        return new User(user, info.record);
     } catch (e) {
-        throw new Error("User does not exists");
+        console.error('[getUserData] Error:', e);
+        throw e;
     }
-};
+}

@@ -1,40 +1,48 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from 'next/navigation';
 import { supabaseBrowser } from '@/utils/supabase/client';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useParams } from 'next/navigation';
 import PopulateReviews from './Reviews';
 import Listings from './Listings';
-import Settings from '../Settings';
-import WalletModal from '@/components/wallet/WalletModal';
-import { useModal } from "@/context/ModalContext";
-import getUser from "@/hooks/getUserData";
-import Spinner from "@/components/SpinnerComponent";
+import Spinner from '@/components/SpinnerComponent';
 
-export default function ProfilePage() {
-    const { isAuthed } = useSupabaseAuth();
-    const { openModal, closeModal } = useModal();
-    const searchParams = useSearchParams();
+// Helper function to calculate time ago (EXACT SAME AS PROFILEPAGE)
+function getTimeAgo(dateString) {
+    if (!dateString) return 'Recently';
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffMs = now - past;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffDays / 365);
+    if (diffYears > 0) return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+    if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return 'Today';
+}
+
+export default function PublicProfile() {
+    const params = useParams();
+    const username = params.username;
     const supabase = supabaseBrowser();
 
     // Single state object
     const [state, setState] = useState({
         user: null,
+        avatarUrl: '',
         loading: true,
         tab: "Listings",
-        avatarUrl: '',
         joinedAgo: '',
         showCopyToast: false,
-        isWalletOpen: false,
-        walletBalance: 0,
         stats: {
             currentListings: 0,
             itemsSold: 0,
             itemsBought: 0,
             avgRating: 0,
             totalReviews: 0
-        }
+        },
+        notFound: false
     });
 
     // Helper to update state
@@ -45,38 +53,44 @@ export default function ProfilePage() {
         window.scrollTo(0, 0);
     }, []);
 
-    // Single useEffect for data loading
+    // Single useEffect for all data loading
     useEffect(() => {
-        if (!isAuthed) {
-            updateState({ loading: false });
-            return;
-        }
+        if (!username) return;
 
-        const loadProfileData = async () => {
+        const fetchAllData = async () => {
             try {
-                // Load user data
-                const userData = await getUser();
-
-                let avatarUrl = '';
-                if (userData.avatarPath) {
-                    const { data } = supabase.storage
-                        .from(userData.avatarBucket)
-                        .getPublicUrl(userData.avatarPath);
-                    avatarUrl = data.publicUrl;
-                }
-
-                const joinedAgo = userData.createdAt
-                    ? userData.getTimeAgo(userData.createdAt)
-                    : '';
-
-                // Fetch wallet balance
-                const { data: profileData } = await supabase
+                // Fetch profile
+                const { data, error } = await supabase
                     .from('profile')
-                    .select('wallet_balance')
-                    .eq('id', userData.id)
+                    .select('id, username, first_name, last_name, avatar_bucket, object_path, created_at')
+                    .ilike('username', username)
                     .single();
 
+                if (error || !data) {
+                    updateState({ notFound: true, loading: false });
+                    return;
+                }
+
+                // Get avatar URL
+                let avatarUrl = '';
+                if (data.object_path) {
+                    const { data: avatarData } = supabase.storage
+                        .from(data.avatar_bucket || 'avatar')
+                        .getPublicUrl(data.object_path);
+                    avatarUrl = avatarData.publicUrl;
+                }
+
+                // Update basic profile info using getTimeAgo function
+                updateState({
+                    user: data,
+                    avatarUrl,
+                    joinedAgo: getTimeAgo(data.created_at)
+                });
+
                 // Fetch user stats
+                const userId = data.id;
+
+                // Fetch items for current listings
                 const { data: items } = await supabase
                     .from('item')
                     .select(`
@@ -85,50 +99,25 @@ export default function ProfilePage() {
                             end_time
                         )
                     `)
-                    .eq('oid', userData.id);
+                    .eq('oid', userId);
 
                 const now = new Date();
                 const currentListings = items?.filter(item =>
                     item.auction?.end_time && new Date(item.auction.end_time) > now
                 ).length || 0;
 
+                // Fetch reviews
                 const { data: reviews } = await supabase
                     .from('review')
                     .select('stars')
-                    .eq('reviewee_id', userData.id);
+                    .eq('reviewee_id', userId);
 
                 const totalReviews = reviews?.length || 0;
                 const totalStars = reviews?.reduce((sum, review) => sum + (review.stars || 0), 0) || 0;
                 const avgRating = totalReviews > 0 ? (totalStars / totalReviews).toFixed(1) : 0;
 
-                // Check for payment completion
-                const reference = searchParams.get('reference');
-                const status = searchParams.get('status');
-
-                if (reference && status === 'completed') {
-                    console.log('Payment completed, fetching updated wallet balance...');
-
-                    // Re-fetch wallet balance after payment
-                    const { data: updatedProfile } = await supabase
-                        .from('profile')
-                        .select('wallet_balance')
-                        .eq('id', userData.id)
-                        .single();
-
-                    if (updatedProfile) {
-                        profileData.wallet_balance = updatedProfile.wallet_balance;
-                    }
-
-                    // Clean up URL parameters
-                    window.history.replaceState({}, '', '/profile');
-                }
-
-                // Update all state at once
+                // Update stats
                 updateState({
-                    user: userData,
-                    avatarUrl,
-                    joinedAgo,
-                    walletBalance: profileData?.wallet_balance || 0,
                     stats: {
                         currentListings,
                         itemsSold: 0,
@@ -141,26 +130,21 @@ export default function ProfilePage() {
 
             } catch (error) {
                 console.error('Failed to load profile:', error);
-                updateState({ loading: false });
+                updateState({ notFound: true, loading: false });
             }
         };
 
-        loadProfileData();
-    }, [isAuthed, searchParams, supabase]);
-
-    const handleSettings = () => {
-        openModal({
-            content: <Settings user={state.user} onClose={closeModal} />
-        });
-    };
+        fetchAllData();
+    }, [username, supabase]);
 
     const handleShareProfile = () => {
-        const profileUrl = `${window.location.origin}/profile/${state.user.username}`;
+        const profileUrl = window.location.href;
         navigator.clipboard.writeText(profileUrl);
         updateState({ showCopyToast: true });
         setTimeout(() => updateState({ showCopyToast: false }), 2000);
     };
 
+    // Loading state (EXACT SAME AS PROFILEPAGE)
     if (state.loading) {
         return (
             <div style={{
@@ -175,20 +159,16 @@ export default function ProfilePage() {
         );
     }
 
-    if (!isAuthed) {
+    if (state.notFound) {
         return (
             <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a' }}>
                 <div style={{ textAlign: 'center', padding: '32px', background: 'white', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.3)', maxWidth: '400px' }}>
-                    <div style={{ fontSize: '60px', marginBottom: '16px' }}>🔒</div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>Authentication Required</h1>
-                    <p style={{ color: '#6b7280' }}>Please log in to view your profile</p>
+                    <div style={{ fontSize: '60px', marginBottom: '16px' }}>🔍</div>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>User Not Found</h1>
+                    <p style={{ color: '#6b7280' }}>This profile doesn't exist or has been removed.</p>
                 </div>
             </div>
         );
-    }
-
-    if (!state.user) {
-        return <div style={{ textAlign: 'center', padding: '32px', color: 'white' }}>Failed to load profile</div>;
     }
 
     return (
@@ -250,30 +230,14 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        {/* Buttons */}
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            {/* Wallet Button */}
-                            <button
-                                onClick={() => updateState({ isWalletOpen: true })}
-                                style={{ padding: '10px 16px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: '1px solid #10b981', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)' }}
-                            >
-                                <span>💰</span>
-                                <span>${state.walletBalance.toFixed(2)}</span>
-                            </button>
-
+                        {/* Share Button */}
+                        <div>
                             <button
                                 onClick={handleShareProfile}
                                 style={{ padding: '10px 16px', backgroundColor: '#2563eb', color: 'white', border: '1px solid #3b82f6', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)' }}
                             >
                                 <span>🔗</span>
                                 <span>Share</span>
-                            </button>
-                            <button
-                                onClick={handleSettings}
-                                style={{ padding: '10px 16px', backgroundColor: '#475569', color: 'white', border: '1px solid #64748b', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(71, 85, 105, 0.3)' }}
-                            >
-                                <span>⚙️</span>
-                                <span>Edit</span>
                             </button>
                         </div>
                     </div>
@@ -323,17 +287,11 @@ export default function ProfilePage() {
 
                     {/* Tab Content */}
                     <div style={{ padding: '24px', backgroundColor: '#1e293b' }}>
-                        {state.tab === "Listings" && <Listings userId={state.user.id} />}
+                        {state.tab === "Listings" && <Listings userId={state.user.id} isPublicView={true} />}
                         {state.tab === "Reviews" && <PopulateReviews userId={state.user.id} />}
                     </div>
                 </div>
             </div>
-
-            {/* Wallet Modal */}
-            <WalletModal
-                isOpen={state.isWalletOpen}
-                onClose={() => updateState({ isWalletOpen: false })}
-            />
         </div>
     );
 }

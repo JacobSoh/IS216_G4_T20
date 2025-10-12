@@ -1,49 +1,170 @@
-'use client'
+'use client';
 
-export default function PopulateReviews({ reviews }) {
-    console.log(reviews);
-    function timeAgo(datetime) {
-        const now = new Date();
-        const past = new Date(datetime);
-        const diffMs = now - past;
+import { useState, useEffect } from 'react';
+import { supabaseBrowser } from '@/utils/supabase/client';
+import Spinner from '@/components/SpinnerComponent';
 
-        const diffMinutes = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+// Helper function - extract outside component
+function timeAgo(datetime) {
+    if (!datetime) return 'Recently';
 
-        if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-        if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-        if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
-        return 'Just now';
+    const now = new Date();
+    const past = new Date(datetime);
+    const diffMs = now - past;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    return 'Just now';
+}
+
+// Review Card Component
+function ReviewCard({ review, supabase }) {
+    const reviewerName = review.reviewer
+        ? `${review.reviewer.first_name || ''} ${review.reviewer.last_name || ''}`.trim() || review.reviewer.username
+        : 'Anonymous';
+
+    const reviewerAvatarUrl = review.reviewer?.object_path
+        ? supabase.storage.from(review.reviewer.avatar_bucket || 'avatar').getPublicUrl(review.reviewer.object_path).data.publicUrl
+        : null;
+
+    const reviewerInitial = reviewerName[0]?.toUpperCase() || 'A';
+
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                    {/* Avatar */}
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+                        {reviewerAvatarUrl ? (
+                            <img
+                                src={reviewerAvatarUrl}
+                                alt={reviewerName}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-blue-500 text-white font-bold text-sm">${reviewerInitial}</div>`;
+                                }}
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white font-bold text-sm">
+                                {reviewerInitial}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Name & Time */}
+                    <div>
+                        <div className="font-semibold text-gray-800">{reviewerName}</div>
+                        <div className="text-xs text-gray-500">{timeAgo(review.time_created)}</div>
+                    </div>
+                </div>
+
+                {/* Stars */}
+                <div className="flex items-center gap-1">
+                    <span className="text-yellow-400 text-base">
+                        {"★".repeat(Math.floor(review.stars || 0))}
+                        {"☆".repeat(5 - Math.floor(review.stars || 0))}
+                    </span>
+                    <span className="text-sm text-gray-600 ml-1">
+                        {review.stars}
+                    </span>
+                </div>
+            </div>
+
+            {/* Review Text */}
+            <p className="text-gray-700 text-sm leading-relaxed">
+                {review.review || 'No review text provided'}
+            </p>
+        </div>
+    );
+}
+
+export default function PopulateReviews({ userId }) {
+    const supabase = supabaseBrowser();
+
+    // Single state object
+    const [state, setState] = useState({
+        reviews: [],
+        loading: true
+    });
+
+    // Single useEffect
+    useEffect(() => {
+        if (!userId) {
+            console.log('[Reviews] No userId provided');
+            setState({ reviews: [], loading: false });
+            return;
+        }
+
+        const fetchReviews = async () => {
+            console.log('[Reviews] Fetching reviews for userId:', userId);
+
+            try {
+                const { data, error } = await supabase
+                    .from('review')
+                    .select(`
+                        *,
+                        reviewer:reviewer_id (
+                            id,
+                            username,
+                            first_name,
+                            last_name,
+                            avatar_bucket,
+                            object_path
+                        )
+                    `)
+                    .eq('reviewee_id', userId)
+                    .order('time_created', { ascending: false });
+
+                console.log('[Reviews] Query result:', { data, error, count: data?.length });
+
+                if (error) {
+                    console.error('[Reviews] Error:', error);
+                    setState({ reviews: [], loading: false });
+                } else {
+                    setState({ reviews: data || [], loading: false });
+                }
+            } catch (error) {
+                console.error('[Reviews] Exception:', error);
+                setState({ reviews: [], loading: false });
+            }
+        };
+
+        fetchReviews();
+    }, [userId, supabase]);
+
+    if (state.loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Spinner size="md" className="text-blue-500" />
+            </div>
+        );
+    }
+
+    if (!state.reviews || state.reviews.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20">
+                <div className="text-6xl mb-4">⭐</div>
+                <div className="text-xl text-gray-400 font-medium">No reviews yet</div>
+                <p className="text-gray-500 mt-2">Reviews from others will appear here</p>
+            </div>
+        );
     }
 
     return (
-        <ul role="list" className="divide-y divide-gray-100">
-            {reviews.map((formattedReview, index) => (
-                <li key={index} className="flex justify-between gap-x-6 py-5">
-                    <div className="flex min-w-0 gap-x-4">
-                        <img
-                            src={formattedReview.avatarUrl}
-                            alt=""
-                            className="size-12 flex-none rounded-full bg-gray-50"
-                        />
-                        <div className="min-w-0 flex-auto">
-                            <p className="text-sm/6 font-semibold text-gray-900 dark:text-gray-100">{formattedReview.reviewer}</p>
-                            <p className="mt-1 truncate text-xs/5 text-gray-500 dark:text-gray-400">{formattedReview.review}</p>
-                        </div>
-                    </div>
-                    <div className="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
-                        <p className="text-sm/6 text-gray-900 dark:text-gray-100">
-                            {"⭐".repeat(Math.floor(formattedReview.stars))}
-                        </p>
-                        <p className="mt-1 text-xs/5 text-gray-500 dark:text-gray-400">
-                            <time dateTime={formattedReview.timeCreated}>
-                                {timeAgo(formattedReview.timeCreated)}
-                            </time>
-                        </p>
-                    </div>
-                </li>
+        <div className="space-y-4">
+            {state.reviews.map((review, index) => (
+                <ReviewCard
+                    key={`${review.reviewee_id}-${review.time_created}-${index}`}
+                    review={review}
+                    supabase={supabase}
+                />
             ))}
-        </ul>
+        </div>
     );
 }
