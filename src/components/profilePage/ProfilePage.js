@@ -5,8 +5,14 @@ import { supabaseBrowser } from '@/utils/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import PopulateReviews from './Reviews';
 import Listings from './Listings';
-import Settings from './Settings';
+import Settings from '../Settings';
 import WalletModal from '@/components/wallet/WalletModal';
+
+import { axiosBrowserClient } from '@/utils/axios/client';
+import { useModal } from "@/context/ModalContext";
+import { useAlert } from '@/context/AlertContext';
+import getUser from "@/hooks/getUserData";
+import Spinner from "@/components/SpinnerComponent";
 
 // Helper function to calculate time ago
 function getTimeAgo(dateString) {
@@ -26,6 +32,11 @@ function getTimeAgo(dateString) {
 
 export default function ProfilePage() {
     const { isAuthed } = useSupabaseAuth();
+    const { openModal, closeModal } = useModal();
+    const { showAlert } = useAlert();
+    const [mounted, setMounted] = useState(false);
+    const [user, setUser] = useState(null);
+
     const [session, setSession] = useState(null);
     const [tab, setTab] = useState("Listings");
     const [userid, setUserid] = useState("");
@@ -47,21 +58,91 @@ export default function ProfilePage() {
 
     const supabase = supabaseBrowser();
 
-    // Fetch session when isAuthed changes
-    useEffect(() => {
-        if (!isAuthed) {
-            setSession(null);
-            setUserid("");
-            setUsername("Unknown User");
-            setAvatarPath("");
-            setLoading(false);
-            return;
+    const updateUserInformation = async (e) => {
+        e.preventDefault();
+        let objectPath = currentData?.object_path;
+        // Upload new avatar if selected
+        if (avatarFile) {
+            const fileExt = avatarFile.name.split('.').pop();
+            const fileName = `${userId}-${Date.now()}.${fileExt}`;
+
+            // Delete old avatar if exists
+            if (currentData?.object_path) {
+                await supabase.storage
+                    .from('avatar')
+                    .remove([currentData.object_path]);
+            }
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('avatar')
+                .upload(fileName, avatarFile, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('Upload error:', uploadError);
+                throw new Error(`Upload failed: ${uploadError.message}`);
+            }
+
+            objectPath = fileName;
         }
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-        });
-    }, [isAuthed, supabase]);
+        const form = new FormData(e.currentTarget);
+        const obj = {
+            first_name: formData.firstName,
+            middle_name: formData.middleName,
+            last_name: formData.lastName,
+            street: formData.street,
+            city: formData.city,
+            state: formData.state,
+            zip: formData.zip,
+            username: formData.username,
+            object_path: objectPath
+        };
+
+        try {
+            const res = await axiosBrowserClient.update(`/api/profile`, {
+                data: obj
+            });
+            if (res.status !== 200) return showAlert({ message: 'Something went wrong.', variant: 'danger' });
+            closeModal();
+            return showAlert({ message: 'Update success', variant: 'success' });
+        } catch (e) {
+            showAlert({ message: 'My Mother', variant: 'warning' });
+        };
+    };
+
+    const handleSettings = () => openModal({
+        content: <Settings onSubmit={updateUserInformation} closeModal={closeModal} />,
+        title: 'Settings'
+    })
+
+    // Fetch session when isAuthed changes
+    useEffect(() => {
+        getUser().then(res => {
+            // const { data: { user } } = res;
+            // setUser(user);
+        }).catch(err => console.error(err.message));
+        setMounted(true);
+    }, []);
+
+    // useEffect(() => {
+    //     if (!isAuthed) {
+    //         setSession(null);
+    //         setUserid("");
+    //         setUsername("Unknown User");
+    //         setAvatarPath("");
+    //         setLoading(false);
+    //         return;
+    //     }
+
+    //     supabase.auth.getSession().then(({ data: { session } }) => {
+    //         setSession(session);
+    //     });
+
+        
+    // }, [isAuthed, supabase]);
 
     useEffect(() => {
         if (!session || !session.user) {
@@ -296,135 +377,140 @@ export default function ProfilePage() {
 
     // REST OF YOUR COMPONENT JSX STAYS THE SAME...
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-            {/* Settings Modal */}
-            {isSettingsOpen && (
+        <>
+            {mounted ? (
+                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+                    {/* Settings Modal */}
+                    {/* {isSettingsOpen && (
                 <Settings
                     isOpen={isSettingsOpen}
                     onClose={() => setIsSettingsOpen(false)}
                     userId={userid}
                     currentData={profileData}
                 />
-            )}
+            )} */}
 
-            {/* Wallet Modal */}
-            {isWalletOpen && (
-                <WalletModal
-                    isOpen={isWalletOpen}
-                    onClose={() => setIsWalletOpen(false)}
-                />
-            )}
+                    {/* Wallet Modal */}
+                    {isWalletOpen && (
+                        <WalletModal
+                            isOpen={isWalletOpen}
+                            onClose={() => setIsWalletOpen(false)}
+                        />
+                    )}
 
-            {/* Main Content */}
-            <div className="container mx-auto px-4 py-8 max-w-7xl">
-                {/* Profile Header */}
-                <div className="bg-gray-800 rounded-2xl p-6 sm:p-8 mb-6 shadow-2xl border border-gray-700">
-                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                        {/* Avatar */}
-                        <div className="relative">
-                            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-blue-500 shadow-xl">
-                                <img
-                                    src={
-                                        avatarPath
-                                            ? `https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/avatar/${avatarPath}`
-                                            : "/default-avatar.jpg"
-                                    }
-                                    alt={username}
-                                    className="w-full h-full object-cover"
-                                />
+                    {/* Main Content */}
+                    <div className="container mx-auto px-4 py-8 max-w-7xl">
+                        {/* Profile Header */}
+                        <div className="bg-gray-800 rounded-2xl p-6 sm:p-8 mb-6 shadow-2xl border border-gray-700">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                                {/* Avatar */}
+                                <div className="relative">
+                                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-blue-500 shadow-xl">
+                                        <img
+                                            src={
+                                                avatarPath
+                                                    ? `https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/avatar/${avatarPath}`
+                                                    : "/default-avatar.jpg"
+                                            }
+                                            alt={username}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Profile Info */}
+                                <div className="flex-1 text-center sm:text-left">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                                        <h1 className="text-3xl sm:text-4xl font-bold">{username}</h1>
+                                        <div className="flex items-center justify-center sm:justify-start gap-1">
+                                            <span className="text-2xl text-yellow-400">⭐</span>
+                                            <span className="text-xl font-semibold">{reviewStars}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-gray-400 text-sm mb-4">
+                                        <span className="flex items-center gap-2">
+                                            <span className="font-semibold text-white">{stats.listed}</span> Listed
+                                        </span>
+                                        <span className="flex items-center gap-2">
+                                            <span className="font-semibold text-white">{stats.sold}</span> Sold
+                                        </span>
+                                        <span className="flex items-center gap-2">
+                                            <span className="font-semibold text-white">{stats.bought}</span> Bought
+                                        </span>
+                                        <span>Joined {joinedDate}</span>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
+                                        <button
+                                            onClick={() => setIsWalletOpen(true)}
+                                            className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-lg font-semibold shadow-lg transition-all hover:shadow-green-500/50"
+                                        >
+                                            💰 Wallet: ${walletBalance.toFixed(2)}
+                                        </button>
+                                        <button
+                                            onClick={handleSettings}
+                                            className="px-6 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold shadow-lg transition-all"
+                                        >
+                                            ⚙️ Settings
+                                        </button>
+                                        <button
+                                            onClick={handleShareProfile}
+                                            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold shadow-lg transition-all"
+                                        >
+                                            🔗 Share Profile
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Profile Info */}
-                        <div className="flex-1 text-center sm:text-left">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
-                                <h1 className="text-3xl sm:text-4xl font-bold">{username}</h1>
-                                <div className="flex items-center justify-center sm:justify-start gap-1">
-                                    <span className="text-2xl text-yellow-400">⭐</span>
-                                    <span className="text-xl font-semibold">{reviewStars}</span>
-                                </div>
+                        {/* Tabs */}
+                        <div className="bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border border-gray-700">
+                            {/* Tab Headers */}
+                            <div className="flex border-b border-gray-700">
+                                <button
+                                    onClick={() => setTab("Listings")}
+                                    className={`flex-1 px-6 py-4 font-semibold transition-all ${tab === "Listings"
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                                        }`}
+                                >
+                                    📦 Listings
+                                </button>
+                                <button
+                                    onClick={() => setTab("Reviews")}
+                                    className={`flex-1 px-6 py-4 font-semibold transition-all ${tab === "Reviews"
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                                        }`}
+                                >
+                                    ⭐ Reviews ({reviewData?.length || 0})
+                                </button>
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-gray-400 text-sm mb-4">
-                                <span className="flex items-center gap-2">
-                                    <span className="font-semibold text-white">{stats.listed}</span> Listed
-                                </span>
-                                <span className="flex items-center gap-2">
-                                    <span className="font-semibold text-white">{stats.sold}</span> Sold
-                                </span>
-                                <span className="flex items-center gap-2">
-                                    <span className="font-semibold text-white">{stats.bought}</span> Bought
-                                </span>
-                                <span>Joined {joinedDate}</span>
-                            </div>
+                            {/* Tab Content */}
+                            <div className="p-6">
+                                {tab === "Listings" && (
+                                    itemsLoading ? (
+                                        <div className="flex justify-center py-20">
+                                            <div className="text-gray-400 text-xl">Loading listings...</div>
+                                        </div>
+                                    ) : (
+                                        <Listings items={items} isPublicView={false} />
+                                    )
+                                )}
 
-                            {/* Action Buttons */}
-                            <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
-                                <button
-                                    onClick={() => setIsWalletOpen(true)}
-                                    className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-lg font-semibold shadow-lg transition-all hover:shadow-green-500/50"
-                                >
-                                    💰 Wallet: ${walletBalance.toFixed(2)}
-                                </button>
-                                <button
-                                    onClick={() => setIsSettingsOpen(true)}
-                                    className="px-6 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold shadow-lg transition-all"
-                                >
-                                    ⚙️ Settings
-                                </button>
-                                <button
-                                    onClick={handleShareProfile}
-                                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold shadow-lg transition-all"
-                                >
-                                    🔗 Share Profile
-                                </button>
+                                {tab === "Reviews" && (
+                                    <PopulateReviews reviews={formattedReviews} />
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
+            ): <Spinner size={'10xl'} />}
+        </>
 
-                {/* Tabs */}
-                <div className="bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border border-gray-700">
-                    {/* Tab Headers */}
-                    <div className="flex border-b border-gray-700">
-                        <button
-                            onClick={() => setTab("Listings")}
-                            className={`flex-1 px-6 py-4 font-semibold transition-all ${tab === "Listings"
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                                }`}
-                        >
-                            📦 Listings
-                        </button>
-                        <button
-                            onClick={() => setTab("Reviews")}
-                            className={`flex-1 px-6 py-4 font-semibold transition-all ${tab === "Reviews"
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                                }`}
-                        >
-                            ⭐ Reviews ({reviewData?.length || 0})
-                        </button>
-                    </div>
-
-                    {/* Tab Content */}
-                    <div className="p-6">
-                        {tab === "Listings" && (
-                            itemsLoading ? (
-                                <div className="flex justify-center py-20">
-                                    <div className="text-gray-400 text-xl">Loading listings...</div>
-                                </div>
-                            ) : (
-                                <Listings items={items} isPublicView={false} />
-                            )
-                        )}
-
-                        {tab === "Reviews" && (
-                            <PopulateReviews reviews={formattedReviews} />
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
     );
 }
