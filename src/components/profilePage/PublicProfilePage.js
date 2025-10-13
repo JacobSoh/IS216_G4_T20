@@ -6,26 +6,14 @@ import { useParams } from 'next/navigation';
 import PopulateReviews from './Reviews';
 import Listings from './Listings';
 import Spinner from '@/components/SpinnerComponent';
-
-// Helper function to calculate time ago (EXACT SAME AS PROFILEPAGE)
-function getTimeAgo(dateString) {
-    if (!dateString) return 'Recently';
-    const now = new Date();
-    const past = new Date(dateString);
-    const diffMs = now - past;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffMonths = Math.floor(diffDays / 30);
-    const diffYears = Math.floor(diffDays / 365);
-    if (diffYears > 0) return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
-    if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
-    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    return 'Today';
-}
+import { User } from '@/models/user';
+import { useAlert } from '@/context/AlertContext';
 
 export default function PublicProfile() {
     const params = useParams();
     const username = params.username;
     const supabase = supabaseBrowser();
+    const { showAlert } = useAlert();
 
     // Single state object
     const [state, setState] = useState({
@@ -34,7 +22,6 @@ export default function PublicProfile() {
         loading: true,
         tab: "Listings",
         joinedAgo: '',
-        showCopyToast: false,
         stats: {
             currentListings: 0,
             itemsSold: 0,
@@ -60,35 +47,43 @@ export default function PublicProfile() {
         const fetchAllData = async () => {
             try {
                 // Fetch profile
-                const { data, error } = await supabase
+                const { data: userData, error } = await supabase
                     .from('profile')
                     .select('id, username, first_name, last_name, avatar_bucket, object_path, created_at')
                     .ilike('username', username)
                     .single();
 
-                if (error || !data) {
+                if (error || !userData) {
                     updateState({ notFound: true, loading: false });
                     return;
                 }
 
+                // Create User instance to use getTimeAgo method
+                const user = new User(userData);
+
                 // Get avatar URL
                 let avatarUrl = '';
-                if (data.object_path) {
+                if (userData.object_path) {
                     const { data: avatarData } = supabase.storage
-                        .from(data.avatar_bucket || 'avatar')
-                        .getPublicUrl(data.object_path);
+                        .from(userData.avatar_bucket || 'avatar')
+                        .getPublicUrl(userData.object_path);
                     avatarUrl = avatarData.publicUrl;
                 }
 
-                // Update basic profile info using getTimeAgo function
+                // Calculate joinedAgo using User class method
+                const joinedAgo = user.created_at
+                    ? user.getTimeAgo(user.created_at)
+                    : '';
+
+                // Update basic profile info
                 updateState({
-                    user: data,
+                    user: userData,
                     avatarUrl,
-                    joinedAgo: getTimeAgo(data.created_at)
+                    joinedAgo
                 });
 
                 // Fetch user stats
-                const userId = data.id;
+                const userId = userData.id;
 
                 // Fetch items for current listings
                 const { data: items } = await supabase
@@ -139,12 +134,23 @@ export default function PublicProfile() {
 
     const handleShareProfile = () => {
         const profileUrl = window.location.href;
-        navigator.clipboard.writeText(profileUrl);
-        updateState({ showCopyToast: true });
-        setTimeout(() => updateState({ showCopyToast: false }), 2000);
+        navigator.clipboard.writeText(profileUrl)
+            .then(() => {
+                showAlert({
+                    message: 'Link copied to clipboard!',
+                    variant: 'success',
+                    timeoutMs: 3000
+                });
+            })
+            .catch(() => {
+                showAlert({
+                    message: 'Failed to copy link',
+                    variant: 'error',
+                    timeoutMs: 3000
+                });
+            });
     };
 
-    // Loading state (EXACT SAME AS PROFILEPAGE)
     if (state.loading) {
         return (
             <div style={{
@@ -174,16 +180,6 @@ export default function PublicProfile() {
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', padding: '24px 0' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 16px' }}>
-                {/* Toast */}
-                {state.showCopyToast && (
-                    <div style={{ position: 'fixed', top: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999 }}>
-                        <div style={{ backgroundColor: '#16a34a', color: 'white', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: '8px', border: '2px solid #22c55e' }}>
-                            <span style={{ fontWeight: 'bold' }}>✓</span>
-                            <span style={{ fontWeight: '500' }}>Link copied to clipboard!</span>
-                        </div>
-                    </div>
-                )}
-
                 {/* Profile Header */}
                 <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', border: '1px solid #334155' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

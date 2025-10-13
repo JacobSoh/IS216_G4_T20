@@ -9,12 +9,14 @@ import Listings from './Listings';
 import Settings from '../Settings';
 import WalletModal from '@/components/wallet/WalletModal';
 import { useModal } from "@/context/ModalContext";
+import { useAlert } from '@/context/AlertContext';
 import getUser from "@/hooks/getUserData";
 import Spinner from "@/components/SpinnerComponent";
 
 export default function ProfilePage() {
     const { isAuthed } = useSupabaseAuth();
     const { openModal, closeModal } = useModal();
+    const { showAlert } = useAlert();
     const searchParams = useSearchParams();
     const supabase = supabaseBrowser();
 
@@ -25,7 +27,6 @@ export default function ProfilePage() {
         tab: "Listings",
         avatarUrl: '',
         joinedAgo: '',
-        showCopyToast: false,
         isWalletOpen: false,
         walletBalance: 0,
         stats: {
@@ -155,10 +156,22 @@ export default function ProfilePage() {
     };
 
     const handleShareProfile = () => {
-        const profileUrl = `${window.location.origin}/profile/${state.user.username}`;
-        navigator.clipboard.writeText(profileUrl);
-        updateState({ showCopyToast: true });
-        setTimeout(() => updateState({ showCopyToast: false }), 2000);
+        const profileUrl = `${window.location.origin}/user/${state.user.username}`;
+        navigator.clipboard.writeText(profileUrl)
+            .then(() => {
+                showAlert({
+                    message: 'Link copied to clipboard!',
+                    variant: 'success',
+                    timeoutMs: 3000
+                });
+            })
+            .catch(() => {
+                showAlert({
+                    message: 'Failed to copy link',
+                    variant: 'error',
+                    timeoutMs: 3000
+                });
+            });
     };
 
     if (state.loading) {
@@ -194,16 +207,6 @@ export default function ProfilePage() {
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', padding: '24px 0' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 16px' }}>
-                {/* Toast */}
-                {state.showCopyToast && (
-                    <div style={{ position: 'fixed', top: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999 }}>
-                        <div style={{ backgroundColor: '#16a34a', color: 'white', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: '8px', border: '2px solid #22c55e' }}>
-                            <span style={{ fontWeight: 'bold' }}>✓</span>
-                            <span style={{ fontWeight: '500' }}>Link copied to clipboard!</span>
-                        </div>
-                    </div>
-                )}
-
                 {/* Profile Header */}
                 <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', border: '1px solid #334155' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
