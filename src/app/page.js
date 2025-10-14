@@ -126,29 +126,38 @@ export default function HomePage() {
     return () => stepObserver.disconnect()
   }, [])
 
-  // Scroll lock after user scrolls further into Featured Auctions
-  useEffect(() => {
-    const featured = featuredRef.current
-    if (!featured) return
+ // ---------------------------
+// Keep only Featured Auctions after scrolling past it
+// ---------------------------
+useEffect(() => {
+  const featured = featuredRef.current
+  if (!featured) return
 
-    let hasEnteredFeatured = false
+  const handleScroll = () => {
+    const scrollY = window.scrollY
+    const featuredTop = featured.offsetTop
 
-    const handleScroll = () => {
-      const scrollY = window.scrollY
-      const featuredTop = featured.offsetTop
+    // Once user scrolls into featured section
+    if (scrollY >= featuredTop) {
+      // Remove all sections above Featured Auctions
+      sectionsRef.current.forEach((section) => {
+        if (section && section !== featured) {
+          section.remove()
+        }
+      })
 
-      if (scrollY >= featuredTop) {
-        hasEnteredFeatured = true
-      }
+      // Optionally scroll to top of Featured Auctions
+      window.scrollTo({ top: featured.offsetTop, behavior: "instant" })
 
-      if (hasEnteredFeatured && scrollY < featuredTop) {
-        window.scrollTo({ top: featuredTop, behavior: "instant" })
-      }
+      // Remove the event listener since it's done
+      window.removeEventListener("scroll", handleScroll)
     }
+  }
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+  window.addEventListener("scroll", handleScroll)
+  return () => window.removeEventListener("scroll", handleScroll)
+}, [])
+
 
   // ---------------------------
   // FloatingShapes component
