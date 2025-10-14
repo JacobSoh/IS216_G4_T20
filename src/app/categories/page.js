@@ -4,10 +4,10 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import AuctionCard from "@/components/AuctionCard";
 import AuctionCardSkeleton from "@/components/HomeAuctionSkele";
-import { supabaseBrowser } from "../utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
-export default function FeaturedAuctions() {
-  const [featuredAuctions, setFeaturedAuctions] = useState([]);
+export default function FeaturedCategories() {
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const featuredRef = useRef(null);
 
@@ -18,8 +18,8 @@ export default function FeaturedAuctions() {
         const supabase = supabaseBrowser();
 
         const { data, error } = await supabase
-          .from("auction")
-          .select("aid, name, description, end_time, thumbnail_bucket, object_path");
+          .from("category")
+          .select("category_name, description, thumbnail_bucket, object_path");
 
         if (error) {
           console.error("❌ Supabase error:", error.message);
@@ -27,35 +27,33 @@ export default function FeaturedAuctions() {
         }
 
         if (!data || data.length === 0) {
-          console.warn("⚠️ No auction data found.");
+          console.warn("⚠️ No category data found.");
           return;
         }
 
-        // Map each auction to include the public image URL
+        // Map each category to include the public image URL
         const mapped = await Promise.all(
-          data.map(async (a) => {
+          data.map(async (c) => {
             let publicUrl = null;
 
-            if (a.thumbnail_bucket && a.object_path) {
+            if (c.thumbnail_bucket && c.object_path) {
               const { data: publicData } = supabase
                 .storage
-                .from(a.thumbnail_bucket)
-                .getPublicUrl(a.object_path);
+                .from(c.thumbnail_bucket)
+                .getPublicUrl(c.object_path);
 
               publicUrl = publicData?.publicUrl || null;
             }
 
             return {
-              aid: a.aid,
-              name: a.name,
-              description: a.description,
-              endTime: new Date(a.end_time).toLocaleString(),
+              name: c.category_name,
+              description: c.description,
               picUrl: publicUrl,
             };
           })
         );
 
-        setFeaturedAuctions(mapped);
+        setCategories(mapped);
       } catch (err) {
         console.error("⚠️ Unexpected error:", err);
       } finally {
@@ -74,25 +72,29 @@ export default function FeaturedAuctions() {
       <div className="max-w-7xl mx-auto pb-15 px-6">
         <div className="text-center mb-16">
           <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gray-800">
-            Featured Auctions
+            Categories
           </h2>
           <p className="text-lg text-gray-600">
-            Discover our handpicked selection of premium items available now
+            Browse categories to find items of your interest
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {isLoading
-            ? Array.from({ length: 25 }).map((_, i) => (
+            ? Array.from({ length: 15 }).map((_, i) => (
                 <AuctionCardSkeleton key={i} />
               ))
-            : featuredAuctions.map((a, i) => (
+            : categories.map((cat) => (
                 <Link
-                  key={i}
-                  href={`/auction/${a.aid}`}
+                  key={cat.id}
+                  href={`/category/${cat.id}`}
                   className="block transform transition-transform hover:scale-105 focus:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-300 rounded-lg"
                 >
-                  <AuctionCard {...a} />
+                  <AuctionCard
+                    name={cat.name}
+                    description={cat.description}
+                    picUrl={cat.picUrl}
+                  />
                 </Link>
               ))}
         </div>
@@ -100,3 +102,4 @@ export default function FeaturedAuctions() {
     </section>
   );
 }
+    
