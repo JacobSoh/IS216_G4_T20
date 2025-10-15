@@ -1,9 +1,7 @@
 // HowItWorks.jsx
 export default function HowItWorks() {
   const text = `
-    This page demonstrates a simple JavaScript example.
-    When this component loads, JavaScript runs and displays this text.
-    You can change this text in the code and it will update automatically.
+    This is the how it works page
   `;
 
   return (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 export default function ContactUs() {
   const [formData, setFormData] = useState({
@@ -21,17 +22,31 @@ export default function ContactUs() {
     setIsSubmitting(true);
 
     try {
-      console.log("Form submitted:", formData);
+      // Insert the form data into the 'enquiry' table
+      const { data, error } = await supabaseBrowser()
+        .from("enquiry")
+        .insert([
+          {
+            name: formData.name,
+            email: formData.email,
+            subject: formData.subject,
+            message: formData.message,
+          },
+        ]);
+
+      if (error) throw error;
+
       setSuccess(true);
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (err) {
-      console.error("Error submitting form:", err);
+      console.error("Error submitting enquiry:", err);
       setSuccess(false);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Placeholder members list
   const members = [
     { name: "Member One", github: "#", email: "member1@example.com" },
     { name: "Member Two", github: "#", email: "member2@example.com" },
@@ -49,7 +64,7 @@ export default function ContactUs() {
           <p className="text-lg text-gray-700">Reach out to us for any enquiries or issues</p>
         </div>
 
-        {/* Member Grid */}
+        {/* Members Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {members.map((m, i) => (
             <div key={i} className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition flex flex-col items-center text-center">
