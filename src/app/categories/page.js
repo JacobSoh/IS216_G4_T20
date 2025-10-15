@@ -71,12 +71,12 @@ export default function FeaturedCategories() {
   return (
     <section
       ref={featuredRef}
-      className="min-h-screen relative pt-10 bg-gradient-to-b from-[#fff5e1] to-[#ffefea]"
+      className="min-h-screen relative pt-10 bg-[#0f1419]"
     >
       <div className="max-w-7xl mx-auto pb-15 px-6">
         <div className="text-center mb-16">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gray-800">Categories</h2>
-          <p className="text-lg text-gray-600">Browse categories to find items of your interest</p>
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[#33A1E0]">Categories</h2>
+          <p className="text-lg text-[#33A1E0]">Browse categories to find items of your interest</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">

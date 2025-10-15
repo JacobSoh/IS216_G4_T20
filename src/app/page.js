@@ -189,7 +189,7 @@ useEffect(() => {
         {/* Hero Section */}
         <section
           ref={(el) => (sectionsRef.current[0] = el)}
-          className="relative flex flex-col items-center justify-center min-h-[100vh] overflow-hidden bg-gradient-to-b from-orange-100 via-yellow-50 to-amber-50"
+          className="relative flex flex-col items-center justify-center min-h-[100vh] overflow-hidden bg-gradient-to-b from-[#b8c5d1] to-[#8aa0b0]"
         >
           <FloatingShapes theme="orange" />
           <div
@@ -210,7 +210,7 @@ useEffect(() => {
         {/* How It Works Section */}
         <section
           ref={(el) => (sectionsRef.current[1] = el)}
-          className="relative flex flex-col items-center justify-center min-h-[180vh] overflow-hidden bg-gradient-to-b from-amber-50 via-yellow-100 to-orange-50"
+          className="relative flex flex-col items-center justify-center min-h-[180vh] overflow-hidden bg-gradient-to-b from-[#8aa0b0] to-[#586576]"
         >
           <FloatingShapes theme="yellow" />
           <div
@@ -231,7 +231,7 @@ useEffect(() => {
         {/* Flow Steps Section */}
         <section
           ref={(el) => (sectionsRef.current[2] = el)}
-          className="relative py-32 bg-gradient-to-b from-orange-50 via-amber-50 to-orange-100"
+          className="relative py-32 bg-gradient-to-b from-[#586576] to-[#1f2733]"
         >
           <FloatingShapes theme="beige" />
           <div className="relative z-10 max-w-6xl mx-auto space-y-16">
@@ -252,7 +252,7 @@ useEffect(() => {
         {/* Welcome Section */}
         <section
           ref={(el) => (sectionsRef.current[3] = el)}
-          className="relative flex flex-col items-center justify-center min-h-[100vh] overflow-hidden bg-gradient-to-b from-orange-100 via-orange-50 to-[#fff5e1]"
+          className="relative flex flex-col items-center justify-center min-h-[100vh] overflow-hidden bg-gradient-to-b from-[#1f2733] to-[#0a0f1a]"
         >
           <FloatingShapes theme="welcome" />
           <div
@@ -264,7 +264,7 @@ useEffect(() => {
             <h1 className="text-7xl md:text-8xl font-bold mb-6 text-orange-600 font-serif">
               Welcome!
             </h1>
-            <p className="text-xl md:text-2xl text-gray-700 mb-8">
+            <p className="text-xl md:text-2xl text-orange-700 mb-8">
               Start bidding and winning.
             </p>
           </div>
@@ -272,11 +272,11 @@ useEffect(() => {
 
 
         {/* Featured Auctions Section */}
-        <section ref={featuredRef} className="min-h-screen relative pt-10 bg-gradient-to-b from-[#fff5e1] to-[#ffefea]">
+        <section ref={featuredRef} className="min-h-screen relative pt-10 bg-[#0a0f1a]">
           <div className="max-w-7xl mx-auto pb-15 px-6">
             <div className="text-center mb-16">
-              <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gray-800">Featured Auctions</h2>
-              <p className="text-lg text-gray-600">Discover our handpicked selection of premium items available now</p>
+              <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[#33A1E0]">Featured Auctions</h2>
+              <p className="text-lg text-[#33A1E0]">Discover our handpicked selection of premium items available now</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
