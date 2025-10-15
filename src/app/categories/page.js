@@ -24,7 +24,7 @@ export default function FeaturedCategories() {
         // Fetch all categories from Supabase
         const { data, error } = await supabase
           .from("category")
-          .select("id, category_name, description, thumbnail_bucket, object_path");
+          .select("id, category_name, description, poop_bucket, object_path");
 
         if (error) throw error;
 
@@ -37,10 +37,10 @@ export default function FeaturedCategories() {
         const mapped = await Promise.all(
           data.map(async (c) => {
             let picUrl = null;
-            if (c.thumbnail_bucket && c.object_path) {
+            if (c.poop_bucket && c.object_path) {
               const { data: publicData } = supabase
                 .storage
-                .from(c.thumbnail_bucket)
+                .from(c.poop_bucket)
                 .getPublicUrl(c.object_path);
               picUrl = publicData?.publicUrl || null;
             }
