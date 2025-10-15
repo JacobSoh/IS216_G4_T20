@@ -83,6 +83,7 @@ export default function HomePage() {
             endTime: new Date(a.end_time).toLocaleString(),
             thumbnail: a.thumbnail_bucket,
             picUrl: publicUrl,
+            buttonText:"Enter Auction"
           }
         })
       )
