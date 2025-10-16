@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { useSettingsForm } from '@/hooks/useSettingsForm';
-import { InputControl } from '../sub';
+import { InputControl } from '../../sub';
 
 export default function Settings({ onClose }) {
     const [loading, setLoading] = useState(false);

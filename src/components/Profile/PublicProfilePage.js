@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { useParams } from 'next/navigation';
-import PopulateReviews from './Reviews';
+import PopulateReviews from './Review';
 import Listings from './Listings';
 import Spinner from '@/components/SpinnerComponent';
 import { User } from '@/models/user';

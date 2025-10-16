@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { useParams } from 'next/navigation';
-import PopulateReviews from '@/components/profilePage/Reviews';
-import Listings from '@/components/profilePage/Listings';
+import PopulateReviews from '@/components/Profile/Review';
+import Listings from '@/components/Profile/Listings';
 
 function getTimeAgo(dateString) {
     if (!dateString) return 'Recently';

@@ -20,7 +20,7 @@ export default function Modal({ isOpen, onClose, title, titleClassName, children
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <DialogPanel className="relative w-full max-w-md rounded-lg bg-gray-800 shadow-xl">
+                            <DialogPanel className="relative w-full max-w-md rounded-lg bg-gray-800 shadow-xl overflow-hidden">
                                 <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/10 p-4">
                                     {title && (
                                         <Dialog.Title className={titleClassName ?? "text-base font-semibold text-gray-100"}>
