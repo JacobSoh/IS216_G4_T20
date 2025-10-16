@@ -10,7 +10,8 @@ export default function Spinner({
         sm: "h-4 w-4",
         md: "h-6 w-6",
         lg: "h-8 w-8",
-        '10xl': "h-30 w-30"
+        '10xl': "h-30 w-30",
+        'sssxl': "h-50 w-50"
     };
     const svgClasses = `motion-safe:animate-spin ${sizeMap[size] ?? sizeMap.sm} ${className}`;
 

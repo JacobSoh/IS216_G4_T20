@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { createTopUpPayment } from '@/utils/hitpay/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import getUser from "@/hooks/getUserData";
+import getUser from "@/hooks/getProfile";
 import { InputControl } from '../sub';
 
 export default function WalletModal({ isOpen, onClose }) {
