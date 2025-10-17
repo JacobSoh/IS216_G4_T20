@@ -2,24 +2,38 @@ import { User } from "@/models/user";
 import { axiosBrowserClient } from "@/utils/axios/client";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
-export default async function getProfile() {
-    const sb = supabaseBrowser();
+async function getUserByUsername(username, sb) {
+    const { data: profile, error: profileError } = await sb.from('profile')
+        .select('*')
+        .eq('username', username)
+        .single();
+    if (profileError) {
+        throw new Error("User profile does not exists");
+    };
+    const id = profile.id;
+    return  {'id': id, 'profile': profile};
+}
 
+async function getUserByAuth(sb) {
+    const { data: { user } } = await sb.auth.getUser();
+    const id = user.id;
+    if (!user) {
+        throw new Error("User does not exist");
+    };
+    const { data: profile, error: profileError } = await sb.from('profile')
+        .select('*')
+        .eq('id', id)
+        .single();
+    if (profileError) {
+        throw new Error("User profile does not exists");
+    };
+    return  {'id': id, 'profile': profile, 'user': user};
+}
+
+export default async function getProfile({ username } = {}) {
+    const sb = supabaseBrowser();
     try {
-        const { data: { user } } = await sb.auth.getUser();
-        const id = user.id;
-        
-        if (!user) {
-            throw new Error("User does not exist");
-        };
-        
-        const { data: profile, error: profileError } = await sb.from('profile')
-            .select('*')
-            .eq('id', id)
-            .single();
-        if (profileError) {
-            throw new Error("User profile does not exists");
-        };
+        const {id: id, profile: profile, user: user} =  username ? await getUserByUsername(username, sb) : await getUserByAuth(sb);
 
         const nowIso = new Date().toISOString();
         const { data: item, error: itemError } = await sb.from('item')
@@ -30,7 +44,7 @@ export default async function getProfile() {
                 )
             `))
             .eq('oid', id)
-            .gt('auction.end_time', nowIso); 
+            .gt('auction.end_time', nowIso);
         if (itemError) {
             throw new Error("Unable to retrieve user items");
         };
@@ -42,6 +56,9 @@ export default async function getProfile() {
             throw new Error("Unable to retrieve user's records");
         };
 
+        if (username) {
+            return new User({ id }, profile, item?.length, review[0]);
+        }
         return new User(user, profile, item?.length, review[0]);
 
     } catch (e) {

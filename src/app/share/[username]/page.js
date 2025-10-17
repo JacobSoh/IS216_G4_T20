@@ -7,7 +7,7 @@
 'use client';
 
 import { useEffect, useReducer, useState } from "react";
-import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import {
     Listing,
@@ -26,6 +26,7 @@ import Spinner from "@/components/SpinnerComponent";
 import getProfile from "@/hooks/getProfile";
 import { getAvatarPublicUrl } from '@/hooks/getStorage';
 import Modal from "@/components/ModalComponent";
+import getTimeAgo from "@/utils/getTimeAgo";
 
 const initialState = {
     loading: true,
@@ -49,18 +50,17 @@ const reducer = (s, a) => {
 export default function ProfilePage({ req, ctx }) {
     const { openModal, closeModal } = useModal();
     const { showAlert } = useAlert();
-    const searchParams = useSearchParams();
+    const params = useParams();
     const supabase = supabaseBrowser();
-
     const [profile, setProfile] = useState(null);
     const [avatarUrl, setAvatarUrl] = useState(null);
     const [state, setState] = useReducer(reducer, initialState);
-
+    const username = params.username;
     useEffect(() => {
         const loadProfileData = async () => {
             try {
                 // Load user data
-                const profile = await getProfile();
+                const profile = await getProfile({ username });
                 const avatar_url = await getAvatarPublicUrl(profile);
                 setProfile(profile);
 
@@ -110,7 +110,7 @@ export default function ProfilePage({ req, ctx }) {
             .then(() => {
                 setState({ type: 'FIELD', field: 'loading', value: false });
             }).catch((err) => console.error(err.message));
-    }, [searchParams, supabase]);
+    }, [params, supabase]);
 
     const handleDisplay = (type) => (e) => {
         switch (type) {
@@ -181,38 +181,13 @@ export default function ProfilePage({ req, ctx }) {
                                         {profile?.stats.map(v => (
                                             <Stats key={v.title} {...v} />
                                         ))}
-                                        <span className="text-slate-500 text-xs ml-1">• Joined {profile?.getTimeAgo()}</span>
+                                        <span className="text-slate-500 text-xs ml-1">• Joined {getTimeAgo({ datetime: profile?.created_at })}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex gap-2">
-                                <Options icon='creditcard' bgColor='bg-gradient-to-br from-emerald-500 to-emerald-700 border-emerald-500' onClick={(handleDisplay(1))} text={profile?.wallet_balance} />
                                 <Options icon='link' bgColor='bg-gradient-to-br from-blue-500 to-blue-700 border-blue-500' onClick={(handleDisplay(2))} text='Share' />
-                                <Options icon='gear' bgColor='bg-gradient-to-br from-gray-500 to-gray-700 border-gray-500' onClick={(handleDisplay(3))} text='Edit' />
-                                {/* <button
-                                    onClick={() => setState({ type: "FIELD", field: "isWalletOpen", value: true })}
-                                    className="px-4 py-2 bg-gradient-to-br from-emerald-500 to-emerald-700 text-white border border-emerald-500 rounded-md text-sm font-medium cursor-pointer inline-flex items-center gap-1.5 shadow-md"
-                                >
-                                    <span>💰</span>
-                                    <span>${profile?.walletBalance.toFixed(2)}</span>
-                                </button> */}
-
-                                {/* <button
-                                    onClick={handleShareProfile}
-                                    className="px-4 py-2 bg-blue-600 text-white border border-blue-500 rounded-md text-sm font-medium cursor-pointer inline-flex items-center gap-1.5 shadow-md"
-                                >
-                                    <span>🔗</span>
-                                    <span>Share</span>
-                                </button>
-
-                                <button
-                                    onClick={handleDisplay(3)}
-                                    className="px-4 py-2 bg-slate-600 text-white border border-slate-400 rounded-md text-sm font-medium cursor-pointer inline-flex items-center gap-1.5 shadow-md"
-                                >
-                                    <span>⚙️</span>
-                                    <span>Edit</span>
-                                </button> */}
                             </div>
                         </div>
                     </div>
@@ -222,7 +197,7 @@ export default function ProfilePage({ req, ctx }) {
                             {tabs.map(v => (
                                 <button
                                     key={`tab${v.tab}`}
-                                    className={`flex-1 px-6 py-4 text-sm font-bold cursor-pointer border-b-4 transition-shadow 
+                                    className={`flex-1 px-6 py-4 text-sm font-bold cursor-pointer border-b-4 transition-shadow
                                         ${state.tab === v.tab
                                             ? "bg-slate-800 text-blue-400 border-blue-500 shadow-[0_-2px_10px_rgba(59,130,246,0.2)]"
                                             : "bg-transparent text-slate-400 border-transparent"

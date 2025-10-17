@@ -26,6 +26,7 @@ import Spinner from "@/components/SpinnerComponent";
 import getProfile from "@/hooks/getProfile";
 import { getAvatarPublicUrl } from '@/hooks/getStorage';
 import Modal from "@/components/ModalComponent";
+import getTimeAgo from '@/utils/getTimeAgo';
 
 const initialState = {
 	loading: true,
@@ -185,7 +186,7 @@ export default function ProfilePage() {
 										{profile?.stats.map(v => (
 											<Stats key={v.title} {...v} />
 										))}
-										<span className="text-slate-500 text-xs ml-1">• Joined {profile?.getTimeAgo()}</span>
+										<span className="text-slate-500 text-xs ml-1">• Joined {getTimeAgo({ datetime: profile?.created_at })}</span>
 									</div>
 								</div>
 							</div>
@@ -226,7 +227,7 @@ export default function ProfilePage() {
 							{tabs.map(v => (
 								<button
 									key={`tab${v.tab}`}
-									className={`flex-1 px-6 py-4 text-sm font-bold cursor-pointer border-b-4 transition-shadow 
+									className={`flex-1 px-6 py-4 text-sm font-bold cursor-pointer border-b-4 transition-shadow
                                         ${state.tab === v.tab
 											? "bg-slate-800 text-blue-400 border-blue-500 shadow-[0_-2px_10px_rgba(59,130,246,0.2)]"
 											: "bg-transparent text-slate-400 border-transparent"

@@ -128,18 +128,18 @@ export class User {
     //     return this.#authUser?.created_at;
     // }
 
-    getTimeAgo() {
-        if (!this.created_at) return 'Recently';
-        const now = new Date();
-        const past = new Date(this.created_at);
-        const diffMs = now - past;
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        const diffMonths = Math.floor(diffDays / 30);
-        const diffYears = Math.floor(diffDays / 365);
+    // getTimeAgo() {
+    //     if (!this.created_at) return 'Recently';
+    //     const now = new Date();
+    //     const past = new Date(this.created_at);
+    //     const diffMs = now - past;
+    //     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    //     const diffMonths = Math.floor(diffDays / 30);
+    //     const diffYears = Math.floor(diffDays / 365);
 
-        if (diffYears > 0) return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
-        if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
-        if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-        return 'Today';
-    }
+    //     if (diffYears > 0) return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+    //     if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+    //     if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    //     return 'Today';
+    // }
 }

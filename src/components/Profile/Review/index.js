@@ -3,23 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import Spinner from '@/components/SpinnerComponent';
-
-// Helper function - extract outside component
-function timeAgo(datetime) {
-    if (!datetime) return 'Recently';
-
-    const now = new Date();
-    const past = new Date(datetime);
-    const diffMs = now - past;
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
-    return 'Just now';
-}
+import getTimeAgo from '@/utils/getTimeAgo';
 
 // Review Card Component
 function ReviewCard({ review, supabase }) {
@@ -60,7 +44,7 @@ function ReviewCard({ review, supabase }) {
                     {/* Name & Time */}
                     <div>
                         <div className="font-semibold text-gray-800">{reviewerName}</div>
-                        <div className="text-xs text-gray-500">{timeAgo(review.time_created)}</div>
+                        <div className="text-xs text-gray-500">{getTimeAgo({ datetime: review.time_created })}</div>
                     </div>
                 </div>
 
