@@ -1,0 +1,215 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body */
+body {
+    background: #000;
+    overflow-x: hidden;
+    cursor: none;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Scroll container & sections */
+.scroll-container {
+    scroll-snap-type: y mandatory;
+    overflow-y: scroll;
+    height: 100vh;
+}
+
+.section {
+    min-height: 100vh;
+    scroll-snap-align: start;
+    position: relative;
+}
+
+/* Hero Section */
+.hero-section {
+    background: #000;
+    position: relative;
+    overflow: hidden;
+}
+
+.border-frame {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    border: 2px solid #a855f7;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.6),
+                inset 0 0 20px rgba(168, 85, 247, 0.3);
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.3s ease;
+}
+
+.border-frame.hidden { opacity: 0; }
+
+.background-glow {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.background-glow.hidden { opacity: 0; }
+
+.text-container {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    width: 50%;
+    z-index: 50;
+}
+
+.large-text {
+    font-size: 8vw;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+    margin-bottom: 30px;
+}
+
+.large-text .letter {
+    display: inline-block;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(168, 85, 247, 0.2);
+    text-stroke: 1px rgba(168, 85, 247, 0.2);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.large-text .letter.lit {
+    color: #8b5cf6;
+    text-shadow: 0 0 30px rgba(168, 85, 247, 0.8);
+    -webkit-text-stroke: 2px #a855f7;
+    text-stroke: 2px #a855f7;
+}
+
+.large-text .letter.flicker { animation: flicker 0.15s infinite; }
+
+@keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.small-text {
+    font-size: 1.5vw;
+    font-weight: 300;
+    line-height: 1.6;
+    letter-spacing: 0.05em;
+}
+
+.small-text .letter { 
+    display: inline-block;
+    color: transparent;
+    -webkit-text-stroke: 0.5px rgba(139, 92, 246, 0.15);
+    text-stroke: 0.5px rgba(139, 92, 246, 0.15);
+}
+
+.small-text .letter.lit { color: #8b5cf6; }
+.small-text .letter.flicker { animation: flicker 0.15s infinite; }
+
+.placeholder-right {
+    position: absolute;
+    top: 50%;
+    right: 12%;
+    transform: translateY(-50%);
+    width: 350px;
+    height: 450px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 2px dashed rgba(168, 85, 247, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: rgba(168, 85, 247, 0.5);
+    z-index: 50;
+}
+
+.discover-btn {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 18px 50px;
+    background: transparent;
+    border: 2px solid #a855f7;
+    color: #fff;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.5),
+                inset 0 0 15px rgba(168, 85, 247, 0.2);
+    border-radius: 4px;
+    z-index: 100;
+}
+
+.discover-btn:hover {
+    background: rgba(168, 85, 247, 0.2);
+    box-shadow: 0 0 50px rgba(168, 85, 247, 0.9),
+                inset 0 0 25px rgba(168, 85, 247, 0.4);
+    transform: translateX(-50%) translateY(-3px);
+}
+
+/* Auction Floating Money */
+.money-icon {
+    position: absolute;
+    font-size: 3rem;
+    color: #fbbf24;
+    animation: floatUp 2s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes floatUp {
+    0% { opacity:1; transform: translateY(0) rotate(0deg); }
+    100% { opacity:0; transform: translateY(-200px) rotate(360deg); }
+}
+
+/* Carousel */
+.carousel-container {
+    display: flex;
+    gap: 30px;
+    overflow-x: auto;
+    padding: 20px;
+    scroll-snap-type: x mandatory;
+}
+
+.carousel-item {
+    min-width: 350px;
+    height: 400px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 2px solid rgba(168, 85, 247, 0.3);
+    border-radius: 12px;
+    scroll-snap-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: rgba(168, 85, 247, 0.5);
+}
+
+/* Auction Button */
+.auction-btn {
+    padding: 25px 60px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    border: 3px solid #a855f7;
+    color: #fff;
+    font-size: 1.5rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.6);
+    border-radius: 8px;
+}
+.auction-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 60px rgba(168, 85, 247, 0.9);
+}

@@ -65,3 +65,13 @@
 		--foreground: #ededed;
 	}
 }
+/* 
+remove scroll bar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge */
+}

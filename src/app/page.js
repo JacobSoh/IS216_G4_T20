@@ -1,313 +1,366 @@
+// FuturisticAuction.jsx
+
 'use client'
+import React, { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-import { useEffect, useRef, useState } from "react"
-import { useAlert } from "@/context/AlertContext"
-import FlowStep from "../components/FlowChartStep"
-import AuctionCard from "../components/AuctionCard"
-import AuctionCardSkeleton from "../components/HomeAuctionSkele"
-import { Search, DollarSign, TrendingUp, Trophy, Package } from "lucide-react"
-import Link from "next/link"
-import { supabaseBrowser } from "../utils/supabase/client"
+export default function FuturisticAuction() {
+  const scrollRef = useRef(null);
+  const [auctionClicks, setAuctionClicks] = useState(0);
+  const [faqOpen, setFaqOpen] = useState([false, false, false, false]);
+  const [showFrame, setShowFrame] = useState(true);
+  const [letters, setLetters] = useState({ large: [], small: [] });
+  const cursorRef = useRef(null);
 
-export default function HomePage() {
-  const { showAlert } = useAlert()
 
-  const sectionsRef = useRef([])
-  const stepsRef = useRef([])
-  const featuredRef = useRef(null)
+  const largeText = "VINTAGE\nRETRO\nFINDS";
+  const smallText =
+    "Discover pre-loved treasures\nfrom timeless eras, curated\nfor the modern collector";
 
-  const [visibleSections, setVisibleSections] = useState(new Set())
-  const [visibleSteps, setVisibleSteps] = useState(new Set())
-  const [featuredAuctions, setFeaturedAuctions] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  const steps = [
-    { icon: <Search className="w-12 h-12" />, label: 'Find Auction', description: 'Browse curated premium auctions' },
-    { icon: <DollarSign className="w-12 h-12" />, label: 'Enter Starting Bid', description: 'Register and place your initial bid' },
-    { icon: <TrendingUp className="w-12 h-12" />, label: 'Bid Increment', description: 'Compete in real-time; auto or manual' },
-    { icon: <Trophy className="w-12 h-12" />, label: 'Win Auction', description: 'Highest bid at close secures the item' },
-    { icon: <Package className="w-12 h-12" />, label: 'Collect Item', description: 'Complete payment and receive your treasure' },
-  ]
-
-  // ---------------------------
-  // Flash alert logic
-  // ---------------------------
+  // Split text into letters for animation
   useEffect(() => {
-    const raw = sessionStorage.getItem('flash')
-    if (raw) {
-      const { message, variant = 'info' } = JSON.parse(raw)
-      showAlert({ message, variant })
-      sessionStorage.removeItem('flash')
-    }
-  }, [showAlert])
+    const splitLetters = (text) =>
+      text.split("\n").map((line) => line.split(""));
+    setLetters({ large: splitLetters(largeText), small: splitLetters(smallText) });
+  }, []);
 
-  // ---------------------------
-  // Fetch featured auctions
-  // ---------------------------
+  // Flickering letters
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true)
-      const supabase = supabaseBrowser()
+    const interval = setInterval(() => {
+      const allLetters = document.querySelectorAll(".letter");
+      allLetters.forEach((el) => el.classList.remove("flicker"));
+      const flickers = Array.from(allLetters)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, Math.random() > 0.5 ? 2 : 1);
+      flickers.forEach((el) => {
+        if (!el.classList.contains("lit")) el.classList.add("flicker");
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
-      const { data, error } = await supabase
-        .from("auction")
-        .select("aid, name, description, end_time, thumbnail_bucket, object_path")
-
-      if (error) {
-        console.error("❌ Supabase error:", error.message)
-        setIsLoading(false)
-        return
+  // Custom cursor movement
+  useEffect(() => {
+    const moveCursor = (e) => {
+      if (cursorRef.current) {
+        cursorRef.current.style.left = e.clientX + "px";
+        cursorRef.current.style.top = e.clientY + "px";
       }
+    };
+    window.addEventListener("mousemove", moveCursor);
+    return () => window.removeEventListener("mousemove", moveCursor);
+  }, []);
 
-      if (!data || data.length === 0) {
-        console.log("⚠️ No auction data found.")
-        setIsLoading(false)
-        return
-      }
-
-      const mapped = await Promise.all(
-        data.map(async (a) => {
-          let publicUrl = null
-          if (a.thumbnail_bucket && a.object_path) {
-            const { data: publicData } = supabase
-              .storage
-              .from(a.thumbnail_bucket)
-              .getPublicUrl(a.object_path)
-            publicUrl = publicData?.publicUrl || null
-          }
-
-          return {
-            aid: a.aid,
-            name: a.name,
-            description: a.description,
-            endTime: new Date(a.end_time).toLocaleString(),
-            thumbnail: a.thumbnail_bucket,
-            picUrl: publicUrl,
-            buttonText:"Enter Auction"
-          }
-        })
-      )
-
-      setFeaturedAuctions(mapped)
-      setIsLoading(false)
-    }
-
-    fetchData()
-  }, [])
-
-  // ---------------------------
-  // Section visibility for animations
-  // ---------------------------
+  // Scroll effects for frame visibility
   useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        const idx = sectionsRef.current.indexOf(entry.target)
-        if (entry.isIntersecting && idx >= 0) {
-          setVisibleSections(prev => new Set(prev).add(idx))
-        }
-      })
-    }, { threshold: 0.5 })
+    const handleScroll = () => {
+      const top = scrollRef.current?.scrollTop ?? 0;
+      const heroHeight = window.innerHeight;
+      setShowFrame(top <= heroHeight * 0.3);
+    };
+    const node = scrollRef.current;
+    node?.addEventListener("scroll", handleScroll);
+    return () => node?.removeEventListener("scroll", handleScroll);
+  }, []);
 
-    sectionsRef.current.forEach(el => el && observer.observe(el))
-    return () => observer.disconnect()
-  }, [])
+  const scrollToSection = (index) => {
+    const sections = document.querySelectorAll(".section");
+    sections[index]?.scrollIntoView({ behavior: "smooth" });
+  };
 
-  // Flow step visibility
-  useEffect(() => {
-    const stepObserver = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        const idx = stepsRef.current.indexOf(entry.target)
-        if (idx >= 0 && entry.intersectionRatio >= 0.4) {
-          setVisibleSteps(prev => new Set(prev).add(idx))
-        }
-      })
-    }, { threshold: [0.4, 0.6] })
+  const handleAuctionClick = (e) => {
+    setAuctionClicks((prev) => {
+      const next = prev + 1;
+      const money = document.createElement("div");
+      money.textContent = "💰";
+      money.className = "absolute text-3xl animate-float pointer-events-none";
+      money.style.left = `${e.clientX}px`;
+      money.style.top = `${e.clientY}px`;
+      document.body.appendChild(money);
+      setTimeout(() => money.remove(), 2000);
+      return next;
+    });
+  };
 
-    stepsRef.current.forEach(el => el && stepObserver.observe(el))
-    return () => stepObserver.disconnect()
-  }, [])
+  const toggleFAQ = (index) => {
+    setFaqOpen((prev) =>
+      prev.map((v, i) => (i === index ? !v : v))
+    );
+  };
 
- // ---------------------------
-// Keep only Featured Auctions after scrolling past it
-// ---------------------------
-useEffect(() => {
-  const featured = featuredRef.current
-  if (!featured) return
-
-  const handleScroll = () => {
-    const scrollY = window.scrollY
-    const featuredTop = featured.offsetTop
-
-    // Once user scrolls into featured section
-    if (scrollY >= featuredTop) {
-      // Remove all sections above Featured Auctions
-      sectionsRef.current.forEach((section) => {
-        if (section && section !== featured) {
-          section.remove()
-        }
-      })
-
-      // Optionally scroll to top of Featured Auctions
-      window.scrollTo({ top: featured.offsetTop, behavior: "instant" })
-
-      // Remove the event listener since it's done
-      window.removeEventListener("scroll", handleScroll)
-    }
-  }
-
-  window.addEventListener("scroll", handleScroll)
-  return () => window.removeEventListener("scroll", handleScroll)
-}, [])
-
-
-  // ---------------------------
-  // FloatingShapes component
-  // ---------------------------
-  const FloatingShapes = ({ theme }) => {
-    const colors = {
-      orange: "from-orange-400/10 to-amber-400/10",
-      yellow: "from-yellow-400/10 to-orange-300/10",
-      beige: "from-amber-300/10 to-yellow-200/10",
-      welcome: "from-red-400/10 to-orange-400/10",
-    }
-
-    return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-br ${colors[theme]} rounded-full blur-3xl animate-float`} />
-        <div className={`absolute top-1/2 right-1/4 w-96 h-96 bg-gradient-to-br ${colors[theme]} rounded-full blur-3xl animate-float-delayed`} />
-        <div className={`absolute bottom-1/4 left-1/3 w-80 h-80 bg-gradient-to-br ${colors[theme]} rounded-full blur-3xl animate-float-slow`} />
-      </div>
-    )
-  }
-
-  // ---------------------------
-  // RENDER
-  // ---------------------------
   return (
-    <div className="relative bg-gray-50 text-gray-800">
-      <main>
-        {/* Hero Section */}
-        <section
-          ref={(el) => (sectionsRef.current[0] = el)}
-          className="relative flex flex-col items-center justify-center min-h-[100vh] overflow-hidden bg-gradient-to-b from-[#b8c5d1] to-[#8aa0b0]"
-        >
-          <FloatingShapes theme="orange" />
-          <div
-            className={`relative z-10 px-6 text-center max-w-3xl transition-all duration-700 ${visibleSections.has(0)
-                ? 'opacity-100 translate-y-0 scale-100'
-                : 'opacity-0 translate-y-8 scale-95'
-              }`}
-          >
-            <h1 className="text-7xl md:text-8xl font-bold mb-6 text-orange-900 font-serif">
-              BidHub
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-700 mb-8">
-              Live auctions. Real-time bidding. Premium collectibles from anywhere.
-            </p>
-          </div>
-        </section>
+    <div
+      ref={scrollRef}
+      className="scroll-smooth h-screen overflow-y-scroll snap-y snap-mandatory bg-black text-white relative"
+    >
+      {/* Border frame */}
+      <motion.div
+        animate={{ opacity: showFrame ? 1 : 0 }}
+        transition={{ duration: 0.4 }}
+        className="fixed top-[76px] left-[12px] right-[12px] bottom-[12px] border-2 border-purple-500 pointer-events-none z-[1000] shadow-[0_0_20px_rgba(168,85,247,0.6),inset_0_0_20px_rgba(168,85,247,0.3)] rounded-lg"
+      />
 
-        {/* How It Works Section */}
-        <section
-          ref={(el) => (sectionsRef.current[1] = el)}
-          className="relative flex flex-col items-center justify-center min-h-[180vh] overflow-hidden bg-gradient-to-b from-[#8aa0b0] to-[#586576]"
-        >
-          <FloatingShapes theme="yellow" />
-          <div
-            className={`relative z-10 text-center px-6 max-w-4xl transition-all duration-700 ${visibleSections.has(1)
-                ? 'opacity-100 translate-y-0 scale-100'
-                : 'opacity-0 translate-y-8 scale-95'
-              }`}
-          >
-            <h2 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6">
-              How It Works
-            </h2>
-            <p className="text-xl text-gray-600 mb-10">
-              Follow these simple steps to start winning auctions
-            </p>
-          </div>
-        </section>
+      {/* Glow background */}
+      <motion.div
+        animate={{ opacity: showFrame ? 1 : 0 }}
+        transition={{ duration: 0.4 }}
+        className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.08)_0%,transparent_60%)] pointer-events-none"
+      />
 
-        {/* Flow Steps Section */}
-        <section
-          ref={(el) => (sectionsRef.current[2] = el)}
-          className="relative py-32 bg-gradient-to-b from-[#586576] to-[#1f2733]"
-        >
-          <FloatingShapes theme="beige" />
-          <div className="relative z-10 max-w-6xl mx-auto space-y-16">
-            {steps.map((s, i) => (
-              <div key={i} ref={(el) => (stepsRef.current[i] = el)}>
-                <FlowStep
-                  icon={s.icon}
-                  label={s.label}
-                  description={s.description}
-                  side={i % 2 === 0 ? 'left' : 'right'}
-                  visible={visibleSteps.has(i)}
-                />
+      {/* HERO SECTION */}
+      <section className="section relative h-screen snap-start flex items-center justify-between px-12 pt-24 scroll-mt-24">
+        <div className="absolute top-14 left-12 w-1/2 space-y-8 z-50">
+          {/* Large text */}
+          <div className="large-text text-[8vw] font-bold leading-tight tracking-tight">
+            {letters.large.map((line, li) => (
+              <div key={li}>
+                {line.map((ch, i) => (
+                  <span
+                    key={i}
+                    className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-all duration-200"
+                    style={{
+                      WebkitTextStroke: "1px rgba(168,85,247,0.3)",
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.target;
+                      el.classList.add("lit");
+                      el.classList.remove("flicker");
+                      el.style.color = "#8b5cf6";
+                      el.style.textShadow =
+                        "0 0 30px rgba(168,85,247,0.8)";
+                      setTimeout(() => {
+                        el.classList.remove("lit");
+                        el.style.color = "transparent";
+                        el.style.textShadow = "none";
+                      }, 2000);
+                    }}
+                  >
+                    {ch === " " ? "\u00A0" : ch}
+                  </span>
+                ))}
               </div>
             ))}
           </div>
-        </section>
 
-        {/* Welcome Section */}
-        <section
-          ref={(el) => (sectionsRef.current[3] = el)}
-          className="relative flex flex-col items-center justify-center min-h-[100vh] overflow-hidden bg-gradient-to-b from-[#1f2733] to-[#0a0f1a]"
+          {/* Small text */}
+          <div className="text-[1.5vw] font-light tracking-wide leading-relaxed">
+            {letters.small.map((line, li) => (
+              <div key={li}>
+                {line.map((ch, i) => (
+                  <span
+                    key={i}
+                    className="letter inline-block text-transparent cursor-pointer px-1 -mx-1"
+                    style={{
+                      WebkitTextStroke: "0.5px rgba(139,92,246,0.15)",
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.target;
+                      el.classList.add("lit");
+                      el.classList.remove("flicker");
+                      el.style.color = "#8b5cf6";
+                      setTimeout(() => {
+                        el.classList.remove("lit");
+                        el.style.color = "transparent";
+                      }, 2000);
+                    }}
+                  >
+                    {ch === " " ? "\u00A0" : ch}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="absolute right-[12%] top-1/2 -translate-y-1/2 w-[350px] h-[450px] border-2 border-dashed border-purple-400/40 flex items-center justify-center text-purple-400/60 text-lg">
+          Items Placeholder
+        </div>
+
+        <button
+          onClick={() => scrollToSection(1)}
+          className="absolute bottom-20 left-1/2 -translate-x-1/2 border-2 border-purple-500 text-white px-12 py-4 rounded-md shadow-[0_0_30px_rgba(168,85,247,0.5),inset_0_0_15px_rgba(168,85,247,0.2)] hover:bg-purple-500/20 hover:shadow-[0_0_50px_rgba(168,85,247,0.9),inset_0_0_25px_rgba(168,85,247,0.4)] transition-all duration-500"
         >
-          <FloatingShapes theme="welcome" />
-          <div
-            className={`relative z-10 px-6 text-center max-w-3xl transition-all duration-700 ${visibleSections.has(3)
-                ? 'opacity-100 translate-y-0 scale-100'
-                : 'opacity-0 translate-y-8 scale-95'
-              }`}
-          >
-            <h1 className="text-7xl md:text-8xl font-bold mb-6 text-orange-600 font-serif">
-              Welcome!
-            </h1>
-            <p className="text-xl md:text-2xl text-orange-700 mb-8">
-              Start bidding and winning.
+          DISCOVER →
+        </button>
+      </section>
+
+      {/* SECTION 2 */}
+      <section className="section min-h-screen snap-start bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 flex items-center px-12 relative">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="w-1/2 space-y-8">
+            <h2 className="text-[6vw] font-bold leading-tight text-purple-700">
+              EXPLORE<br />CURATED<br />COLLECTIONS
+            </h2>
+            <p className="text-xl text-purple-800">
+              Every piece tells a story, every item carries history.
+              Discover unique vintage treasures handpicked from around the
+              world.
             </p>
           </div>
-        </section>
+        </div>
+        <div className="absolute bottom-12 right-12 w-[400px] h-[300px] border-2 border-dashed border-purple-700/40 flex items-center justify-center text-purple-700/60">
+          Image Placeholder
+        </div>
+      </section>
 
+      {/* SECTION 3: Carousel */}
+      <section className="section snap-start bg-black text-white px-12 py-30">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl text-purple-500 mb-4">Featured Auctions</h2>
+          <p className="max-w-3xl mx-auto text-purple-400 text-lg">
+            Browse through our carefully curated vintage collections.
+            Each item has been authenticated and preserved to bring you the
+            best quality pieces from different eras.
+          </p>
+        </div>
 
-        {/* Featured Auctions Section */}
-        <section ref={featuredRef} className="min-h-screen relative pt-10 bg-[#0a0f1a]">
-          <div className="max-w-7xl mx-auto pb-15 px-6">
-            <div className="text-center mb-16">
-              <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[#33A1E0]">Featured Auctions</h2>
-              <p className="text-lg text-[#33A1E0]">Discover our handpicked selection of premium items available now</p>
+        <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <div
+              key={n}
+              className="min-w-[350px] h-[400px] flex items-center justify-center border-2 border-purple-400/30 rounded-xl bg-purple-400/10 text-purple-400/70 text-lg snap-center"
+            >
+              Collection {n}
             </div>
+          ))}
+        </div>
+      </section>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {isLoading
-                ? Array.from({ length: 25 }).map((_, i) => <AuctionCardSkeleton key={i} />)
-                : featuredAuctions.map((a, i) => (
-                  <Link
-                    key={i}
-                    href={`/auction/${a.aid}`}
-                    className="block transform transition-transform hover:scale-105 focus:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-300 rounded-lg"
+      {/* SECTION 4: Auction */}
+      <section
+        id="auction"
+        className="min-h-screen snap-start bg-gradient-to-b from-[#1a0033] to-black flex flex-col items-center justify-center relative overflow-hidden"
+      >
+        <h2 className="text-5xl text-purple-400 mb-8 text-center">LIVE AUCTION</h2>
+        <p className="text-2xl mb-8">
+          Clicks: {auctionClicks} / 5
+        </p>
+        <button
+          onClick={handleAuctionClick}
+          disabled={auctionClicks >= 5}
+          className={`px-16 py-6 text-2xl rounded-lg border-4 transition-all duration-300 ${auctionClicks >= 5
+              ? "bg-gradient-to-r from-green-500 to-emerald-400 border-green-400 shadow-[0_0_40px_rgba(16,185,129,0.6)]"
+              : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105"
+            }`}
+        >
+          {auctionClicks >= 5 ? "BID PLACED ✓" : "PLACE BID"}
+        </button>
+      </section>
+
+
+      {/* SECTION 5: About + FAQ */}
+      <section className="section snap-start bg-black text-white px-12 pt-20 pb-30 flex flex-col lg:flex-row gap-12 max-w-6xl mx-auto">
+        <div className="flex-1">
+          <h2 className="text-3xl text-purple-500 mb-6">About Us</h2>
+          <p className="text-purple-200 leading-relaxed text-lg">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+            eiusmod tempor incididunt ut labore et dolore magna aliqua...
+            <br />
+            <br />
+            Duis aute irure dolor in reprehenderit in voluptate velit esse
+            cillum dolore eu fugiat nulla pariatur...
+          </p>
+        </div>
+        <div className="flex-1">
+          <h2 className="text-3xl text-purple-500 mb-6">FAQ</h2>
+          {[
+            "How does bidding work?",
+            "Are items authenticated?",
+            "What payment methods do you accept?",
+            "Do you ship internationally?",
+          ].map((q, i) => (
+            <div
+              key={i}
+              className="border border-purple-400/40 rounded-lg mb-4 overflow-hidden"
+            >
+              <button
+                onClick={() => toggleFAQ(i)}
+                className="w-full flex justify-between items-center px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all"
+              >
+                {q}
+                <span
+                  className={`transform transition-transform ${faqOpen[i] ? "rotate-180" : ""
+                    }`}
+                >
+                  ▼
+                </span>
+              </button>
+              <AnimatePresence>
+                {faqOpen[i] && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="px-6 py-4 text-purple-300 bg-black/50"
                   >
-                    <AuctionCard {...a} />
-                  </Link>
-                ))
-              }
+                    This is the answer to "{q}". Lorem ipsum dolor sit amet,
+                    consectetur adipiscing elit.
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          </div>
-        </section>
-      </main>
+          ))}
+        </div>
+      </section>
+
+      {/* Custom Cursor */}
+      <div
+        ref={cursorRef}
+        className="fixed z-[9999] pointer-events-none transform -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]"
+      >
+        <svg
+          width="40"
+          height="40"
+          viewBox="0 0 100 100"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            x="25"
+            y="20"
+            width="50"
+            height="60"
+            rx="3"
+            fill="none"
+            stroke="#a855f7"
+            strokeWidth="2.5"
+          />
+          <line
+            x1="25"
+            y1="35"
+            x2="75"
+            y2="35"
+            stroke="#ffffff"
+            strokeWidth="1.5"
+          />
+          <circle cx="40" cy="50" r="3" fill="#a855f7" />
+          <circle cx="60" cy="50" r="3" fill="#a855f7" />
+          <path
+            d="M35 65 Q50 72 65 65"
+            stroke="#ffffff"
+            strokeWidth="1.5"
+            fill="none"
+          />
+        </svg>
+      </div>
 
       {/* Floating animation */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translate(0,0) scale(1); }
-          33% { transform: translate(30px,-30px) scale(1.1); }
-          66% { transform: translate(-20px,20px) scale(0.9); }
+      <style>{`
+        .animate-float {
+          animation: floatUp 2s ease-out forwards;
         }
-        .animate-float { animation: float 20s ease-in-out infinite; }
-        .animate-float-delayed { animation: float 25s ease-in-out infinite; animation-delay: -5s; }
-        .animate-float-slow { animation: float 30s ease-in-out infinite; animation-delay: -10s; }
+        @keyframes floatUp {
+          0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+          100% { opacity: 0; transform: translateY(-200px) rotate(360deg); }
+        }
+        .flicker {
+          animation: flicker 0.15s infinite;
+        }
+        @keyframes flicker {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
       `}</style>
     </div>
-  )
+  );
 }
