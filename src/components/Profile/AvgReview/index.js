@@ -9,7 +9,6 @@ export default function AvgReview({ number }) {
   // choose whether to allow any fraction or snap to halves
   const rating =  Math.round(raw * 2) / 2;
 
-
   return (
     <div className="flex items-center gap-1 py-1 rounded-full">
       <ul className="flex items-center gap-0.5">

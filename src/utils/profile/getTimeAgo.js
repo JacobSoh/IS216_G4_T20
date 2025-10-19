@@ -1,5 +1,5 @@
 export default function getTimeAgo({ datetime } = {}) {
-    if (!datetime) return 'uh oh';
+    if (!datetime) return 'Just now';
 
     const now = new Date();
     const past = new Date(datetime);
@@ -12,11 +12,10 @@ export default function getTimeAgo({ datetime } = {}) {
     const diffMonths = Math.abs(monthsNow - monthsPast);
     const diffYears = Math.floor(diffDays / 365);
 
-    console.log(past);
     if (diffYears > 0) return `${diffYears} day${diffYears > 1 ? 's' : ''} ago`;
     if (diffMonths > 0) return `${diffMonths} day${diffMonths > 1 ? 's' : ''} ago`;
     if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
     if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
     if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
-    return 'Just now uh oh';
+    return 'Just now';
 }

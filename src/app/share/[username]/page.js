@@ -26,7 +26,7 @@ import Spinner from "@/components/SpinnerComponent";
 import getProfile from "@/hooks/getProfile";
 import { getAvatarPublicUrl } from '@/hooks/getStorage';
 import Modal from "@/components/ModalComponent";
-import getTimeAgo from "@/utils/getTimeAgo";
+import getTimeAgo from "@/utils/profile/getTimeAgo";
 
 const initialState = {
     loading: true,

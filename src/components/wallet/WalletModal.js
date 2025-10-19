@@ -45,16 +45,7 @@ export default function WalletModal({
 
     const quickAmounts = [10, 50, 100, 200, 500];
 
-    // useEffect(() => {
-    //     if (isAuthed) {
-    //         supabase.auth.getSession().then(({ data: { session } }) => {
-    //             setSession(session);
-    //         });
-    //     }
-    // }, [isAuthed, supabase]);
-
     useEffect(() => {
-        // if (!session?.user?.id) return;
 
         const fetchWalletData = async () => {
             const sb = supabaseBrowser();
@@ -63,7 +54,7 @@ export default function WalletModal({
             setWallet({ type: 'FIELD', field: 'wallet_balance', value: profile?.wallet_balance || 0 });
             setWallet({ type: 'FIELD', field: 'wallet_held', value: profile?.wallet_held || 0 });
 
-            
+
 
             const { data: txData } = await sb
                 .from('wallet_transaction')
@@ -71,7 +62,7 @@ export default function WalletModal({
                 .eq('uid', profile.id)
                 .order('created_at', { ascending: false })
                 .limit(10);
-            
+
             if (txData) {
                 setTransactions(txData);
             }
@@ -83,7 +74,6 @@ export default function WalletModal({
     }, []);
 
     const handleTopUp = async (amount) => {
-        // if (!session) return;
 
         setTopUpLoading(true);
         setError(null);
@@ -168,9 +158,6 @@ export default function WalletModal({
         }
     };
 
-    // if (!isOpen) return null;
-
-    // REST OF YOUR JSX STAYS THE SAME...
     return (
         <div className="bg-gray-800 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             {/* Tabs */}
@@ -220,7 +207,7 @@ export default function WalletModal({
 
                 {tab === 'balance' && (
                     <div>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-center">
                             <div className="bg-gray-700 rounded-lg p-4">
                                 <p className="text-gray-400 text-sm mb-1">Available Balance</p>
                                 <p className="text-2xl font-bold text-green-400">
