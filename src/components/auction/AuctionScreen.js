@@ -452,7 +452,7 @@ function ModalAuctionCard({ lotData, onClose }) {
           {auctionName}
         </h3>
         <p className="text-lg md:text-xl max-w-2xl" style={{ color: COLORS.lightPurple }}>
-          The auction has officially concluded. We appreciate your participation and look forward to seeing you at the next event.
+          No items left to auction. Thank you for joining us!
         </p>
       </div>
     )

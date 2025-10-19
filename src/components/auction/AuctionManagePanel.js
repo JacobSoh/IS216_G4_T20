@@ -307,12 +307,9 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
         isRunning: remaining > 0
       }))
 
-      // Auto-close when timer hits 0 if item has bids
+      // Auto-close when timer hits 0 (regardless of bids)
       if (remaining <= 0) {
-        const itemBids = bidHistory.filter(bid => bid.iid === activeItemId)
-        if (itemBids.length > 0) {
-          closeItemSale({ iid: activeItemId }) // auto-close via timer
-        }
+        closeItemSale({ iid: activeItemId }) // auto-close via timer
         if (timerIntervalRef.current) {
           clearInterval(timerIntervalRef.current)
           timerIntervalRef.current = null

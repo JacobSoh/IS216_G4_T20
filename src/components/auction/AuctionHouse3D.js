@@ -377,7 +377,7 @@ function AuctioneerSpeechBubble({ message, visible }) {
           style={{
             width: '100%',
             height: '100%',
-            padding: '16px 20px',
+            padding: '24px 32px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1491,6 +1491,7 @@ export default function AuctionHouse3D({
   const [lotItems, setLotItems] = useState(initialLiveData?.items ?? [])
   const [bidAmount, setBidAmount] = useState('')
   const [bidFeedback, setBidFeedback] = useState(null)
+  const [bidValidationError, setBidValidationError] = useState(null)
   const [isBidding, setIsBidding] = useState(false)
   const [nowTs, setNowTs] = useState(() => Date.now())
   const {
@@ -1682,6 +1683,12 @@ useEffect(() => {
 }, [chatFeedback])
 
 useEffect(() => {
+  if (!bidValidationError) return undefined
+  const id = window.setTimeout(() => setBidValidationError(null), 4000)
+  return () => window.clearTimeout(id)
+}, [bidValidationError])
+
+useEffect(() => {
   if (chatMessagesEndRef.current) {
     chatMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }
@@ -1751,10 +1758,22 @@ useEffect(() => {
 
   const handleBidSubmit = async () => {
     if (!aid || !currentLot.activeItem?.iid) return
+
+    // Clear previous validation error
+    setBidValidationError(null)
+
     const parsedAmount = Number(bidAmount)
     const minimumRequired = currentLot.nextBidMinimum ?? currentLot.minBid ?? 0
-    if (Number.isNaN(parsedAmount) || parsedAmount < minimumRequired) {
-      setBidFeedback(`Enter at least $${minimumRequired.toFixed(2)}`)
+
+    // Validation: Check if it's a valid number
+    if (Number.isNaN(parsedAmount) || bidAmount.trim() === '') {
+      setBidValidationError('Please enter a valid number')
+      return
+    }
+
+    // Validation: Check if it meets minimum requirement
+    if (parsedAmount < minimumRequired) {
+      setBidValidationError(`Bid must be at least $${minimumRequired.toFixed(2)}`)
       return
     }
 
@@ -1821,12 +1840,13 @@ useEffect(() => {
         )
       )
       setBidFeedback('Bid placed successfully')
+      setBidValidationError(null) // Clear any validation errors
       setConfettiTrigger(Date.now()) // Trigger confetti explosion
       setBidAnnouncement({
         message: `The bid for ${currentLot.name} has increased to $${parsedAmount.toLocaleString()}!!`,
         timestamp: Date.now()
       })
-      setBidAmount(nextRequired.toFixed(2))
+      setBidAmount('') // Clear the input so user can enter fresh
       refresh?.()
     } catch (error) {
       setBidFeedback(error?.message ?? 'Unable to place bid')
@@ -1882,13 +1902,13 @@ useEffect(() => {
   const isAfterEnd = auctionEnd ? nowTs > auctionEnd.getTime() : false
   const chatParticipantCount = chatMessages.length
 
+  // Clear validation error when bid panel opens
   useEffect(() => {
-    if (!isBidPanelOpen) return undefined
-    if (!bidAmount) {
-      setBidAmount(nextBidMinimum.toFixed(2))
+    if (isBidPanelOpen) {
+      setBidValidationError(null)
+      setBidFeedback(null)
     }
-    return undefined
-  }, [isBidPanelOpen, nextBidMinimum, bidAmount])
+  }, [isBidPanelOpen])
 
   if (isLoading) {
     return (
@@ -2106,15 +2126,27 @@ useEffect(() => {
                       type="number"
                       inputMode="decimal"
                       step={bidIncrementValue}
-                      min={nextBidMinimum}
                       value={bidAmount}
-                      onChange={(event) => setBidAmount(event.target.value)}
+                      onChange={(event) => {
+                        setBidAmount(event.target.value)
+                        // Clear validation error when user types
+                        if (bidValidationError) {
+                          setBidValidationError(null)
+                        }
+                      }}
                       placeholder={`Min: $${nextBidMinimum.toFixed(2)}`}
                       className="w-full px-3 md:px-4 py-2 md:py-3 bg-black/60 border border-[#7209B7]/40 rounded-lg text-white text-sm md:text-base focus:outline-none focus:border-[#7209B7] focus:shadow-[0_0_10px_rgba(176,38,255,0.3)]"
                     />
-                    <p className="mt-2 text-[11px] md:text-xs text-purple-300">
-                      Enter in increments of ${bidIncrementValue.toFixed(2)}.
-                    </p>
+                    {bidValidationError && (
+                      <p className="mt-2 text-[11px] md:text-xs text-red-400">
+                        {bidValidationError}
+                      </p>
+                    )}
+                    {!bidValidationError && (
+                      <p className="mt-2 text-[11px] md:text-xs text-purple-300">
+                        Enter in increments of ${bidIncrementValue.toFixed(2)}.
+                      </p>
+                    )}
                   </div>
 
                   {/* Place Bid Button */}
