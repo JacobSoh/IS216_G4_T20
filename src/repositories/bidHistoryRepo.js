@@ -114,3 +114,17 @@ export async function getBidCountByAuction(aid) {
   if (error) throw error
   return count ?? 0
 }
+
+export async function deleteBidHistoryByAuction(aid) {
+  const sb = supabaseServer()
+  const { error } = await (
+    await sb
+  )
+    .from('bid_history')
+    .delete()
+    .eq('aid', aid)
+
+  if (error) throw error
+
+  return true
+}

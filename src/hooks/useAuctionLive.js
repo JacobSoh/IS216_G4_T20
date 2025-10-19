@@ -162,6 +162,7 @@ export function useAuctionLive(aid, initialData) {
     snapshot,
     isFetching,
     error,
-    refresh: fetchLive
+    refresh: fetchLive,
+    setSnapshot
   }
 }

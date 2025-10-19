@@ -89,3 +89,16 @@ export async function isItemSold(iid) {
   if (error) throw error
   return data !== null
 }
+
+export async function deleteItemsSoldByAuction(aid) {
+  const sb = supabaseServer()
+  const { error } = await (
+    await sb
+  )
+    .from('items_sold')
+    .delete()
+    .eq('aid', aid)
+
+  if (error) throw error
+  return true
+}

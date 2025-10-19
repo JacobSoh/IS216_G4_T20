@@ -7,7 +7,8 @@ import {
   retrieveAuctionById,
   upAuctionById,
   delAuctionById,
-  updateAuctionTimer
+  updateAuctionTimer,
+  closeAuctionRecord
 } from '@/repositories/auctionRepo'
 import { retrieveItemsByAuction, retrieveItemById, markItemAsSold } from '@/repositories/itemRepo'
 import { retrieveAuctionChats, insertAuctionChat } from '@/repositories/auctionChatRepo'
@@ -70,25 +71,47 @@ function enhanceItemRecord(item, bidsMap) {
 
 function deriveActiveItem(items = []) {
   if (items.length === 0) return { active: null, next: null }
+
+  // Consider only items that currently have an active bid entry (lot is live)
+  const candidates = items.filter((item) => Boolean(item.current_bid) && item.sold !== true)
   let active = null
-  items.forEach((item, index) => {
-    if (!active) {
-      active = item
-      return
+
+  if (candidates.length > 0) {
+    active = candidates.reduce((latest, item) => {
+      if (!latest) return item
+      const latestTimestamp = latest.current_bid?.bid_datetime
+        ? new Date(latest.current_bid.bid_datetime).getTime()
+        : 0
+      const candidateTimestamp = item.current_bid?.bid_datetime
+        ? new Date(item.current_bid.bid_datetime).getTime()
+        : 0
+      return candidateTimestamp > latestTimestamp ? item : latest
+    }, null)
+  }
+
+  if (!active) {
+    const nextUnsold = items.find((item) => item.sold !== true) ?? null
+    return {
+      active: null,
+      next: nextUnsold
     }
-    const activeTimestamp = active.current_bid?.bid_datetime
-      ? new Date(active.current_bid.bid_datetime).getTime()
-      : 0
-    const candidateTimestamp = item.current_bid?.bid_datetime
-      ? new Date(item.current_bid.bid_datetime).getTime()
-      : 0
-    if (candidateTimestamp > activeTimestamp) {
-      active = item
-    }
-  })
-  if (!active) active = items[0]
+  }
+
   const activeIndex = items.findIndex((item) => item.iid === active.iid)
-  const next = activeIndex >= 0 && activeIndex + 1 < items.length ? items[activeIndex + 1] : null
+  let next = null
+  if (activeIndex >= 0) {
+    for (let idx = activeIndex + 1; idx < items.length; idx += 1) {
+      const candidate = items[idx]
+      if (candidate?.sold !== true) {
+        next = candidate
+        break
+      }
+    }
+  }
+  if (!next) {
+    next = items.find((item) => item.sold !== true && item.iid !== active.iid) ?? null
+  }
+
   return { active, next }
 }
 
@@ -181,7 +204,7 @@ export async function setActiveAuctionItem({ aid, iid, actorId, currentPrice }) 
     aid,
     iid,
     oid: auctionRecord.oid,
-    uid: actorId,
+    uid: null,
     current_price: price,
     bid_datetime: new Date().toISOString()
   }
@@ -288,7 +311,11 @@ export async function closeItemSale({ aid, iid, actorId }) {
 
   // Get current bid
   const currentBid = await retrieveCurrentBidByItem(iid)
-  const hasBids = Boolean(currentBid && currentBid.uid)
+  const hasBids = Boolean(
+    currentBid &&
+    currentBid.uid &&
+    currentBid.uid !== auctionRecord.oid
+  )
 
   // If there are bids, log to items_sold table
   if (hasBids) {
@@ -304,7 +331,7 @@ export async function closeItemSale({ aid, iid, actorId }) {
   }
 
   // Mark item as sold in items table (whether or not there are bids)
-  await markItemAsSold(iid)
+  await markItemAsSold(iid, { sold: true })
 
   // Clear the countdown timer
   await updateAuctionTimer(aid, {
@@ -367,5 +394,23 @@ export async function adjustAuctionTimer({ aid, durationSeconds, actorId }) {
     success: true,
     timer_started_at: new Date().toISOString(),
     timer_duration_seconds: duration
+  }
+}
+
+export async function closeAuction({ aid, actorId }) {
+  const auctionRecord = await retrieveAuctionById(aid)
+  if (!auctionRecord) {
+    throw new Error('Auction not found')
+  }
+  if (auctionRecord.oid !== actorId) {
+    throw new Error('Only the auction owner can close this auction')
+  }
+
+  const closedAt = new Date().toISOString()
+  await closeAuctionRecord(aid, { end_time: closedAt })
+
+  return {
+    success: true,
+    closedAt
   }
 }

@@ -24,48 +24,268 @@ const formatNumber = (value) => {
 const pad = (value) => String(Math.max(0, Math.floor(value))).padStart(2, '0')
 
 export const buildScreenLot = (currentLot = {}, nextItem = null, itemTimerSeconds = null) => {
-  const lotLabel = currentLot?.id ? `Lot #${currentLot.id}` : 'Lot TBD'
-  const imageUrl = currentLot?.imageUrl ?? currentLot?.activeItem?.imageUrl ?? PLACEHOLDER_IMAGE
-  const hasBid = Boolean(currentLot?.hasBid)
-  const bidIncrement = Number.isFinite(Number(currentLot?.bidIncrement))
-    ? Number(currentLot.bidIncrement)
-    : 0.01
-  const currentBidValue = Number(currentLot?.currentBid ?? currentLot?.displayPriceValue ?? 0)
-  const priceLabel = 'Current Bid'
-  const priceValue = formatNumber(currentBidValue)
-  const minBidLabel = 'Minimum Bid'
-  const minBidValue = formatNumber(currentLot?.minBid ?? currentLot?.min_bid ?? 0)
-  const biddersLabel = `${formatNumber(currentLot?.bidders)} active bidders`
-  const nextLotTitle = nextItem?.title ?? 'Preview coming soon'
-  const nextLotImage = nextItem?.imageUrl ?? PLACEHOLDER_IMAGE
+  const isAwaitingStart = currentLot?.status === 'awaiting_start'
+  const isAuctionComplete = currentLot?.status === 'completed'
+  const awaitingMessage =
+    currentLot?.awaitingMessage ?? 'Please stay seated - the auctioneer will open the first lot shortly.'
+  const previewItem = isAwaitingStart
+    ? currentLot?.previewItem ?? nextItem
+    : currentLot?.activeItem ?? null
 
-  // Format item timer
-  const itemTimerDisplay = itemTimerSeconds !== null
+  let lotLabel
+  if (isAuctionComplete) {
+    lotLabel = 'Auction Complete'
+  } else if (isAwaitingStart) {
+    lotLabel = 'Awaiting First Lot'
+  } else if (currentLot?.id) {
+    lotLabel = `Lot #${currentLot.id}`
+  } else {
+    lotLabel = 'Lot TBD'
+  }
+
+  const resolvedImage =
+    currentLot?.imageUrl ??
+    previewItem?.imageUrl ??
+    currentLot?.activeItem?.imageUrl ??
+    PLACEHOLDER_IMAGE
+
+  const bidIncrementSource = isAwaitingStart
+    ? previewItem?.bid_increment ?? currentLot?.bidIncrement
+    : currentLot?.bidIncrement
+  const bidIncrement = Number.isFinite(Number(bidIncrementSource))
+    ? Number(bidIncrementSource)
+    : 0.01
+
+  const baseMinBid = isAwaitingStart
+    ? previewItem?.min_bid ?? currentLot?.minBid ?? 0
+    : currentLot?.minBid ?? currentLot?.min_bid ?? 0
+  const currentBidValue = isAwaitingStart
+    ? Number(baseMinBid)
+    : Number(currentLot?.currentBid ?? currentLot?.displayPriceValue ?? 0)
+
+  let priceLabel
+  let priceValue
+  let minBidLabel
+  let minBidValue
+  let biddersLabel
+
+  if (isAuctionComplete) {
+    priceLabel = 'Status'
+    priceValue = 'Closed'
+    minBidLabel = 'Finale'
+    minBidValue = 'All lots concluded'
+    biddersLabel = 'Auction has ended'
+  } else {
+    priceLabel = isAwaitingStart ? 'Starting Bid' : 'Current Bid'
+    priceValue = formatNumber(currentBidValue)
+    minBidLabel = isAwaitingStart ? 'Opening Bid' : 'Minimum Bid'
+    minBidValue = formatNumber(baseMinBid)
+    biddersLabel = isAwaitingStart
+      ? 'Host preparing the auction'
+      : `${formatNumber(currentLot?.bidders)} active bidders`
+  }
+
+  const itemTimerDisplay = !isAwaitingStart && !isAuctionComplete && itemTimerSeconds !== null
     ? `${pad(Math.floor(itemTimerSeconds / 60))}:${pad(itemTimerSeconds % 60)}`
     : null
+
+  const timeRemaining = isAuctionComplete
+    ? 'Auction closed'
+    : isAwaitingStart
+      ? 'Awaiting host'
+      : currentLot?.timeRemaining ?? '--:--:--'
+
+  const resolvedNextItem = isAwaitingStart ? currentLot?.nextItem ?? null : nextItem
+  let nextLotTitle
+  let hasFollowingLot = false
+
+  if (isAuctionComplete) {
+    nextLotTitle = null
+    hasFollowingLot = false
+  } else if (isAwaitingStart) {
+    nextLotTitle = resolvedNextItem?.title ?? null
+    hasFollowingLot = Boolean(resolvedNextItem)
+  } else if (currentLot?.hasNextLot) {
+    nextLotTitle = resolvedNextItem?.title ?? 'Preview coming soon'
+    hasFollowingLot = true
+  } else {
+    nextLotTitle = 'End Of Auction'
+    hasFollowingLot = true
+  }
+
+  const nextLotImage = resolvedNextItem?.imageUrl ?? null
+  const nextBidMinimum = isAwaitingStart
+    ? Number(baseMinBid) + bidIncrement
+    : currentLot?.nextBidMinimum ?? currentBidValue + bidIncrement
+
+  const previewOpeningBid = formatNumber(Number(baseMinBid))
+  const previewBidIncrement = formatNumber(Number(bidIncrement))
+  const previewTitle = previewItem?.title ?? null
+  const previewImage = previewItem?.imageUrl ?? PLACEHOLDER_IMAGE
 
   return {
     lotLabel,
     auctionName: currentLot?.auctionName || 'Grand Evening Sale',
-    imageUrl,
-    timeRemaining: currentLot?.timeRemaining ?? '--:--:--',
+    imageUrl: resolvedImage,
+    timeRemaining,
     itemTimer: itemTimerDisplay,
     priceLabel,
     priceValue,
     minBidLabel,
     minBidValue,
     biddersLabel,
-    title: currentLot?.name ?? 'Upcoming lot',
+    title: isAuctionComplete
+      ? 'No items left'
+      : isAwaitingStart
+        ? awaitingMessage
+        : currentLot?.name ?? 'Upcoming lot',
     nextLotTitle,
     nextLotImage,
     currentBidRaw: currentBidValue,
-    timeRemainingRaw: currentLot?.timeRemaining ?? '--:--:--',
+    timeRemainingRaw: timeRemaining,
     bidIncrement,
-    nextBidMinimum: currentLot?.nextBidMinimum ?? currentBidValue + bidIncrement
+    nextBidMinimum,
+    isAwaitingStart,
+    isAuctionComplete,
+    awaitingMessage,
+    previewTitle,
+    previewImage,
+    previewOpeningBid,
+    previewBidIncrement,
+    hasFollowingLot,
+    hasNextLot: currentLot?.hasNextLot ?? false
   }
 }
 
 function StageAuctionCard({ lotData, onClick }) {
+  if (lotData.isAuctionComplete) {
+    const { auctionName, lotLabel } = lotData
+    return (
+      <div
+        onClick={onClick}
+        className="w-[820px] h-[460px] bg-black/90 border-2 rounded-[18px] p-[24px] font-sans text-slate-100 flex flex-col gap-6 cursor-pointer pointer-events-auto select-none items-center justify-center text-center"
+        style={{
+          borderColor: `${COLORS.richPurple}40`,
+          boxShadow: `0 25px 60px ${COLORS.richPurple}30`
+        }}
+      >
+        <div>
+          <span className="text-xs tracking-[0.18em] uppercase block mb-3" style={{ color: COLORS.richPurple }}>
+            {lotLabel}
+          </span>
+          <h2 className="text-[26px] font-bold mb-2" style={{ color: COLORS.warmCream }}>
+            {auctionName}
+          </h2>
+          <p className="text-lg mb-0" style={{ color: COLORS.lightPurple }}>
+            No items left to auction. Thank you for joining us!
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (lotData.isAwaitingStart) {
+    const {
+      auctionName,
+      awaitingMessage,
+      previewTitle,
+      previewImage,
+      previewOpeningBid,
+      previewBidIncrement,
+      nextLotTitle,
+      nextLotImage,
+      lotLabel
+    } = lotData
+
+    return (
+      <div
+        onClick={onClick}
+        className="w-[820px] h-[460px] bg-black/90 border-2 rounded-[18px] p-[18px] font-sans text-slate-100 flex flex-col gap-4 cursor-pointer pointer-events-auto select-none"
+        style={{
+          borderColor: `${COLORS.richPurple}40`,
+          boxShadow: `0 25px 60px ${COLORS.richPurple}30`
+        }}
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs tracking-[0.18em] uppercase animate-pulse" style={{ color: COLORS.richPurple }}>
+              {lotLabel}
+            </span>
+            <h2 className="m-0 text-[22px] font-bold" style={{ color: COLORS.warmCream }}>{auctionName}</h2>
+            <span className="text-[11px] tracking-[0.12em] uppercase" style={{ color: COLORS.lightPurple }}>
+              Preparing to go live
+            </span>
+          </div>
+          <div className="rounded-full px-3.5 py-1.5 text-[11px] uppercase tracking-[0.12em] flex items-center gap-1.5 border" style={{
+            backgroundColor: `${COLORS.richPurple}20`,
+            color: COLORS.richPurple,
+            borderColor: `${COLORS.richPurple}30`
+          }}>
+            <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: COLORS.richPurple }} />
+            Awaiting host
+          </div>
+        </div>
+
+        <div className="flex gap-4 flex-1 min-h-0 items-stretch">
+          <div className="flex-[1.05] flex flex-col justify-center gap-5">
+            <p className="text-lg leading-relaxed" style={{ color: COLORS.warmCream }}>
+              {awaitingMessage}
+            </p>
+            {previewTitle && (
+              <div
+                className="rounded-[14px] p-4 border"
+                style={{
+                  backgroundColor: `${COLORS.deepPurple}80`,
+                  borderColor: `${COLORS.richPurple}40`
+                }}
+              >
+                <span className="text-[11px] uppercase" style={{ color: COLORS.lightPurple }}>Opening Lot Preview</span>
+                <p className="mt-1 mb-2 text-lg font-semibold" style={{ color: COLORS.warmCream }}>{previewTitle}</p>
+                <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs" style={{ color: COLORS.lightPurple }}>
+                  <span>Opening bid: ${previewOpeningBid}</span>
+                  <span>Bid increment: ${previewBidIncrement}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <div
+            className="flex-[1.1] rounded-[14px] overflow-hidden border flex items-center justify-center bg-black/80"
+            style={{ borderColor: `${COLORS.richPurple}25` }}
+          >
+            <Image
+              src={previewImage}
+              alt={previewTitle ?? 'Opening lot preview'}
+              width={420}
+              height={260}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        {lotData.hasFollowingLot && nextLotTitle && (
+          <div className="flex items-center gap-3 rounded-xl p-3 border border-dashed" style={{
+            backgroundColor: `${COLORS.deepPurple}95`,
+            borderColor: `${COLORS.richPurple}30`
+          }}>
+            <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/60 flex-shrink-0 border" style={{ borderColor: `${COLORS.richPurple}20` }}>
+              <Image
+                src={nextLotImage}
+                alt="Following lot preview"
+                width={56}
+                height={56}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex flex-col justify-center">
+              <span className="text-[11px] uppercase" style={{ color: COLORS.lightPurple }}>Following Lot</span>
+              <span className="text-sm font-semibold" style={{ color: COLORS.warmCream }}>{nextLotTitle}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const {
     auctionName,
     lotLabel,
@@ -145,7 +365,7 @@ function StageAuctionCard({ lotData, onClick }) {
             </div>
             <div className="flex justify-between text-xs" style={{ color: COLORS.lightPurple }}>
               <span>Next Required Bid</span>
-              <span>${formatNumber(Number(nextBidMinimum) + Number(priceValue))}</span>
+              <span>${formatNumber(nextBidMinimum)}</span>
             </div>
           </div>
 
@@ -166,20 +386,27 @@ function StageAuctionCard({ lotData, onClick }) {
             </div>
           </div>
 
-          <div className="flex gap-2.5 items-center rounded-xl p-2.5 border border-dashed" style={{
+          <div
+            className={`rounded-xl p-2.5 border border-dashed flex ${nextLotImage ? 'gap-2.5 items-center' : 'items-center'}`}
+            style={{
             backgroundColor: `${COLORS.deepPurple}95`,
             borderColor: `${COLORS.richPurple}30`
-          }}>
-            <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/60 flex-shrink-0 border" style={{ borderColor: `${COLORS.richPurple}20` }}>
-              <Image
-                src={nextLotImage}
-                alt="Upcoming lot preview"
-                width={56}
-                height={56}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex flex-col justify-center">
+          }}
+          >
+            {nextLotImage ? (
+              <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/60 flex-shrink-0 border" style={{ borderColor: `${COLORS.richPurple}20` }}>
+                <Image
+                  src={nextLotImage}
+                  alt={nextLotTitle ?? 'Upcoming lot preview'}
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              null
+            )}
+            <div className={`flex flex-col justify-center ${nextLotImage ? '' : 'pl-1'}`}>
               <span className="text-[11px] uppercase" style={{ color: COLORS.lightPurple }}>Next Up</span>
               <span className="text-sm font-semibold" style={{ color: COLORS.warmCream }}>{nextLotTitle}</span>
             </div>
@@ -191,6 +418,162 @@ function StageAuctionCard({ lotData, onClick }) {
 }
 
 function ModalAuctionCard({ lotData, onClose }) {
+  if (lotData.isAuctionComplete) {
+    const { auctionName, lotLabel } = lotData
+    return (
+      <div className="relative w-full max-w-4xl mx-auto bg-black/95 border-2 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col items-center justify-center text-center gap-6 p-10" style={{
+        borderColor: `${COLORS.richPurple}50`,
+        boxShadow: `0 0 80px ${COLORS.richPurple}60`
+      }}>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            onClose?.()
+          }}
+          className="absolute top-4 right-4 z-10"
+          aria-label="Close preview"
+        >
+          <span
+            className="inline-flex items-center justify-center w-9 h-9 rounded-full border text-[15px] font-semibold"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              borderColor: `${COLORS.richPurple}50`,
+              color: COLORS.lightPurple
+            }}
+          >
+            ×
+          </span>
+        </button>
+        <span className="text-xs tracking-[0.2em] uppercase" style={{ color: COLORS.richPurple }}>
+          {lotLabel}
+        </span>
+        <h3 className="text-3xl md:text-4xl font-bold" style={{ color: COLORS.warmCream }}>
+          {auctionName}
+        </h3>
+        <p className="text-lg md:text-xl max-w-2xl" style={{ color: COLORS.lightPurple }}>
+          The auction has officially concluded. We appreciate your participation and look forward to seeing you at the next event.
+        </p>
+      </div>
+    )
+  }
+
+  if (lotData.isAwaitingStart) {
+    const {
+      auctionName,
+      awaitingMessage,
+      previewTitle,
+      previewImage,
+      previewOpeningBid,
+      previewBidIncrement,
+      nextLotTitle,
+      nextLotImage,
+      lotLabel
+    } = lotData
+
+    return (
+      <div className="relative w-full max-w-6xl mx-auto bg-black/95 border-2 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col" style={{
+        borderColor: `${COLORS.richPurple}50`,
+        boxShadow: `0 0 80px ${COLORS.richPurple}60`
+      }}>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            onClose?.()
+          }}
+          className="absolute top-4 right-4 z-10"
+          aria-label="Close preview"
+        >
+          <span
+            className="inline-flex items-center justify-center w-9 h-9 rounded-full border text-[15px] font-semibold"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              borderColor: `${COLORS.richPurple}50`,
+              color: COLORS.lightPurple
+            }}
+          >
+            ×
+          </span>
+        </button>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 flex-1 overflow-hidden">
+          <div className="p-6 md:p-8 flex flex-col gap-4 justify-center">
+            <div>
+              <span className="text-xs uppercase tracking-[0.2em]" style={{ color: COLORS.richPurple }}>
+                {lotLabel}
+              </span>
+              <h3 className="text-2xl md:text-3xl font-bold mt-2 mb-3" style={{ color: COLORS.warmCream }}>
+                {auctionName}
+              </h3>
+              <p className="text-base md:text-lg leading-relaxed" style={{ color: COLORS.lightPurple }}>
+                {awaitingMessage}
+              </p>
+            </div>
+
+            {previewTitle && (
+              <div
+                className="rounded-2xl p-5 border"
+                style={{
+                  backgroundColor: `${COLORS.deepPurple}85`,
+                  borderColor: `${COLORS.richPurple}40`
+                }}
+              >
+                <span className="text-[11px] uppercase tracking-[0.12em]" style={{ color: COLORS.lightPurple }}>
+                  Opening Lot Preview
+                </span>
+                <p className="text-xl font-semibold mt-2 mb-3" style={{ color: COLORS.warmCream }}>
+                  {previewTitle}
+                </p>
+                <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm" style={{ color: COLORS.lightPurple }}>
+                  <span>Opening bid: ${previewOpeningBid}</span>
+                  <span>Bid increment: ${previewBidIncrement}</span>
+                </div>
+              </div>
+            )}
+
+        {lotData.hasFollowingLot && nextLotTitle && (
+              <div
+                className="flex items-center gap-3 rounded-xl p-3 border border-dashed"
+                style={{
+                  backgroundColor: `${COLORS.deepPurple}70`,
+                  borderColor: `${COLORS.richPurple}30`
+                }}
+              >
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/60 flex-shrink-0 border" style={{ borderColor: `${COLORS.richPurple}20` }}>
+                  <Image
+                    src={nextLotImage}
+                    alt="Following lot preview"
+                    width={56}
+                    height={56}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <span className="text-[11px] uppercase" style={{ color: COLORS.lightPurple }}>Following Lot</span>
+                  <p className="text-sm font-semibold mt-1 mb-0" style={{ color: COLORS.warmCream }}>
+                    {nextLotTitle}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative min-h-[320px] md:min-h-full">
+            <Image
+              src={previewImage}
+              alt={previewTitle ?? 'Opening lot artwork'}
+              fill
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const {
     auctionName,
     lotLabel,
@@ -286,7 +669,7 @@ function ModalAuctionCard({ lotData, onClose }) {
                 </div>
                 <div className="flex justify-between">
                   <span>Next Required Bid</span>
-                  <span>${formatNumber(Number(nextBidMinimum) + Number(priceValue))}</span>
+                  <span>${formatNumber(nextBidMinimum)}</span>
                 </div>
               </div>
             </div>
@@ -310,20 +693,27 @@ function ModalAuctionCard({ lotData, onClose }) {
             </div>
 
             {/* Next Lot Preview */}
-            <div className="flex gap-3 items-center rounded-xl md:rounded-2xl p-3 md:p-4 border border-dashed" style={{
+            <div
+              className={`rounded-xl md:rounded-2xl p-3 md:p-4 border border-dashed flex ${nextLotImage ? 'gap-3 items-center' : 'items-center'}`}
+              style={{
               backgroundColor: `${COLORS.deepPurple}95`,
               borderColor: `${COLORS.richPurple}40`
-            }}>
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden bg-black/70 flex-shrink-0 border" style={{ borderColor: `${COLORS.richPurple}30` }}>
-                <Image
-                  src={nextLotImage}
-                  alt="Upcoming lot preview"
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex flex-col justify-center min-w-0">
+            }}
+            >
+              {nextLotImage ? (
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden bg-black/70 flex-shrink-0 border" style={{ borderColor: `${COLORS.richPurple}30` }}>
+                  <Image
+                    src={nextLotImage}
+                    alt={nextLotTitle ?? 'Upcoming lot preview'}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                null
+              )}
+              <div className={`flex flex-col justify-center min-w-0 ${nextLotImage ? '' : 'pl-1'}`}>
                 <span className="text-[10px] md:text-xs uppercase" style={{ color: COLORS.lightPurple }}>Next Up</span>
                 <span className="text-sm md:text-base font-semibold truncate" style={{ color: COLORS.warmCream }}>{nextLotTitle}</span>
               </div>

@@ -104,3 +104,21 @@ export async function updateAuctionTimer(aid, timerData) {
   if (error) throw error
   return data ?? null
 }
+
+export async function closeAuctionRecord(aid, { end_time }) {
+  const sb = supabaseServer()
+  const payload = {
+    end_time,
+    timer_started_at: null,
+    timer_duration_seconds: null
+  }
+  const { data, error } = await (
+    await sb
+  ).from('auction')
+    .update(payload)
+    .eq('aid', aid)
+    .select(baseAuctionSelect)
+    .single()
+  if (error) throw error
+  return data ?? null
+}

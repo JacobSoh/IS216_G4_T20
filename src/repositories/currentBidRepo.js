@@ -54,3 +54,14 @@ export async function upsertCurrentBid(payload) {
   if (error) throw error
   return data ?? null
 }
+
+export async function deleteCurrentBidsByAuction(aid) {
+  const sb = supabaseServer()
+  const { error } = await (
+    await sb
+  ).from('current_bid')
+    .delete()
+    .eq('aid', aid)
+  if (error) throw error
+  return true
+}

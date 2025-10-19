@@ -24,6 +24,7 @@ import { useAuctionChat } from '@/hooks/useAuctionChat'
 import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen'
 import { axiosBrowserClient } from '@/utils/axios/client'
 import { buildStoragePublicUrl } from '@/utils/storage'
+import { supabaseBrowser } from '@/utils/supabase/client'
 
 const pad = (value) => String(Math.max(0, Math.floor(value))).padStart(2, '0')
 
@@ -61,6 +62,13 @@ const resolveAvatarUrl = (sender) => {
 
 const DEFAULT_AVATAR = '/images/avatar-placeholder.png'
 
+const buildGuestPresenceId = () => {
+  if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
+    return `guest-${globalThis.crypto.randomUUID()}`
+  }
+  return `guest-${Math.random().toString(36).slice(2, 10)}`
+}
+
 const buildLotFromSnapshot = (snapshot) => {
   if (!snapshot) {
     return {
@@ -85,41 +93,92 @@ const buildLotFromSnapshot = (snapshot) => {
   const items = snapshot.items ?? []
   const active = snapshot.activeItem ?? null
   const next = snapshot.nextItem ?? null
-  const bidderCount = items.reduce((acc, item) => {
-    const hasBidder = Boolean(item.current_bid?.uid)
-    return acc + (hasBidder ? 1 : 0)
-  }, 0)
-  const activeBid = active?.current_bid ?? null
+  const ownerId = auction.oid ?? null
+  const bidderIds = new Set()
+  items.forEach((item) => {
+    const bidderId = item.current_bid?.uid
+    if (bidderId && bidderId !== ownerId) {
+      bidderIds.add(bidderId)
+    }
+  })
+  const bidderCount = bidderIds.size
+  const unsoldItems = items.filter((item) => item.sold !== true)
+  const auctionComplete = unsoldItems.length === 0 && !active
+
+  if (auctionComplete) {
+    return {
+      id: null,
+      name: 'No items left',
+      status: 'completed',
+      awaitingMessage: null,
+      previewItem: null,
+      currentBid: 0,
+      timeRemaining: 'Auction closed',
+      bidders: 0,
+      activeItem: null,
+      nextItem: null,
+      auctionName: auction.name ?? '',
+      imageUrl: null,
+      minBid: 0,
+      bidIncrement: 0,
+      nextBidMinimum: 0,
+      hasBid: false,
+      auctionEndsAt: auction.end_time ?? null,
+      auctionStartsAt: auction.start_time ?? null,
+      itemTimerSeconds: null,
+      itemTimerStartedAt: null,
+      hasNextLot: false
+    }
+  }
+
+  const awaitingStart = !active
+  const primaryUpcoming = awaitingStart ? unsoldItems[0] ?? null : active
+  const remainingAfterActive = awaitingStart
+    ? unsoldItems.slice(1)
+    : unsoldItems.filter((item) => item.iid !== active?.iid)
+  const secondaryUpcoming = awaitingStart
+    ? remainingAfterActive[0] ?? null
+    : next ?? remainingAfterActive[0] ?? null
+  const hasNextLot = awaitingStart ? Boolean(secondaryUpcoming) : remainingAfterActive.length > 0
+  const displayItem = primaryUpcoming ?? active ?? null
+  const activeBid = awaitingStart ? null : active?.current_bid ?? null
   const endDate = auction.end_time ? new Date(auction.end_time) : null
-  const minBid = Number(active?.min_bid ?? 0)
-  const bidIncrement = Number.isFinite(Number(active?.bid_increment)) && Number(active?.bid_increment) > 0
-    ? Number(active?.bid_increment)
+  const minBid = Number(displayItem?.min_bid ?? 0)
+  const bidIncrement = Number.isFinite(Number(displayItem?.bid_increment)) && Number(displayItem?.bid_increment) > 0
+    ? Number(displayItem?.bid_increment)
     : 0.01
-  const currentBidValue = Number(activeBid?.current_price ?? 0)
+  const currentBidValue = awaitingStart
+    ? Number(displayItem?.min_bid ?? 0)
+    : Number(activeBid?.current_price ?? displayItem?.min_bid ?? 0)
   const nextBidMinimum = currentBidValue + bidIncrement
 
   // Get item timer data from auction
   const itemTimerStartedAt = auction.timer_started_at ? new Date(auction.timer_started_at) : null
   const itemTimerDuration = auction.timer_duration_seconds ?? null
+  const awaitingStartMessage = 'Please stay seated - the auctioneer will open the first lot shortly.'
 
   return {
-    id: active?.iid ?? null,
-    name: active?.title ?? 'Upcoming Lot',
-    currentBid: activeBid?.current_price ?? minBid,
-    timeRemaining: formatTimeRemaining(endDate),
-    bidders: bidderCount,
+    id: awaitingStart ? null : active?.iid ?? null,
+    name: awaitingStart ? awaitingStartMessage : active?.title ?? 'Upcoming Lot',
+    status: awaitingStart ? 'awaiting_start' : 'active',
+    awaitingMessage: awaitingStart ? awaitingStartMessage : null,
+    previewItem: awaitingStart ? primaryUpcoming : null,
+    currentBid: awaitingStart ? Number(primaryUpcoming?.min_bid ?? 0) : activeBid?.current_price ?? minBid,
+    timeRemaining: awaitingStart ? 'Awaiting host' : formatTimeRemaining(endDate),
+    bidders: awaitingStart ? 0 : bidderCount,
     activeItem: active,
-    nextItem: next,
+    nextItem: secondaryUpcoming,
     auctionName: auction.name ?? '',
-    imageUrl: active?.imageUrl ?? null,
+    imageUrl: displayItem?.imageUrl ?? null,
     minBid,
     bidIncrement,
     nextBidMinimum,
-    hasBid: Boolean(activeBid),
+    hasBid: awaitingStart ? false : Boolean(activeBid),
     auctionEndsAt: auction.end_time ?? null,
     auctionStartsAt: auction.start_time ?? null,
-    itemTimerSeconds: itemTimerDuration,
-    itemTimerStartedAt: itemTimerStartedAt
+    itemTimerSeconds: awaitingStart ? null : itemTimerDuration,
+    itemTimerStartedAt: awaitingStart ? null : itemTimerStartedAt,
+    hasNextLot
   }
 }
 
@@ -1424,7 +1483,7 @@ export default function AuctionHouse3D({
   pollingMs = 7000 // Deprecated - keeping for backwards compatibility
 }) {
   const { snapshot, isFetching, refresh } = useAuctionLive(aid, initialLiveData)
-  const chatPollMs = Math.max(3000, pollingMs || 5000)
+  const ownerId = snapshot?.auction?.oid ?? null
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isBidPanelOpen, setIsBidPanelOpen] = useState(false)
   const [isChatPanelOpen, setIsChatPanelOpen] = useState(false)
@@ -1439,7 +1498,7 @@ export default function AuctionHouse3D({
     isFetching: isChatFetching,
     setMessages: setChatMessages,
     refresh: refreshChat
-  } = useAuctionChat(aid, initialChatMessages, { enabled: true, pollInterval: chatPollMs })
+  } = useAuctionChat(aid, initialChatMessages, { enabled: true })
   const [chatInput, setChatInput] = useState('')
   const [chatFeedback, setChatFeedback] = useState(null)
   const [isSendingChat, setIsSendingChat] = useState(false)
@@ -1452,6 +1511,11 @@ export default function AuctionHouse3D({
   const hasUnlockedAudioRef = useRef(false)
   const [itemTimerSeconds, setItemTimerSeconds] = useState(null)
   const [bidConfirmModal, setBidConfirmModal] = useState(null) // { amount, onConfirm, onCancel }
+  const [participantCount, setParticipantCount] = useState(0)
+  const presenceChannelRef = useRef(null)
+  const ownerIdRef = useRef(initialLiveData?.auction?.oid ?? null)
+  const guestPresenceIdRef = useRef(null)
+  const participantCountRef = useRef(0)
 
   useEffect(() => {
     console.log('🎯 AuctionHouse3D: Snapshot changed, rebuilding lot', {
@@ -1459,13 +1523,24 @@ export default function AuctionHouse3D({
       activeItemTitle: snapshot?.activeItem?.title
     })
     const newLot = buildLotFromSnapshot(snapshot)
-    setCurrentLot(newLot)
+    setCurrentLot({
+      ...newLot,
+      bidders: participantCountRef.current
+    })
     setLotItems(snapshot?.items ?? [])
     console.log('🎯 AuctionHouse3D: New lot built', {
       newLotId: newLot?.id,
       newLotName: newLot?.name
     })
   }, [snapshot])
+
+  useEffect(() => {
+    ownerIdRef.current = snapshot?.auction?.oid ?? null
+  }, [snapshot?.auction?.oid])
+
+  useEffect(() => {
+    participantCountRef.current = participantCount
+  }, [participantCount])
 
   useEffect(() => {
     if (!snapshot?.auction?.end_time) return undefined
@@ -1500,6 +1575,87 @@ export default function AuctionHouse3D({
     const intervalId = setInterval(updateItemTimer, 1000)
     return () => clearInterval(intervalId)
   }, [currentLot.itemTimerStartedAt, currentLot.itemTimerSeconds])
+
+  useEffect(() => {
+    if (!aid) return undefined
+
+    const supabase = supabaseBrowser()
+    const presenceKey =
+      currentUserId ?? guestPresenceIdRef.current ?? buildGuestPresenceId()
+
+    if (!guestPresenceIdRef.current) {
+      guestPresenceIdRef.current = presenceKey
+    } else if (currentUserId && guestPresenceIdRef.current !== currentUserId) {
+      guestPresenceIdRef.current = currentUserId
+    }
+
+    const channel = supabase.channel(`auction-presence:${aid}`, {
+      config: {
+        presence: {
+          key: guestPresenceIdRef.current
+        }
+      }
+    })
+
+    const updateParticipantCount = () => {
+      const state = channel.presenceState()
+      const allParticipants = Object.values(state).flat()
+      const uniqueIds = new Set()
+
+      allParticipants.forEach((entry) => {
+        const participantId =
+          entry?.userId ?? entry?.id ?? entry?.presenceKey ?? entry?.presence_key ?? null
+        if (participantId) {
+          uniqueIds.add(participantId)
+        }
+      })
+
+      const ownerId = ownerIdRef.current
+      if (ownerId) {
+        uniqueIds.delete(ownerId)
+      }
+
+      setParticipantCount(uniqueIds.size)
+    }
+
+    channel
+      .on('presence', { event: 'sync' }, updateParticipantCount)
+      .on('presence', { event: 'join' }, updateParticipantCount)
+      .on('presence', { event: 'leave' }, updateParticipantCount)
+
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        channel.track({
+          userId: guestPresenceIdRef.current,
+          joinedAt: new Date().toISOString()
+        })
+        updateParticipantCount()
+      }
+    })
+
+    presenceChannelRef.current = channel
+
+    return () => {
+      setParticipantCount(0)
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current)
+        presenceChannelRef.current = null
+      }
+    }
+  }, [aid, currentUserId])
+
+  useEffect(() => {
+    setCurrentLot((prev) => {
+      if (!prev) return prev
+      if (prev.bidders === participantCount) {
+        return prev
+      }
+      return {
+        ...prev,
+        bidders: participantCount
+      }
+    })
+  }, [participantCount])
 
 useEffect(() => {
   if (!bidFeedback) return undefined
@@ -2006,6 +2162,7 @@ useEffect(() => {
                   )}
                   {chatMessages.map((chat) => {
                     const isOwn = currentUserId && chat.uid === currentUserId
+                    const isOwnerMessage = ownerId ? chat.uid === ownerId : false
                     const avatarUrl = resolveAvatarUrl(chat.sender)
                     return (
                       <div
@@ -2029,8 +2186,13 @@ useEffect(() => {
                                 : 'bg-[#4D067B] text-white border border-[#7209B7]/30 rounded-bl-md'
                             }`}
                           >
-                            <p className="text-[10px] font-semibold mb-0.5 opacity-90">
-                              {chat.sender?.username ?? 'Guest'}
+                            <p className="text-[10px] font-semibold mb-0.5 opacity-90 flex items-center gap-1.5">
+                              <span>{chat.sender?.username ?? 'Guest'}</span>
+                              {isOwnerMessage && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] uppercase tracking-wider" style={{ backgroundColor: '#F8E2D4', color: '#4D067B' }}>
+                                  Owner
+                                </span>
+                              )}
                             </p>
                             <p className="text-sm break-words leading-relaxed">
                               {chat.message}

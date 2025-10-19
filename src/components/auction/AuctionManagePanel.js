@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { useAuctionLive } from '@/hooks/useAuctionLive'
+import { useAuctionChat } from '@/hooks/useAuctionChat'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -20,16 +22,31 @@ const COLORS = {
   goldenTan: '#E2BD6B'
 }
 
-export default function AuctionManagePanel({ aid, initialLiveData }) {
-  const { snapshot, isFetching, refresh } = useAuctionLive(aid, initialLiveData)
+export default function AuctionManagePanel({ aid, initialLiveData, initialChatMessages = [] }) {
+  const router = useRouter()
+  const { snapshot, isFetching, refresh, setSnapshot: setLiveSnapshot } = useAuctionLive(aid, initialLiveData)
   const [busyItem, setBusyItem] = useState(null)
+  const [isResetting, setIsResetting] = useState(false)
+  const [isClosingAuction, setIsClosingAuction] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+
+  const {
+    messages: chatMessages,
+    isFetching: isChatFetching,
+    error: chatError,
+    refresh: refreshChat,
+    setMessages: setChatMessages
+  } = useAuctionChat(aid, initialChatMessages, { enabled: true })
+  const [chatInput, setChatInput] = useState('')
+  const [chatFeedback, setChatFeedback] = useState(null)
+  const [isSendingChat, setIsSendingChat] = useState(false)
 
   // Timer state
   const [activeTimer, setActiveTimer] = useState(null) // { iid, secondsLeft, isRunning }
   const [timerAdjust, setTimerAdjust] = useState({ minutes: '', seconds: '' })
   const timerIntervalRef = useRef(null)
+  const chatMessagesEndRef = useRef(null)
 
   // Confirmation modal state
   const [confirmModal, setConfirmModal] = useState(null) // { title, message, status, onConfirm, onCancel }
@@ -38,6 +55,27 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
   const activeItemId = snapshot?.activeItem?.iid ?? null
   const activeItem = items.find(item => item.iid === activeItemId)
   const defaultTimeInterval = snapshot?.auction?.time_interval ?? 300 // Default 5 minutes
+  const ownerId = snapshot?.auction?.oid ?? null
+
+  useEffect(() => {
+    const endTimeIso = snapshot?.auction?.end_time ?? null
+    if (!endTimeIso) {
+      return
+    }
+    const endTime = new Date(endTimeIso)
+    if (Number.isNaN(endTime.getTime())) {
+      return
+    }
+    if (Date.now() >= endTime.getTime()) {
+      router.replace(`/auction/${aid}/ended`)
+    }
+  }, [snapshot?.auction?.end_time, router, aid])
+
+  useEffect(() => {
+    if (!chatFeedback) return undefined
+    const timeoutId = window.setTimeout(() => setChatFeedback(null), 2500)
+    return () => window.clearTimeout(timeoutId)
+  }, [chatFeedback])
 
   // Get bid history from snapshot
   const bidHistory = useMemo(() => {
@@ -54,12 +92,26 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
 
   // Determine next item to activate (first unsold, non-active item)
   const nextItemToActivate = useMemo(() => {
-    // If there's no active item, return the first unsold item
-    if (!activeItemId) {
-      return items.find(item => !item.sold)
+    if (!items.length) {
+      return null
     }
-    // If there is an active item, return the first unsold item that's not active
-    return items.find(item => !item.sold && item.iid !== activeItemId)
+
+    // No active item yet - pick the first unsold lot
+    if (!activeItemId) {
+      return items.find(item => item?.sold !== true) ?? null
+    }
+
+    const activeIndex = items.findIndex(item => item.iid === activeItemId)
+    const startIndex = activeIndex >= 0 ? activeIndex + 1 : 0
+
+    for (let idx = startIndex; idx < items.length; idx += 1) {
+      const candidate = items[idx]
+      if (candidate?.sold !== true) {
+        return candidate
+      }
+    }
+
+    return null
   }, [items, activeItemId])
 
   // Check if item has any bids
@@ -73,6 +125,46 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
     const secs = seconds % 60
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
   }
+
+  const formatChatTimestamp = useCallback((value) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) {
+      return ''
+    }
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }, [])
+
+  const handleChatSubmit = useCallback(async (event) => {
+    event?.preventDefault()
+    const trimmed = chatInput.trim()
+    if (!trimmed) {
+      return
+    }
+    setIsSendingChat(true)
+    setChatFeedback(null)
+    try {
+      const res = await fetch(`/api/auctions/${aid}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: trimmed })
+      })
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}))
+        throw new Error(payload.error ?? 'Unable to send message')
+      }
+
+      setChatInput('')
+      setChatFeedback('Message sent')
+      await refreshChat()
+    } catch (err) {
+      setChatFeedback(err.message ?? 'Unable to send message')
+    } finally {
+      setIsSendingChat(false)
+    }
+  }, [aid, chatInput, refreshChat])
 
   // Initialize timer from database when auction data changes
   useEffect(() => {
@@ -131,15 +223,17 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
   }, [aid, refresh])
 
   // Close item sale function
-  const closeItemSale = useCallback(async (iid, isAutoClose = false, shouldActivateNext = true) => {
-    if (!isAutoClose) {
-      if (!window.confirm('Are you sure you want to close this lot and finalize the sale to the highest bidder?')) {
-        return
-      }
+  const closeItemSale = useCallback(async ({ iid, shouldActivateNext = true } = {}) => {
+    if (!iid) {
+      return
     }
 
     setBusyItem(iid)
     setError(null)
+
+    const itemsInSequence = items ?? []
+    const closedItemIndex = itemsInSequence.findIndex(item => item.iid === iid)
+
     try {
       const res = await fetch(`/api/auctions/${aid}/close-item`, {
         method: 'POST',
@@ -170,10 +264,15 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
       if (shouldActivateNext) {
         // Wait a bit for refresh to complete
         setTimeout(async () => {
-          const nextItem = items.find(item => !item.sold && item.iid !== iid)
-          if (nextItem) {
-            const currentPrice = nextItem.current_bid?.current_price ?? nextItem.min_bid ?? 0
-            await activateItemInternal(nextItem.iid, currentPrice)
+          const startIndex = closedItemIndex >= 0 ? closedItemIndex + 1 : 0
+          const sequentialNext =
+            itemsInSequence
+              .slice(startIndex)
+              .find(item => item?.sold !== true && item.iid !== iid) ??
+            itemsInSequence.find(item => item?.sold !== true && item.iid !== iid)
+          if (sequentialNext) {
+            const currentPrice = sequentialNext.current_bid?.current_price ?? sequentialNext.min_bid ?? 0
+            await activateItemInternal(sequentialNext.iid, currentPrice)
           }
         }, 500)
       }
@@ -212,7 +311,7 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
       if (remaining <= 0) {
         const itemBids = bidHistory.filter(bid => bid.iid === activeItemId)
         if (itemBids.length > 0) {
-          closeItemSale(activeItemId, true) // true = auto-close
+          closeItemSale({ iid: activeItemId }) // auto-close via timer
         }
         if (timerIntervalRef.current) {
           clearInterval(timerIntervalRef.current)
@@ -279,13 +378,14 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
           currentItem: activeItemTitle,
           status: itemHasBids ? 'Has bids - will be SOLD' : 'No bids - will be CLOSED',
           action,
+          description: 'Activating the next lot will automatically finalize the current lot.',
           onConfirm: async () => {
             setConfirmModal(null)
 
             // Close the previous item first (don't auto-activate since we're manually activating)
             try {
               setBusyItem(activeItemId)
-              await closeItemSale(activeItemId, true, false) // true = auto-close, false = don't auto-activate next
+              await closeItemSale({ iid: activeItemId, shouldActivateNext: false }) // close current lot before switching
             } catch (err) {
               setError(`Failed to close previous item: ${err.message}`)
               setBusyItem(null)
@@ -309,6 +409,118 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
     await activateItemInternal(iid, price)
   }
 
+  const handleCloseActiveItem = useCallback(() => {
+    if (!activeItemId || !activeItem) {
+      return
+    }
+
+    const itemHasBids = getItemBidCount(activeItemId) > 0
+    const action = itemHasBids ? 'SOLD' : 'CLOSED'
+
+    setConfirmModal({
+      title: itemHasBids ? 'Finalize Current Lot' : 'Close Current Lot',
+      currentItem: activeItem.title || 'Current lot',
+      status: itemHasBids ? 'Has bids - will be SOLD' : 'No bids - will be CLOSED',
+      action,
+      description: itemHasBids
+        ? 'Closing this lot will finalize the winning bid and immediately move to the next item.'
+        : 'Closing this lot will mark it as closed and continue to the next available item.',
+      confirmLabel: itemHasBids ? 'Finalize Sale' : 'Close Lot',
+      onConfirm: async () => {
+        setConfirmModal(null)
+        await closeItemSale({ iid: activeItemId })
+      },
+      onCancel: () => {
+        setConfirmModal(null)
+      }
+    })
+  }, [activeItemId, activeItem, closeItemSale, getItemBidCount])
+
+  const requestResetAuction = useCallback(() => {
+    const auctionName = snapshot?.auction?.name ?? 'this auction'
+
+    setConfirmModal({
+      title: 'Reset Auction',
+      currentItem: auctionName,
+      status: 'This action cannot be undone.',
+      action: 'RESET',
+      description: 'Resetting will delete all bid history, clear current bids, remove sale records, and mark every lot as unsold.',
+      confirmLabel: 'Reset Auction',
+      cancelLabel: 'Keep Data',
+      contextLabel: 'Auction',
+      onConfirm: async () => {
+        setConfirmModal(null)
+        setIsResetting(true)
+        setError(null)
+        try {
+          const res = await fetch(`/api/auctions/${aid}/reset`, {
+            method: 'POST'
+          })
+
+          if (!res.ok) {
+            const payload = await res.json().catch(() => ({}))
+            throw new Error(payload.error ?? 'Unable to reset auction')
+          }
+
+          setActiveTimer(null)
+          await refresh()
+          setLiveSnapshot(prev => (prev ? { ...prev, bidHistory: [] } : prev))
+          setChatMessages([]) // Clear chat messages after reset
+          setSuccess('Auction reset successfully')
+          setTimeout(() => setSuccess(null), 4000)
+        } catch (err) {
+          setError(err.message)
+        } finally {
+          setIsResetting(false)
+        }
+      },
+      onCancel: () => {
+        setConfirmModal(null)
+      }
+    })
+  }, [aid, refresh, router, snapshot?.auction?.name])
+
+  const requestCloseAuction = useCallback(() => {
+    const auctionName = snapshot?.auction?.name ?? 'this auction'
+
+    setConfirmModal({
+      title: 'Close Auction',
+      currentItem: auctionName,
+      status: 'This will end bidding immediately.',
+      action: 'END',
+      description: 'Closing the auction will stop all bidding and mark the event as complete. Make sure all lots are finalized before proceeding.',
+      confirmLabel: 'Close Auction',
+      cancelLabel: 'Keep Open',
+      contextLabel: 'Auction',
+      onConfirm: async () => {
+        setConfirmModal(null)
+        setIsClosingAuction(true)
+        setError(null)
+        try {
+          const res = await fetch(`/api/auctions/${aid}/close`, {
+            method: 'POST'
+          })
+
+          if (!res.ok) {
+            const payload = await res.json().catch(() => ({}))
+            throw new Error(payload.error ?? 'Unable to close auction')
+          }
+
+          setActiveTimer(null)
+          router.replace(`/auction/${aid}/ended`)
+          refresh().catch(() => {})
+        } catch (err) {
+          setError(err.message)
+        } finally {
+          setIsClosingAuction(false)
+        }
+      },
+      onCancel: () => {
+        setConfirmModal(null)
+      }
+    })
+  }, [aid, refresh, router, snapshot?.auction?.name])
+
   const updateTimerAdjustMinutes = (value) => {
     setTimerAdjust(prev => ({ ...prev, minutes: value }))
   }
@@ -321,7 +533,7 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
     <div className="min-h-screen py-8 px-6" style={{ backgroundColor: '#0a0514' }}>
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
           <div>
             <h1
               className="text-4xl font-bold mb-2"
@@ -336,11 +548,39 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
               {snapshot?.auction?.name ?? 'Untitled Auction'}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: COLORS.richPurple }} />
-            <span className="text-sm font-semibold" style={{ color: COLORS.goldenTan }}>
-              LIVE
-            </span>
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: COLORS.richPurple }} />
+              <span className="text-sm font-semibold" style={{ color: COLORS.goldenTan }}>
+                LIVE
+              </span>
+            </div>
+            <button
+              onClick={requestCloseAuction}
+              disabled={isClosingAuction || isFetching}
+              className="px-4 py-2 rounded-lg text-sm font-semibold uppercase tracking-wide transition-all hover:opacity-90 disabled:opacity-50"
+              style={{
+                backgroundColor: '#5f1a1a',
+                border: '1px solid rgba(239,68,68,0.6)',
+                color: '#fca5a5',
+                boxShadow: '0 0 18px rgba(239, 68, 68, 0.25)'
+              }}
+            >
+              {isClosingAuction ? 'Closing...' : 'Close Auction'}
+            </button>
+            <button
+              onClick={requestResetAuction}
+              disabled={isResetting || isFetching}
+              className="px-4 py-2 rounded-lg text-sm font-semibold uppercase tracking-wide transition-all hover:opacity-90 disabled:opacity-50"
+              style={{
+                backgroundColor: '#2d143f',
+                border: `1px solid ${COLORS.richPurple}`,
+                color: COLORS.warmCream,
+                boxShadow: '0 0 15px rgba(114, 9, 183, 0.35)'
+              }}
+            >
+              {isResetting ? 'Resetting...' : 'Reset Auction'}
+            </button>
           </div>
         </div>
 
@@ -743,7 +983,7 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
             </div>
 
             <button
-              onClick={() => closeItemSale(activeItem.iid)}
+              onClick={handleCloseActiveItem}
               disabled={busyItem === activeItem.iid}
               className="w-full px-6 py-4 rounded-xl text-base font-bold uppercase tracking-wide transition-all hover:opacity-90 disabled:opacity-50"
               style={{
@@ -755,6 +995,167 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
             </button>
           </div>
         )}
+
+        {/* Section: Live Chat */}
+        <div
+          className="rounded-2xl border p-8"
+          style={{
+            borderColor: `${COLORS.richPurple}40`,
+            backgroundColor: '#130a1f'
+          }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: COLORS.warmCream }}>
+                Live Auction Chat
+              </h2>
+              <p className="text-sm" style={{ color: COLORS.lightPurple }}>
+                Monitor conversations and engage directly with bidders.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span style={{ color: COLORS.lightPurple }}>
+                {isChatFetching ? 'Syncing messages...' : `${chatMessages.length} message${chatMessages.length === 1 ? '' : 's'}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => refreshChat()}
+                disabled={isChatFetching}
+                className="px-3 py-1.5 rounded-md border text-xs font-semibold uppercase tracking-wide transition-all"
+                style={{
+                  borderColor: `${COLORS.richPurple}60`,
+                  color: COLORS.lightPurple,
+                  backgroundColor: 'rgba(0,0,0,0.4)'
+                }}
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {chatError && (
+            <div
+              className="mb-4 rounded-lg border-l-4 px-5 py-3 text-xs"
+              style={{
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                color: '#fca5a5'
+              }}
+            >
+              <strong className="font-semibold">Chat Error:</strong> {chatError.message}
+            </div>
+          )}
+
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div>
+              <div
+                className="rounded-xl border p-4 h-80 overflow-y-auto space-y-3"
+                style={{
+                  borderColor: `${COLORS.richPurple}30`,
+                  backgroundColor: 'rgba(0,0,0,0.35)'
+                }}
+              >
+                {chatMessages.length === 0 && (
+                  <div
+                    className="h-full flex items-center justify-center text-sm italic"
+                    style={{ color: COLORS.lightPurple }}
+                  >
+                    No chat activity yet.
+                  </div>
+                )}
+                {chatMessages.map((chat) => {
+                  const username = chat.sender?.username ?? 'Guest'
+                  const initials = username.slice(0, 1).toUpperCase()
+                  const isOwnerMessage = ownerId ? chat.uid === ownerId : false
+                  return (
+                    <div key={chat.chat_id ?? `${chat.sent_at}-${chat.uid}`} className="flex gap-3 items-start">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold"
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.08)',
+                          border: `1px solid ${COLORS.richPurple}40`,
+                          color: COLORS.goldenTan
+                        }}
+                      >
+                        {initials}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold" style={{ color: COLORS.warmCream }}>
+                            {username}
+                          </span>
+                          {isOwnerMessage && (
+                            <span
+                              className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                              style={{
+                                backgroundColor: `${COLORS.goldenTan}20`,
+                                border: `1px solid ${COLORS.goldenTan}60`,
+                                color: COLORS.goldenTan
+                              }}
+                            >
+                              Owner
+                            </span>
+                          )}
+                          <span className="text-[10px]" style={{ color: `${COLORS.lightPurple}B3` }}>
+                            {formatChatTimestamp(chat.sent_at)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm leading-relaxed" style={{ color: COLORS.lightPurple }}>
+                          {chat.message}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+                <div ref={chatMessagesEndRef} />
+              </div>
+            </div>
+
+            <div
+              className="rounded-xl border p-4 flex flex-col gap-4"
+              style={{
+                borderColor: `${COLORS.richPurple}30`,
+                backgroundColor: 'rgba(0,0,0,0.35)'
+              }}
+            >
+              <form className="flex flex-col gap-3" onSubmit={handleChatSubmit}>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs uppercase font-semibold" style={{ color: COLORS.lightPurple }}>
+                    Send Message
+                  </label>
+                  <textarea
+                    value={chatInput}
+                    onChange={(event) => setChatInput(event.target.value)}
+                    rows={4}
+                    placeholder="Share updates or engage with bidders..."
+                    className="w-full resize-none rounded-lg px-3 py-2 text-sm"
+                    style={{
+                      backgroundColor: 'rgba(0,0,0,0.45)',
+                      border: `1px solid ${COLORS.richPurple}40`,
+                      color: COLORS.warmCream
+                    }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSendingChat || !chatInput.trim()}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold uppercase tracking-wide transition-all hover:opacity-90 disabled:opacity-50"
+                  style={{
+                    backgroundColor: COLORS.richPurple,
+                    color: COLORS.warmCream
+                  }}
+                >
+                  {isSendingChat ? 'Sending...' : 'Send Message'}
+                </button>
+              </form>
+              {chatFeedback && (
+                <p className="text-xs" style={{ color: COLORS.lightPurple }}>
+                  {chatFeedback}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Section 3: Bid Activity Logs */}
         <div
@@ -851,18 +1252,32 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
             </h3>
 
             <p className="text-base mb-6" style={{ color: COLORS.lightPurple }}>
-              Activating the next item will automatically <span className="font-bold" style={{ color: COLORS.goldenTan }}>{confirmModal.action}</span> the previous item.
+              {confirmModal.description ? (
+                confirmModal.description
+              ) : (
+                <>
+                  Activating the next item will automatically{' '}
+                  <span className="font-bold" style={{ color: COLORS.goldenTan }}>{confirmModal.action}</span>{' '}
+                  the previous item.
+                </>
+              )}
             </p>
 
-            <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: `1px solid ${COLORS.richPurple}40` }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs uppercase font-semibold" style={{ color: COLORS.lightPurple }}>Current Item</span>
+            {confirmModal.currentItem && (
+              <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: `1px solid ${COLORS.richPurple}40` }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs uppercase font-semibold" style={{ color: COLORS.lightPurple }}>
+                    {confirmModal.contextLabel ?? 'Current Item'}
+                  </span>
+                </div>
+                <p className="font-bold text-lg mb-2" style={{ color: COLORS.warmCream }}>&ldquo;{confirmModal.currentItem}&rdquo;</p>
+                {confirmModal.status && (
+                  <p className="text-sm" style={{ color: confirmModal.action === 'SOLD' ? COLORS.goldenTan : '#999' }}>
+                    {confirmModal.status}
+                  </p>
+                )}
               </div>
-              <p className="font-bold text-lg mb-2" style={{ color: COLORS.warmCream }}>&ldquo;{confirmModal.currentItem}&rdquo;</p>
-              <p className="text-sm" style={{ color: confirmModal.action === 'SOLD' ? COLORS.goldenTan : '#999' }}>
-                {confirmModal.status}
-              </p>
-            </div>
+            )}
 
             <p className="text-sm mb-6" style={{ color: COLORS.lightPurple }}>
               Do you want to continue?
@@ -877,7 +1292,7 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
                   color: COLORS.warmCream
                 }}
               >
-                Cancel
+                {confirmModal.cancelLabel ?? 'Cancel'}
               </button>
               <button
                 onClick={confirmModal.onConfirm}
@@ -887,7 +1302,7 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
                   color: COLORS.deepPurple
                 }}
               >
-                Confirm
+                {confirmModal.confirmLabel ?? 'Confirm'}
               </button>
             </div>
           </div>

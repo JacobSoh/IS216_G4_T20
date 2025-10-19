@@ -7,6 +7,7 @@ import { getServerUser } from '@/utils/auth'
 export default async function AuctionViewerPage({ params }) {
   const { aid } = await params
   if (!aid) {
+    console.log('[AuctionViewerPage] Missing aid in params')
     notFound()
   }
 
@@ -16,14 +17,24 @@ export default async function AuctionViewerPage({ params }) {
     getServerUser()
   ])
   if (!snapshot) {
+    console.log('[AuctionViewerPage] No snapshot retrieved for aid', aid)
     notFound()
   }
 
   if (!user) {
+    console.log('[AuctionViewerPage] No authenticated user, redirecting to login', { aid })
     redirect(`/login?next=/auction/${aid}`)
   }
 
-  if (snapshot.auction?.oid === user.id) {
+  const ownerId = snapshot.auction?.oid ?? snapshot.auction?.owner?.id ?? null
+  console.log('[AuctionViewerPage] Ownership check', {
+    aid,
+    ownerId,
+    userId: user.id,
+    hasOwnerId: Boolean(ownerId)
+  })
+  if (ownerId && ownerId === user.id) {
+    console.log('[AuctionViewerPage] User is owner, redirecting to manage', { aid })
     redirect(`/auction/${aid}/manage`)
   }
 
