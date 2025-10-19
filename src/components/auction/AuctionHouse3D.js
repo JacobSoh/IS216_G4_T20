@@ -76,7 +76,9 @@ const buildLotFromSnapshot = (snapshot) => {
       minBid: 0,
       hasBid: false,
       auctionEndsAt: null,
-      auctionStartsAt: null
+      auctionStartsAt: null,
+      itemTimerSeconds: null,
+      itemTimerStartedAt: null
     }
   }
   const auction = snapshot.auction ?? {}
@@ -95,6 +97,11 @@ const buildLotFromSnapshot = (snapshot) => {
     : 0.01
   const currentBidValue = Number(activeBid?.current_price ?? 0)
   const nextBidMinimum = currentBidValue + bidIncrement
+
+  // Get item timer data from auction
+  const itemTimerStartedAt = auction.timer_started_at ? new Date(auction.timer_started_at) : null
+  const itemTimerDuration = auction.timer_duration_seconds ?? null
+
   return {
     id: active?.iid ?? null,
     name: active?.title ?? 'Upcoming Lot',
@@ -110,7 +117,9 @@ const buildLotFromSnapshot = (snapshot) => {
     nextBidMinimum,
     hasBid: Boolean(activeBid),
     auctionEndsAt: auction.end_time ?? null,
-    auctionStartsAt: auction.start_time ?? null
+    auctionStartsAt: auction.start_time ?? null,
+    itemTimerSeconds: itemTimerDuration,
+    itemTimerStartedAt: itemTimerStartedAt
   }
 }
 
@@ -1412,9 +1421,9 @@ export default function AuctionHouse3D({
   initialLiveData,
   initialChatMessages = [],
   currentUserId = null,
-  pollingMs = 7000
+  pollingMs = 7000 // Deprecated - keeping for backwards compatibility
 }) {
-  const { snapshot, isFetching, refresh } = useAuctionLive(aid, initialLiveData, pollingMs)
+  const { snapshot, isFetching, refresh } = useAuctionLive(aid, initialLiveData)
   const chatPollMs = Math.max(3000, pollingMs || 5000)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isBidPanelOpen, setIsBidPanelOpen] = useState(false)
@@ -1441,10 +1450,20 @@ export default function AuctionHouse3D({
   const [musicVolume, setMusicVolume] = useState(0.3)
   const audioRef = useRef(null)
   const hasUnlockedAudioRef = useRef(false)
+  const [itemTimerSeconds, setItemTimerSeconds] = useState(null)
 
   useEffect(() => {
-    setCurrentLot(buildLotFromSnapshot(snapshot))
+    console.log('🎯 AuctionHouse3D: Snapshot changed, rebuilding lot', {
+      activeItemId: snapshot?.activeItem?.iid,
+      activeItemTitle: snapshot?.activeItem?.title
+    })
+    const newLot = buildLotFromSnapshot(snapshot)
+    setCurrentLot(newLot)
     setLotItems(snapshot?.items ?? [])
+    console.log('🎯 AuctionHouse3D: New lot built', {
+      newLotId: newLot?.id,
+      newLotName: newLot?.name
+    })
   }, [snapshot])
 
   useEffect(() => {
@@ -1460,6 +1479,26 @@ export default function AuctionHouse3D({
     const id = window.setInterval(updateTicker, 1000)
     return () => window.clearInterval(id)
   }, [snapshot?.auction?.end_time])
+
+  // Item timer countdown calculation
+  useEffect(() => {
+    if (!currentLot.itemTimerStartedAt || !currentLot.itemTimerSeconds) {
+      setItemTimerSeconds(null)
+      return
+    }
+
+    const updateItemTimer = () => {
+      const startedAt = currentLot.itemTimerStartedAt
+      const duration = currentLot.itemTimerSeconds
+      const elapsed = Math.floor((Date.now() - startedAt.getTime()) / 1000)
+      const remaining = Math.max(0, duration - elapsed)
+      setItemTimerSeconds(remaining)
+    }
+
+    updateItemTimer()
+    const intervalId = setInterval(updateItemTimer, 1000)
+    return () => clearInterval(intervalId)
+  }, [currentLot.itemTimerStartedAt, currentLot.itemTimerSeconds])
 
 useEffect(() => {
   if (!bidFeedback) return undefined
@@ -1654,7 +1693,7 @@ useEffect(() => {
   const nextBidMinimum = useMemo(() => {
     return lotBidValue + bidIncrementValue
   }, [lotBidValue, bidIncrementValue])
-  const modalLotData = useMemo(() => buildScreenLot(currentLot, currentLot.nextItem), [currentLot, currentLot.nextItem])
+  const modalLotData = useMemo(() => buildScreenLot(currentLot, currentLot.nextItem, itemTimerSeconds), [currentLot, itemTimerSeconds])
   const auctionStart = useMemo(
     () => (currentLot.auctionStartsAt ? new Date(currentLot.auctionStartsAt) : null),
     [currentLot.auctionStartsAt]
@@ -1729,7 +1768,7 @@ useEffect(() => {
   }
 
   return (
-    <ModalContext.Provider value={{ isModalOpen, setIsModalOpen, currentLot, items: lotItems, nextItem: currentLot.nextItem }}>
+    <ModalContext.Provider value={{ isModalOpen, setIsModalOpen, currentLot, items: lotItems, nextItem: currentLot.nextItem, itemTimerSeconds }}>
       <div className="w-full h-screen bg-black relative">
         {/* Background Music */}
         <audio ref={audioRef} loop autoPlay>
@@ -1781,12 +1820,19 @@ useEffect(() => {
                 <div className={`w-3 h-3 ${isFetching ? 'bg-[#7209B7] animate-ping' : 'bg-[#7209B7] animate-pulse'} rounded-full`}></div>
                 <span className="text-sm font-medium uppercase tracking-wide text-[#7209B7]">Live Auction</span>
               </div>
-              <p className="text-purple-200 text-xs mt-1">
-                Time remaining: {currentLot.timeRemaining}
-              </p>
-              <p className="text-purple-200 text-xs">
-                {currentLot.auctionName || 'Live Lot'} · {currentLot.bidders} active bidders
-              </p>
+              <div className="space-y-1">
+                <p className="text-purple-200 text-xs">
+                  Auction ends: {currentLot.timeRemaining}
+                </p>
+                {itemTimerSeconds !== null && (
+                  <p className="text-purple-200 text-xs">
+                    Item timer: {pad(Math.floor(itemTimerSeconds / 60))}:{pad(itemTimerSeconds % 60)}
+                  </p>
+                )}
+                <p className="text-purple-200 text-xs">
+                  {currentLot.auctionName || 'Live Lot'} · {currentLot.bidders} active bidders
+                </p>
+              </div>
             </div>
 
             {/* Music Controls */}

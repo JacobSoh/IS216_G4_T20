@@ -48,3 +48,16 @@ export async function upsertItem(payload) {
   if (error) throw error
   return data ?? null
 }
+
+export async function markItemAsSold(iid) {
+  const sb = supabaseServer()
+  const { data, error } = await (
+    await sb
+  ).from('item')
+    .update({ sold: true })
+    .eq('iid', iid)
+    .select(baseItemSelect)
+    .single()
+  if (error) throw error
+  return data ?? null
+}

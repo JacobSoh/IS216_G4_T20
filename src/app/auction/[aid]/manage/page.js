@@ -5,7 +5,7 @@ import { getAuctionLiveState } from '@/services/auctionService'
 import { getServerUser } from '@/utils/auth'
 
 export default async function AuctionManagePage({ params }) {
-  const { aid } = params ?? {}
+  const { aid } = await params
   if (!aid) {
     notFound()
   }
