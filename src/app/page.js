@@ -1,66 +1,111 @@
 // FuturisticAuction.jsx
-
-'use client'
+'use client';
 import React, { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { createTimeline, stagger, splitText } from 'animejs';
+import { supabaseBrowser } from "@/utils/supabase/client";
+import AuctionCard from "@/components/AuctionCard";
+import AuctionCardSkeleton from "@/components/HomeAuctionSkele";
 
+// ---------- Main Component ----------
 export default function FuturisticAuction() {
   const scrollRef = useRef(null);
+  const sectionRef = useRef(null);
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+  if (!heroRef.current) return;
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      setShowFrame(entry.isIntersecting); // true only if hero is in viewport
+    },
+    { threshold: 0.3 }
+  );
+
+  observer.observe(heroRef.current);
+
+  return () => observer.disconnect();
+}, []);
+
+  // ---------- Featured Auctions Section ----------
+  const [auctions, setAuctions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch auctions from Supabase
+useEffect(() => {
+  const fetchAuctions = async () => {
+    const { data, error } = await supabaseBrowser()
+      .from('auction')
+      .select('aid, name, description, start_time, end_time, thumbnail_bucket, object_path')
+      .limit(5);
+
+    if (error) console.error(error);
+    else setAuctions(data);
+    setLoading(false);
+  };
+
+  fetchAuctions();
+}, []);
+
+
+
   const [auctionClicks, setAuctionClicks] = useState(0);
-  const [faqOpen, setFaqOpen] = useState([false, false, false, false]);
   const [showFrame, setShowFrame] = useState(true);
   const [letters, setLetters] = useState({ large: [], small: [] });
-  const cursorRef = useRef(null);
-
 
   const largeText = "VINTAGE\nRETRO\nFINDS";
-  const smallText =
-    "Discover pre-loved treasures\nfrom timeless eras, curated\nfor the modern collector";
+  const smallText = "Discover pre-loved treasures\nfrom timeless eras, curated\nfor the modern collector";
 
-  // Split text into letters for animation
+  // ---------- Split Text for Hero Animation ----------
   useEffect(() => {
-    const splitLetters = (text) =>
-      text.split("\n").map((line) => line.split(""));
+    const splitLetters = (text) => text.split("\n").map(line => line.split(""));
     setLetters({ large: splitLetters(largeText), small: splitLetters(smallText) });
   }, []);
 
-  // Flickering letters
+  // ---------- Animate Info Section ----------
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const { lines } = splitText(".info-heading", { lines: { wrap: "clip" }, words: true, chars: false });
+    const { lines: paragraphLines } = splitText(".info-para", { lines: { wrap: "clip" }, words: true, chars: false });
+
+    const animateIn = () => {
+      createTimeline({ loop: false, defaults: { ease: "inOut(3)", duration: 650 } })
+        .add(lines, { y: ["100%", "0%"], opacity: [0, 1] }, stagger(250))
+        .add(paragraphLines, { y: ["100%", "0%"], opacity: [0, 1] }, stagger(150))
+        .init();
+    };
+
+    const animateOut = () => {
+      createTimeline({ loop: false, defaults: { ease: "inOut(3)", duration: 650 } })
+        .add(lines, { y: ["0%", "-100%"], opacity: [1, 0] }, stagger(250))
+        .add(paragraphLines, { y: ["0%", "-100%"], opacity: [1, 0] }, stagger(150))
+        .init();
+    };
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => entry.isIntersecting ? animateIn() : animateOut());
+    }, { threshold: 0.3 });
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  // ---------- Flickering Letters ----------
   useEffect(() => {
     const interval = setInterval(() => {
       const allLetters = document.querySelectorAll(".letter");
-      allLetters.forEach((el) => el.classList.remove("flicker"));
+      allLetters.forEach(el => el.classList.remove("flicker"));
       const flickers = Array.from(allLetters)
         .sort(() => Math.random() - 0.5)
         .slice(0, Math.random() > 0.5 ? 2 : 1);
-      flickers.forEach((el) => {
-        if (!el.classList.contains("lit")) el.classList.add("flicker");
-      });
+      flickers.forEach(el => !el.classList.contains("lit") && el.classList.add("flicker"));
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Custom cursor movement
-  useEffect(() => {
-    const moveCursor = (e) => {
-      if (cursorRef.current) {
-        cursorRef.current.style.left = e.clientX + "px";
-        cursorRef.current.style.top = e.clientY + "px";
-      }
-    };
-    window.addEventListener("mousemove", moveCursor);
-    return () => window.removeEventListener("mousemove", moveCursor);
-  }, []);
-
-  // Scroll effects for frame visibility
-  useEffect(() => {
-    const handleScroll = () => {
-      const top = scrollRef.current?.scrollTop ?? 0;
-      const heroHeight = window.innerHeight;
-      setShowFrame(top <= heroHeight * 0.3);
-    };
-    const node = scrollRef.current;
-    node?.addEventListener("scroll", handleScroll);
-    return () => node?.removeEventListener("scroll", handleScroll);
   }, []);
 
   const scrollToSection = (index) => {
@@ -69,7 +114,7 @@ export default function FuturisticAuction() {
   };
 
   const handleAuctionClick = (e) => {
-    setAuctionClicks((prev) => {
+    setAuctionClicks(prev => {
       const next = prev + 1;
       const money = document.createElement("div");
       money.textContent = "💰";
@@ -82,24 +127,14 @@ export default function FuturisticAuction() {
     });
   };
 
-  const toggleFAQ = (index) => {
-    setFaqOpen((prev) =>
-      prev.map((v, i) => (i === index ? !v : v))
-    );
-  };
-
   return (
-    <div
-      ref={scrollRef}
-      className="scroll-smooth h-screen overflow-y-scroll snap-y snap-mandatory bg-black text-white relative"
-    >
+    <div ref={scrollRef} className="scroll-smooth h-screen overflow-y-scroll snap-y snap-mandatory bg-black text-white relative">
       {/* Border frame */}
       <motion.div
         animate={{ opacity: showFrame ? 1 : 0 }}
         transition={{ duration: 0.4 }}
-        className="fixed top-[76px] left-[12px] right-[12px] bottom-[12px] border-2 border-purple-500 pointer-events-none z-[1000] shadow-[0_0_20px_rgba(168,85,247,0.6),inset_0_0_20px_rgba(168,85,247,0.3)] rounded-lg"
+        className="fixed top-[12px] left-[12px] right-[12px] bottom-[12px] border-2 border-purple-500 pointer-events-none z-[1000] shadow-[0_0_20px_rgba(168,85,247,0.6),inset_0_0_20px_rgba(168,85,247,0.3)] rounded-lg"
       />
-
       {/* Glow background */}
       <motion.div
         animate={{ opacity: showFrame ? 1 : 0 }}
@@ -108,26 +143,23 @@ export default function FuturisticAuction() {
       />
 
       {/* HERO SECTION */}
-      <section className="section relative h-screen snap-start flex items-center justify-between px-12 pt-24 scroll-mt-24">
-        <div className="absolute top-14 left-12 w-1/2 space-y-8 z-50">
+      <section   ref={heroRef} className="section relative h-screen flex items-center justify-between px-12 pt-24 scroll-mt-24">
+        <div className="absolute top-10 left-12 w-1/2 space-y-8 z-50">
           {/* Large text */}
-          <div className="large-text text-[8vw] font-bold leading-tight tracking-tight">
+          <div className="large-text text-[8vw] font-bold leading-[0.85] tracking-tight">
             {letters.large.map((line, li) => (
               <div key={li}>
                 {line.map((ch, i) => (
                   <span
                     key={i}
                     className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-all duration-200"
-                    style={{
-                      WebkitTextStroke: "1px rgba(168,85,247,0.3)",
-                    }}
+                    style={{ WebkitTextStroke: "1px rgba(168,85,247,0.3)" }}
                     onMouseEnter={(e) => {
                       const el = e.target;
                       el.classList.add("lit");
                       el.classList.remove("flicker");
                       el.style.color = "#8b5cf6";
-                      el.style.textShadow =
-                        "0 0 30px rgba(168,85,247,0.8)";
+                      el.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
                       setTimeout(() => {
                         el.classList.remove("lit");
                         el.style.color = "transparent";
@@ -143,25 +175,34 @@ export default function FuturisticAuction() {
           </div>
 
           {/* Small text */}
-          <div className="text-[1.5vw] font-light tracking-wide leading-relaxed">
+          <div className="text-[1.5vw] font-sans tracking-wide leading-tight">
             {letters.small.map((line, li) => (
               <div key={li}>
                 {line.map((ch, i) => (
                   <span
                     key={i}
-                    className="letter inline-block text-transparent cursor-pointer px-1 -mx-1"
-                    style={{
-                      WebkitTextStroke: "0.5px rgba(139,92,246,0.15)",
-                    }}
+                    className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-colors duration-500"
+                    style={{ WebkitTextStroke: "0.5px rgba(168,85,247,0.25)" }}
                     onMouseEnter={(e) => {
                       const el = e.target;
-                      el.classList.add("lit");
-                      el.classList.remove("flicker");
-                      el.style.color = "#8b5cf6";
-                      setTimeout(() => {
-                        el.classList.remove("lit");
-                        el.style.color = "transparent";
-                      }, 2000);
+                      const parent = el.parentElement;
+                      const letters = Array.from(parent.querySelectorAll(".letter"));
+                      const index = letters.indexOf(el);
+                      const nearby = [index - 2, index - 1, index, index + 1, index + 2];
+                      nearby.forEach((i) => {
+                        if (letters[i]) {
+                          const l = letters[i];
+                          l.classList.add("lit");
+                          l.classList.remove("flicker");
+                          l.style.color = "#a78bfa";
+                          l.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
+                          setTimeout(() => {
+                            l.classList.remove("lit");
+                            l.style.color = "transparent";
+                            l.style.textShadow = "none";
+                          }, 1500);
+                        }
+                      });
                     }}
                   >
                     {ch === " " ? "\u00A0" : ch}
@@ -178,184 +219,132 @@ export default function FuturisticAuction() {
 
         <button
           onClick={() => scrollToSection(1)}
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 border-2 border-purple-500 text-white px-12 py-4 rounded-md shadow-[0_0_30px_rgba(168,85,247,0.5),inset_0_0_15px_rgba(168,85,247,0.2)] hover:bg-purple-500/20 hover:shadow-[0_0_50px_rgba(168,85,247,0.9),inset_0_0_25px_rgba(168,85,247,0.4)] transition-all duration-500"
+          className="absolute bottom-20 left-1/2 -translate-x-1/2 border-2 border-purple-500 text-white px-12 py-4 rounded-md shadow-[0_0_30px_rgba(168,85,247,0.5),inset_0_0_15px_rgba(168,85,247,0.2)] hover:bg-purple-500/20 hover:shadow-[0_0_100px_rgba(168,85,247,0.9),inset_0_0_100px_rgba(168,85,247,0.4)] transition-all duration-500"
         >
           DISCOVER →
         </button>
       </section>
 
-      {/* SECTION 2 */}
-      <section className="section min-h-screen snap-start bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 flex items-center px-12 relative">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="w-1/2 space-y-8">
-            <h2 className="text-[6vw] font-bold leading-tight text-purple-700">
+
+      {/* SECTION 2: Info */}
+      <section
+        ref={sectionRef}
+        className="section min-h-screen bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 flex flex-col lg:flex-row justify-between px-24 relative"
+      >
+        <div className="flex-1 flex flex-col justify-center py-24">
+          <div className="max-w-3xl -translate-y-10 -ml-10">
+            <h2 className="info-heading text-[7vw] font-bold leading-[0.9] text-purple-700">
               EXPLORE<br />CURATED<br />COLLECTIONS
             </h2>
-            <p className="text-xl text-purple-800">
-              Every piece tells a story, every item carries history.
-              Discover unique vintage treasures handpicked from around the
-              world.
+
+            <p className="info-para text-xl text-purple-800 max-w-2xl mt-12">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+              Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
           </div>
         </div>
-        <div className="absolute bottom-12 right-12 w-[400px] h-[300px] border-2 border-dashed border-purple-700/40 flex items-center justify-center text-purple-700/60">
-          Image Placeholder
+
+        <div className="flex flex-col h-[80vh] my-auto -mr-10">
+          <div className="sticky top-20 w-[400px] h-[300px] mr-8 border-2 border-dashed border-purple-700/40 flex items-center justify-center text-purple-700/60 rounded-2xl shadow-lg">
+            Image Placeholder
+          </div>
         </div>
       </section>
 
-      {/* SECTION 3: Carousel */}
-      <section className="section snap-start bg-black text-white px-12 py-30">
+      {/* SECTION 3: Featured Auctions */}
+      {/* SECTION 3: Featured Auctions */}
+      <section className="section bg-black text-white px-12 py-30">
         <div className="text-center mb-12">
-          <h2 className="text-4xl text-purple-500 mb-4">Featured Auctions</h2>
-          <p className="max-w-3xl mx-auto text-purple-400 text-lg">
+          <Link href="/featured_auctions" className="inline-block text-4xl text-purple-500 mb-4 hover:text-purple-300 transition-colors duration-300 relative group">
+            Featured Auctions
+            <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-purple-400 transition-all duration-300 group-hover:w-full" />
+          </Link>
+
+          <p className="max-w-3xl mx-auto text-purple-400 text-lg mt-4">
             Browse through our carefully curated vintage collections.
-            Each item has been authenticated and preserved to bring you the
-            best quality pieces from different eras.
           </p>
         </div>
 
         <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <div
-              key={n}
-              className="min-w-[350px] h-[400px] flex items-center justify-center border-2 border-purple-400/30 rounded-xl bg-purple-400/10 text-purple-400/70 text-lg snap-center"
-            >
-              Collection {n}
-            </div>
-          ))}
+          {loading
+  ? Array.from({ length: 5 }).map((_, i) => <AuctionCardSkeleton key={i} />)
+  : auctions.map((auction) => {
+      const picUrl = auction.thumbnail_bucket && auction.object_path
+        ? `https://your-supabase-project-url/storage/v1/object/public/${auction.thumbnail_bucket}/${auction.object_path}`
+        : null;
+
+      return (
+        <AuctionCard
+          key={auction.aid}
+          aid={auction.aid}
+          name={auction.name}
+          description={auction.description}
+          startTime={auction.start_time}
+          endTime={auction.end_time}
+          picUrl={picUrl}
+        />
+      );
+    })}
+
         </div>
       </section>
 
-      {/* SECTION 4: Auction */}
-      <section
-        id="auction"
-        className="min-h-screen snap-start bg-gradient-to-b from-[#1a0033] to-black flex flex-col items-center justify-center relative overflow-hidden"
-      >
+
+      {/* SECTION 4: Live Auction */}
+      <section id="auction" className="min-h-screen bg-gradient-to-b from-[#1a0033] to-black flex flex-col items-center justify-center relative overflow-hidden">
         <h2 className="text-5xl text-purple-400 mb-8 text-center">LIVE AUCTION</h2>
-        <p className="text-2xl mb-8">
-          Clicks: {auctionClicks} / 5
-        </p>
+        <p className="text-2xl mb-8">Clicks: {auctionClicks} / 3</p>
         <button
           onClick={handleAuctionClick}
-          disabled={auctionClicks >= 5}
-          className={`px-16 py-6 text-2xl rounded-lg border-4 transition-all duration-300 ${auctionClicks >= 5
-              ? "bg-gradient-to-r from-green-500 to-emerald-400 border-green-400 shadow-[0_0_40px_rgba(16,185,129,0.6)]"
-              : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105"
+          disabled={auctionClicks >= 3}
+          className={`px-16 py-6 text-2xl rounded-lg border-4 transition-all duration-300 ${auctionClicks >= 3
+            ? "bg-gradient-to-r from-green-500 to-emerald-400 border-green-400 shadow-[0_0_40px_rgba(16,185,129,0.6)]"
+            : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105"
             }`}
         >
-          {auctionClicks >= 5 ? "BID PLACED ✓" : "PLACE BID"}
+          {auctionClicks >= 3 ? "BID PLACED ✓" : "PLACE BID"}
         </button>
       </section>
 
-
       {/* SECTION 5: About + FAQ */}
-      <section className="section snap-start bg-black text-white px-12 pt-20 pb-30 flex flex-col lg:flex-row gap-12 max-w-6xl mx-auto">
-        <div className="flex-1">
+      <section className="section bg-black text-white px-12 flex flex-col lg:flex-row items-start justify-center gap-12 max-w-6xl mx-auto h-screen">
+        <div className="flex-1 flex flex-col justify-start items-start mt-12">
           <h2 className="text-3xl text-purple-500 mb-6">About Us</h2>
           <p className="text-purple-200 leading-relaxed text-lg">
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
             eiusmod tempor incididunt ut labore et dolore magna aliqua...
-            <br />
-            <br />
-            Duis aute irure dolor in reprehenderit in voluptate velit esse
-            cillum dolore eu fugiat nulla pariatur...
           </p>
         </div>
-        <div className="flex-1">
+
+        <div className="flex-1 flex flex-col justify-start items-start mt-12">
           <h2 className="text-3xl text-purple-500 mb-6">FAQ</h2>
-          {[
-            "How does bidding work?",
-            "Are items authenticated?",
-            "What payment methods do you accept?",
-            "Do you ship internationally?",
-          ].map((q, i) => (
-            <div
-              key={i}
-              className="border border-purple-400/40 rounded-lg mb-4 overflow-hidden"
-            >
-              <button
-                onClick={() => toggleFAQ(i)}
-                className="w-full flex justify-between items-center px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all"
-              >
-                {q}
-                <span
-                  className={`transform transition-transform ${faqOpen[i] ? "rotate-180" : ""
-                    }`}
-                >
-                  ▼
-                </span>
-              </button>
-              <AnimatePresence>
-                {faqOpen[i] && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="px-6 py-4 text-purple-300 bg-black/50"
-                  >
-                    This is the answer to "{q}". Lorem ipsum dolor sit amet,
-                    consectetur adipiscing elit.
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ))}
+
+          <Accordion type="single" collapsible className="space-y-2 w-full">
+            {[
+              "How does bidding work?",
+              "Are items authenticated?",
+              "What payment methods do you accept?",
+              "Do you ship internationally?",
+            ].map((q, i) => (
+              <AccordionItem key={i} value={`item-${i}`} className="border border-purple-400/40 rounded-lg">
+                <AccordionTrigger className="px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all">{q}</AccordionTrigger>
+                <AccordionContent className="px-6 py-4 text-purple-300 bg-black/50">
+                  This is the answer to "{q}". Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 
-      {/* Custom Cursor */}
-      <div
-        ref={cursorRef}
-        className="fixed z-[9999] pointer-events-none transform -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]"
-      >
-        <svg
-          width="40"
-          height="40"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <rect
-            x="25"
-            y="20"
-            width="50"
-            height="60"
-            rx="3"
-            fill="none"
-            stroke="#a855f7"
-            strokeWidth="2.5"
-          />
-          <line
-            x1="25"
-            y1="35"
-            x2="75"
-            y2="35"
-            stroke="#ffffff"
-            strokeWidth="1.5"
-          />
-          <circle cx="40" cy="50" r="3" fill="#a855f7" />
-          <circle cx="60" cy="50" r="3" fill="#a855f7" />
-          <path
-            d="M35 65 Q50 72 65 65"
-            stroke="#ffffff"
-            strokeWidth="1.5"
-            fill="none"
-          />
-        </svg>
-      </div>
-
-      {/* Floating animation */}
+      {/* Floating animation styles */}
       <style>{`
-        .animate-float {
-          animation: floatUp 2s ease-out forwards;
-        }
+        .animate-float { animation: floatUp 2s ease-out forwards; }
         @keyframes floatUp {
           0% { opacity: 1; transform: translateY(0) rotate(0deg); }
           100% { opacity: 0; transform: translateY(-200px) rotate(360deg); }
         }
-        .flicker {
-          animation: flicker 0.15s infinite;
-        }
+        .flicker { animation: flicker 0.15s infinite; }
         @keyframes flicker {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }
