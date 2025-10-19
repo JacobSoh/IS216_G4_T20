@@ -1451,6 +1451,7 @@ export default function AuctionHouse3D({
   const audioRef = useRef(null)
   const hasUnlockedAudioRef = useRef(false)
   const [itemTimerSeconds, setItemTimerSeconds] = useState(null)
+  const [bidConfirmModal, setBidConfirmModal] = useState(null) // { amount, onConfirm, onCancel }
 
   useEffect(() => {
     console.log('🎯 AuctionHouse3D: Snapshot changed, rebuilding lot', {
@@ -1601,6 +1602,25 @@ useEffect(() => {
       return
     }
 
+    // Show confirmation modal
+    return new Promise((resolve) => {
+      setBidConfirmModal({
+        amount: parsedAmount,
+        itemName: currentLot.name,
+        onConfirm: async () => {
+          setBidConfirmModal(null)
+          await placeBidInternal(parsedAmount)
+          resolve()
+        },
+        onCancel: () => {
+          setBidConfirmModal(null)
+          resolve()
+        }
+      })
+    })
+  }
+
+  const placeBidInternal = async (parsedAmount) => {
     try {
       setIsBidding(true)
       await axiosBrowserClient.post(`/api/auctions/${aid}/bid`, {
@@ -2065,6 +2085,69 @@ useEffect(() => {
             onClick={(event) => event.stopPropagation()}
           >
             <AuctionScreenCard lotData={modalLotData} variant="modal" onClose={() => setIsModalOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Bid Confirmation Modal */}
+      {bidConfirmModal && (
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.85)' }}>
+          <div
+            className="rounded-2xl border-2 p-6 md:p-8 max-w-md w-full"
+            style={{
+              borderColor: '#7209B7',
+              backgroundColor: '#130a1f',
+              boxShadow: '0 0 60px rgba(114, 9, 183, 0.6)'
+            }}
+          >
+            <h3 className="text-xl md:text-2xl font-bold mb-4" style={{ color: '#F8E2D4' }}>
+              🔨 Confirm Your Bid
+            </h3>
+
+            <p className="text-sm md:text-base mb-6" style={{ color: '#B984DB' }}>
+              You are about to place a bid. Please review the details below:
+            </p>
+
+            <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: '1px solid rgba(114, 9, 183, 0.4)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs uppercase font-semibold" style={{ color: '#B984DB' }}>Item</span>
+              </div>
+              <p className="font-bold text-base md:text-lg mb-3" style={{ color: '#F8E2D4' }}>{bidConfirmModal.itemName}</p>
+
+              <div className="pt-3 border-t" style={{ borderColor: 'rgba(114, 9, 183, 0.3)' }}>
+                <span className="text-xs uppercase font-semibold block mb-1" style={{ color: '#B984DB' }}>Your Bid Amount</span>
+                <p className="text-2xl md:text-3xl font-bold" style={{ color: '#E2BD6B' }}>
+                  ${bidConfirmModal.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs md:text-sm mb-6" style={{ color: '#B984DB' }}>
+              Do you want to place this bid?
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={bidConfirmModal.onCancel}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-80"
+                style={{
+                  backgroundColor: '#444',
+                  color: '#F8E2D4'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={bidConfirmModal.onConfirm}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-90"
+                style={{
+                  backgroundColor: '#E2BD6B',
+                  color: '#4D067B'
+                }}
+              >
+                Confirm Bid
+              </button>
+            </div>
           </div>
         </div>
       )}

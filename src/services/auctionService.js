@@ -288,25 +288,25 @@ export async function closeItemSale({ aid, iid, actorId }) {
 
   // Get current bid
   const currentBid = await retrieveCurrentBidByItem(iid)
-  if (!currentBid || !currentBid.uid) {
-    throw new Error('Cannot close sale: No bids have been placed on this item')
+  const hasBids = Boolean(currentBid && currentBid.uid)
+
+  // If there are bids, log to items_sold table
+  if (hasBids) {
+    const itemSoldPayload = {
+      iid,
+      aid,
+      buyer_id: currentBid.uid,
+      seller_id: itemRecord.oid,
+      final_price: currentBid.current_price,
+      sold_at: new Date().toISOString()
+    }
+    await insertItemSold(itemSoldPayload)
   }
 
-  // 1. Insert into items_sold table
-  const itemSoldPayload = {
-    iid,
-    aid,
-    buyer_id: currentBid.uid,
-    seller_id: itemRecord.oid,
-    final_price: currentBid.current_price,
-    sold_at: new Date().toISOString()
-  }
-  await insertItemSold(itemSoldPayload)
-
-  // 2. Mark item as sold in items table
+  // Mark item as sold in items table (whether or not there are bids)
   await markItemAsSold(iid)
 
-  // 3. Clear the countdown timer
+  // Clear the countdown timer
   await updateAuctionTimer(aid, {
     timer_started_at: null,
     timer_duration_seconds: null
@@ -315,8 +315,9 @@ export async function closeItemSale({ aid, iid, actorId }) {
   return {
     success: true,
     itemId: iid,
-    buyerId: currentBid.uid,
-    finalPrice: currentBid.current_price
+    buyerId: hasBids ? currentBid.uid : null,
+    finalPrice: hasBids ? currentBid.current_price : null,
+    hasBids
   }
 }
 

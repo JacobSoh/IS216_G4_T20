@@ -31,6 +31,9 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
   const [timerAdjust, setTimerAdjust] = useState({ minutes: '', seconds: '' })
   const timerIntervalRef = useRef(null)
 
+  // Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState(null) // { title, message, status, onConfirm, onCancel }
+
   const items = useMemo(() => snapshot?.items ?? [], [snapshot?.items])
   const activeItemId = snapshot?.activeItem?.iid ?? null
   const activeItem = items.find(item => item.iid === activeItemId)
@@ -48,6 +51,21 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
       timestamp: new Date(bid.bid_datetime)
     }))
   }, [snapshot?.bidHistory])
+
+  // Determine next item to activate (first unsold, non-active item)
+  const nextItemToActivate = useMemo(() => {
+    // If there's no active item, return the first unsold item
+    if (!activeItemId) {
+      return items.find(item => !item.sold)
+    }
+    // If there is an active item, return the first unsold item that's not active
+    return items.find(item => !item.sold && item.iid !== activeItemId)
+  }, [items, activeItemId])
+
+  // Check if item has any bids
+  const getItemBidCount = useCallback((iid) => {
+    return bidHistory.filter(bid => bid.iid === iid).length
+  }, [bidHistory])
 
   // Format seconds to MM:SS
   const formatTime = (seconds) => {
@@ -83,8 +101,37 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
     }
   }, [snapshot?.auction, activeItemId])
 
+  // Activate item internal function
+  const activateItemInternal = useCallback(async (iid, price) => {
+    setBusyItem(iid)
+    setError(null)
+    try {
+      const res = await fetch(`/api/auctions/${aid}/active`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          iid,
+          currentPrice: price
+        })
+      })
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}))
+        throw new Error(payload.error ?? 'Unable to activate lot')
+      }
+
+      // Refresh to get updated timer from database
+      await refresh()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusyItem(null)
+    }
+  }, [aid, refresh])
+
   // Close item sale function
-  const closeItemSale = useCallback(async (iid, isAutoClose = false) => {
+  const closeItemSale = useCallback(async (iid, isAutoClose = false, shouldActivateNext = true) => {
     if (!isAutoClose) {
       if (!window.confirm('Are you sure you want to close this lot and finalize the sale to the highest bidder?')) {
         return
@@ -110,49 +157,80 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
       // Stop timer
       setActiveTimer(null)
 
-      setSuccess(`Item sold successfully for ${currencyFormatter.format(result.record.final_price)}!`)
+      if (result.record.hasBids) {
+        setSuccess(`Item sold successfully for ${currencyFormatter.format(result.record.finalPrice)}!`)
+      } else {
+        setSuccess('Item closed (no bids received)')
+      }
       setTimeout(() => setSuccess(null), 5000)
 
       await refresh()
+
+      // Auto-activate next item if requested
+      if (shouldActivateNext) {
+        // Wait a bit for refresh to complete
+        setTimeout(async () => {
+          const nextItem = items.find(item => !item.sold && item.iid !== iid)
+          if (nextItem) {
+            const currentPrice = nextItem.current_bid?.current_price ?? nextItem.min_bid ?? 0
+            await activateItemInternal(nextItem.iid, currentPrice)
+          }
+        }, 500)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
       setBusyItem(null)
     }
-  }, [aid, refresh])
+  }, [aid, refresh, items, activateItemInternal])
 
-  // Timer countdown logic
+  // Timer countdown logic - recalculate from database every second
   useEffect(() => {
-    if (activeTimer?.isRunning && activeTimer.secondsLeft > 0) {
-      timerIntervalRef.current = setInterval(() => {
-        setActiveTimer(prev => {
-          if (!prev || prev.secondsLeft <= 0) {
-            return prev
-          }
+    const auctionData = snapshot?.auction
+    if (!auctionData || !activeItemId || !auctionData.timer_started_at || !auctionData.timer_duration_seconds) {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
+      }
+      return
+    }
 
-          const newSecondsLeft = prev.secondsLeft - 1
+    const updateTimer = () => {
+      const startedAt = new Date(auctionData.timer_started_at)
+      const duration = auctionData.timer_duration_seconds
+      const elapsed = Math.floor((Date.now() - startedAt.getTime()) / 1000)
+      const remaining = Math.max(0, duration - elapsed)
 
-          // Auto-close when timer hits 0 if item is still active
-          if (newSecondsLeft <= 0) {
-            // Check if item has bids before auto-closing
-            const itemBids = bidHistory.filter(bid => bid.iid === prev.iid)
-            if (itemBids.length > 0) {
-              closeItemSale(prev.iid, true) // true = auto-close
-            }
-            return { ...prev, secondsLeft: 0, isRunning: false }
-          }
+      setActiveTimer(prev => ({
+        ...prev,
+        iid: activeItemId,
+        secondsLeft: remaining,
+        isRunning: remaining > 0
+      }))
 
-          return { ...prev, secondsLeft: newSecondsLeft }
-        })
-      }, 1000)
-
-      return () => {
+      // Auto-close when timer hits 0 if item has bids
+      if (remaining <= 0) {
+        const itemBids = bidHistory.filter(bid => bid.iid === activeItemId)
+        if (itemBids.length > 0) {
+          closeItemSale(activeItemId, true) // true = auto-close
+        }
         if (timerIntervalRef.current) {
           clearInterval(timerIntervalRef.current)
+          timerIntervalRef.current = null
         }
       }
     }
-  }, [activeTimer?.isRunning, activeTimer?.secondsLeft, bidHistory, closeItemSale])
+
+    updateTimer()
+    timerIntervalRef.current = setInterval(updateTimer, 1000)
+
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
+      }
+    }
+  }, [snapshot?.auction, activeItemId, bidHistory, closeItemSale])
 
   // Adjust timer while running
   const adjustTimer = async () => {
@@ -189,31 +267,46 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
   }
 
   const activateItem = async (iid, price) => {
-    setBusyItem(iid)
-    setError(null)
-    try {
-      const res = await fetch(`/api/auctions/${aid}/active`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          iid,
-          currentPrice: price
+    // If there's an active item, show confirmation modal
+    if (activeItemId && activeItemId !== iid) {
+      const activeItemTitle = activeItem?.title || 'current item'
+      const itemHasBids = getItemBidCount(activeItemId) > 0
+      const action = itemHasBids ? 'SOLD' : 'CLOSED'
+
+      return new Promise((resolve) => {
+        setConfirmModal({
+          title: '⚠️ Confirm Item Activation',
+          currentItem: activeItemTitle,
+          status: itemHasBids ? 'Has bids - will be SOLD' : 'No bids - will be CLOSED',
+          action,
+          onConfirm: async () => {
+            setConfirmModal(null)
+
+            // Close the previous item first (don't auto-activate since we're manually activating)
+            try {
+              setBusyItem(activeItemId)
+              await closeItemSale(activeItemId, true, false) // true = auto-close, false = don't auto-activate next
+            } catch (err) {
+              setError(`Failed to close previous item: ${err.message}`)
+              setBusyItem(null)
+              resolve()
+              return
+            }
+
+            // Activate new item
+            await activateItemInternal(iid, price)
+            resolve()
+          },
+          onCancel: () => {
+            setConfirmModal(null)
+            resolve()
+          }
         })
       })
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}))
-        throw new Error(payload.error ?? 'Unable to activate lot')
-      }
-
-      // Refresh to get updated timer from database
-      await refresh()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusyItem(null)
     }
+
+    // No active item, just activate directly
+    await activateItemInternal(iid, price)
   }
 
   const updateTimerAdjustMinutes = (value) => {
@@ -296,6 +389,9 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
               const currentPrice = item.current_bid?.current_price ?? item.min_bid ?? 0
               const isActive = activeItemId === item.iid
               const isSold = item.sold === true
+              const itemHasBids = getItemBidCount(item.iid) > 0
+              const isNextInSequence = nextItemToActivate?.iid === item.iid
+              const canActivate = !isActive && !isSold && isNextInSequence
 
               return (
                 <div
@@ -313,11 +409,11 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
                       <span
                         className="text-xs uppercase font-bold tracking-wider px-2 py-1 rounded"
                         style={{
-                          backgroundColor: '#666',
-                          color: '#fff'
+                          backgroundColor: itemHasBids ? COLORS.goldenTan : '#666',
+                          color: itemHasBids ? COLORS.deepPurple : '#fff'
                         }}
                       >
-                        SOLD
+                        {itemHasBids ? 'SOLD' : 'CLOSED'}
                       </span>
                     </div>
                   )}
@@ -446,14 +542,15 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
                     <button
                       type="button"
                       onClick={() => activateItem(item.iid, currentPrice)}
-                      disabled={busyItem === item.iid || isActive || isSold}
+                      disabled={busyItem === item.iid || isActive || isSold || !canActivate}
                       className="w-full px-4 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
-                        backgroundColor: isSold ? '#666' : isActive ? `${COLORS.richPurple}80` : COLORS.goldenTan,
-                        color: isSold ? '#ccc' : isActive ? COLORS.warmCream : COLORS.deepPurple
+                        backgroundColor: isSold ? '#666' : isActive ? `${COLORS.richPurple}80` : canActivate ? COLORS.goldenTan : '#444',
+                        color: isSold ? '#ccc' : isActive ? COLORS.warmCream : canActivate ? COLORS.deepPurple : '#999'
                       }}
+                      title={!canActivate && !isActive && !isSold ? 'Complete previous items first' : ''}
                     >
-                      {busyItem === item.iid ? 'Activating...' : isSold ? 'Sold' : isActive ? 'Active Now' : 'Make Active'}
+                      {busyItem === item.iid ? 'Activating...' : isSold ? (itemHasBids ? 'Sold' : 'Closed') : isActive ? 'Active Now' : canActivate ? 'Make Active' : 'Locked'}
                     </button>
                   </div>
                 </div>
@@ -737,6 +834,65 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}>
+          <div
+            className="rounded-2xl border-2 p-8 max-w-md w-full"
+            style={{
+              borderColor: COLORS.richPurple,
+              backgroundColor: '#130a1f',
+              boxShadow: `0 0 60px ${COLORS.richPurple}60`
+            }}
+          >
+            <h3 className="text-2xl font-bold mb-4" style={{ color: COLORS.warmCream }}>
+              {confirmModal.title}
+            </h3>
+
+            <p className="text-base mb-6" style={{ color: COLORS.lightPurple }}>
+              Activating the next item will automatically <span className="font-bold" style={{ color: COLORS.goldenTan }}>{confirmModal.action}</span> the previous item.
+            </p>
+
+            <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: `1px solid ${COLORS.richPurple}40` }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs uppercase font-semibold" style={{ color: COLORS.lightPurple }}>Current Item</span>
+              </div>
+              <p className="font-bold text-lg mb-2" style={{ color: COLORS.warmCream }}>&ldquo;{confirmModal.currentItem}&rdquo;</p>
+              <p className="text-sm" style={{ color: confirmModal.action === 'SOLD' ? COLORS.goldenTan : '#999' }}>
+                {confirmModal.status}
+              </p>
+            </div>
+
+            <p className="text-sm mb-6" style={{ color: COLORS.lightPurple }}>
+              Do you want to continue?
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={confirmModal.onCancel}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-80"
+                style={{
+                  backgroundColor: '#444',
+                  color: COLORS.warmCream
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-90"
+                style={{
+                  backgroundColor: COLORS.goldenTan,
+                  color: COLORS.deepPurple
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
