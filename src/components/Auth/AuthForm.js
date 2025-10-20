@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { Button } from '@headlessui/react';
 import {
 	Header,
-	InputControl,
 	SwitchLink,
 } from '@/components/Auth/sub';
+import {
+	InputControl
+} from '@/components/sub/index';
 import Spinner from '@/components/SpinnerComponent';
 import { useAuthForm } from '@/hooks/useAuthForm';
 

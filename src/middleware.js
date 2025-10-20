@@ -19,15 +19,7 @@ export async function middleware(req) {
     if (isAuthed && isAuthPage) {
         return NextResponse.redirect(new URL('/', req.url));
     };
-
-    const set = (k, v, maxAge = 10) =>
-        res.cookies.set(k, String(v), {
-        path: '/',
-        maxAge,               // seconds
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        });
-
+    
     const isProtected =
         pathname.startsWith('/profile') ||
         pathname.startsWith('/auction');
