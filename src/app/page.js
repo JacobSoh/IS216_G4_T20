@@ -6,8 +6,9 @@ import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { createTimeline, stagger, splitText } from 'animejs';
 import { supabaseBrowser } from "@/utils/supabase/client";
-import AuctionCard from "@/components/AuctionCard";
-import AuctionCardSkeleton from "@/components/HomeAuctionSkele";
+import { AuctionMinimal, AuctionMinimalSkeleton } from "@/components/LandingAuction";
+import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/landingauctionhover";
+
 
 // ---------- Main Component ----------
 export default function FuturisticAuction() {
@@ -16,39 +17,39 @@ export default function FuturisticAuction() {
   const heroRef = useRef(null);
 
   useEffect(() => {
-  if (!heroRef.current) return;
+    if (!heroRef.current) return;
 
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      setShowFrame(entry.isIntersecting); // true only if hero is in viewport
-    },
-    { threshold: 0.3 }
-  );
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowFrame(entry.isIntersecting); // true only if hero is in viewport
+      },
+      { threshold: 0.3 }
+    );
 
-  observer.observe(heroRef.current);
+    observer.observe(heroRef.current);
 
-  return () => observer.disconnect();
-}, []);
+    return () => observer.disconnect();
+  }, []);
 
   // ---------- Featured Auctions Section ----------
   const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch auctions from Supabase
-useEffect(() => {
-  const fetchAuctions = async () => {
-    const { data, error } = await supabaseBrowser()
-      .from('auction')
-      .select('aid, name, description, start_time, end_time, thumbnail_bucket, object_path')
-      .limit(5);
+  useEffect(() => {
+    const fetchAuctions = async () => {
+      const { data, error } = await supabaseBrowser()
+        .from('auction')
+        .select('aid, name, description, start_time, end_time, thumbnail_bucket, object_path')
+        .limit(5);
 
-    if (error) console.error(error);
-    else setAuctions(data);
-    setLoading(false);
-  };
+      if (error) console.error(error);
+      else setAuctions(data);
+      setLoading(false);
+    };
 
-  fetchAuctions();
-}, []);
+    fetchAuctions();
+  }, []);
 
 
 
@@ -143,7 +144,7 @@ useEffect(() => {
       />
 
       {/* HERO SECTION */}
-      <section   ref={heroRef} className="section relative h-screen flex items-center justify-between px-12 pt-24 scroll-mt-24">
+      <section ref={heroRef} className="section relative h-screen flex items-center justify-between px-12 pt-24 scroll-mt-24">
         <div className="absolute top-10 left-12 w-1/2 space-y-8 z-50">
           {/* Large text */}
           <div className="large-text text-[8vw] font-bold leading-[0.85] tracking-tight">
@@ -232,7 +233,7 @@ useEffect(() => {
         className="section min-h-screen bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 flex flex-col lg:flex-row justify-between px-24 relative"
       >
         <div className="flex-1 flex flex-col justify-center py-24">
-          <div className="max-w-3xl -translate-y-10 -ml-10">
+          <div className="max-w-3xl -translate-y-30 -ml-10">
             <h2 className="info-heading text-[7vw] font-bold leading-[0.9] text-purple-700">
               EXPLORE<br />CURATED<br />COLLECTIONS
             </h2>
@@ -252,59 +253,89 @@ useEffect(() => {
       </section>
 
       {/* SECTION 3: Featured Auctions */}
-      {/* SECTION 3: Featured Auctions */}
-      <section className="section bg-black text-white px-12 py-30">
+
+      <section className="section min-h-screen  bg-gradient-to-br from-purple-700 to-purple-800 px-12 py-30">
         <div className="text-center mb-12">
-          <Link href="/featured_auctions" className="inline-block text-4xl text-purple-500 mb-4 hover:text-purple-300 transition-colors duration-300 relative group">
+          <Link
+            href="/featured_auctions"
+            className="inline-block text-[8vw] text-black mb-4 hover:text-green-200 transition-colors duration-300 relative group"
+          >
             Featured Auctions
-            <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-purple-400 transition-all duration-300 group-hover:w-full" />
+            <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-green-300 transition-all duration-300 group-hover:w-full" />
           </Link>
 
-          <p className="max-w-3xl mx-auto text-purple-400 text-lg mt-4">
-            Browse through our carefully curated vintage collections.
+          <p className="max-w-3xl mx-auto text-black text-lg mt-4">
+            Browse through our carefully curated vintage collections.Gonna add some picture effect soon
           </p>
         </div>
 
-        <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory">
+        {/* Grid layout: exactly 2 per row on all larger screens */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           {loading
-  ? Array.from({ length: 5 }).map((_, i) => <AuctionCardSkeleton key={i} />)
-  : auctions.map((auction) => {
-      const picUrl = auction.thumbnail_bucket && auction.object_path
-        ? `https://your-supabase-project-url/storage/v1/object/public/${auction.thumbnail_bucket}/${auction.object_path}`
-        : null;
+            ? Array.from({ length: 6 }).map((_, i) => (
+              <AuctionHoverPictureSkeleton key={i} />
+            ))
+            : auctions.map((auction) => {
+              const picUrl =
+                auction.thumbnail_bucket && auction.object_path
+                  ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${auction.thumbnail_bucket}/${auction.object_path}`
+                  : null;
 
-      return (
-        <AuctionCard
-          key={auction.aid}
-          aid={auction.aid}
-          name={auction.name}
-          description={auction.description}
-          startTime={auction.start_time}
-          endTime={auction.end_time}
-          picUrl={picUrl}
-        />
-      );
-    })}
 
+              return (
+                <AuctionHoverPicture
+                  key={auction.aid}
+                  name={auction.name}
+                  picUrl={picUrl}
+                />
+              );
+            })}
         </div>
+
+
       </section>
+
+
 
 
       {/* SECTION 4: Live Auction */}
-      <section id="auction" className="min-h-screen bg-gradient-to-b from-[#1a0033] to-black flex flex-col items-center justify-center relative overflow-hidden">
-        <h2 className="text-5xl text-purple-400 mb-8 text-center">LIVE AUCTION</h2>
-        <p className="text-2xl mb-8">Clicks: {auctionClicks} / 3</p>
-        <button
-          onClick={handleAuctionClick}
-          disabled={auctionClicks >= 3}
-          className={`px-16 py-6 text-2xl rounded-lg border-4 transition-all duration-300 ${auctionClicks >= 3
-            ? "bg-gradient-to-r from-green-500 to-emerald-400 border-green-400 shadow-[0_0_40px_rgba(16,185,129,0.6)]"
-            : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105"
-            }`}
-        >
-          {auctionClicks >= 3 ? "BID PLACED ✓" : "PLACE BID"}
-        </button>
-      </section>
+<section
+  id="auction"
+  className="relative w-full flex flex-col items-center justify-center overflow-hidden"
+>
+  {/* Background Image */}
+  <div
+    className="w-full h-[90vh] bg-cover bg-center"
+    style={{
+      backgroundImage:
+        "url('https://img.freepik.com/premium-photo/empty-elegant-classic-theatre-with-spotlight-shot-from-stage-opera-house-with-beautiful-golden-decoration-ready-recieve-audience-play-ballet-show_263512-9763.jpg')",
+    }}
+  />
+
+  {/* Vertical Gradient on top portion */}
+  <div className="absolute top-0 left-0 w-full h-[45%] bg-gradient-to-b from-blue-900 to-yellow-200"></div>
+
+  {/* Content */}
+  <div className="absolute top-1/2 w-full flex flex-col items-center transform -translate-y-1/2 z-10">
+    <h2 className="text-5xl text-purple-400 mb-8 text-center">
+      LIVE AUCTION
+    </h2>
+    <p className="text-2xl mb-8">Clicks: {auctionClicks} / 3</p>
+    <button
+      onClick={handleAuctionClick}
+      disabled={auctionClicks >= 3}
+      className={`px-16 py-6 text-2xl rounded-lg border-4 transition-all duration-300 ${
+        auctionClicks >= 3
+          ? "bg-gradient-to-r from-green-500 to-emerald-400 border-green-400 shadow-[0_0_40px_rgba(16,185,129,0.6)]"
+          : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105"
+      }`}
+    >
+      {auctionClicks >= 3 ? "BID PLACED ✓" : "PLACE BID"}
+    </button>
+  </div>
+</section>
+
+
 
       {/* SECTION 5: About + FAQ */}
       <section className="section bg-black text-white px-12 flex flex-col lg:flex-row items-start justify-center gap-12 max-w-6xl mx-auto h-screen">
