@@ -15,7 +15,9 @@ import {
 } from '@/components/Profile';
 import WalletModal from '@/components/wallet/WalletModal';
 import { useModal } from "@/context/ModalContext";
-import { useAlert } from '@/context/AlertContext';
+import { toast } from "sonner";
+
+
 import Spinner from "@/components/SpinnerComponent";
 import getProfile from "@/hooks/getProfile";
 import { getAvatarPublicUrl } from '@/hooks/getStorage';
@@ -33,7 +35,6 @@ import {
 
 export default function ProfilePage() {
 	const { openModal, closeModal } = useModal();
-	const { showAlert } = useAlert();
 	const [profile, setProfile] = useState(null);
 	const [avatarUrl, setAvatarUrl] = useState(null);
 	const [loading, setLoading] = useState(true);
@@ -68,18 +69,10 @@ export default function ProfilePage() {
 				navigator.clipboard.writeText(profileUrl)
 					.then(() => {
 						{/* this alert doesnt fit iPhone6 width, can help mod @/context/AlertContext? */}
-						showAlert({
-							message: 'Link copied to clipboard!',
-							variant: 'success',
-							timeoutMs: 2000
-						});
+						toast.success('Link copied to clipboard!');
 					})
 					.catch(() => {
-						showAlert({
-							message: 'Failed to copy link',
-							variant: 'error',
-							timeoutMs: 2000
-						});
+						toast.error('Failed to copy link!');
 					});
 				break;
 			};

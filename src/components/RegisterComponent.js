@@ -3,7 +3,6 @@ import { useState } from 'react';
 import AuthFormComponent from '@/components/AuthFormComponent';
 import { axiosBrowserClient } from '@/utils/axios/client';
 import { useRouter } from 'next/navigation';
-import { useAlert } from '@/context/AlertContext';
 import { useModal } from '@/context/ModalContext';
 
 export default function Register() {

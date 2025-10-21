@@ -20,13 +20,14 @@ import {
 } from '@/components/Profile';
 import WalletModal from '@/components/wallet/WalletModal';
 import { useModal } from "@/context/ModalContext";
-import { useAlert } from '@/context/AlertContext';
 import Spinner from "@/components/SpinnerComponent";
 
 import getProfile from "@/hooks/getProfile";
 import { getAvatarPublicUrl } from '@/hooks/getStorage';
 import Modal from "@/components/ModalComponent";
 import getTimeAgo from "@/utils/profile/getTimeAgo";
+
+import { toast } from "sonner";
 
 const initialState = {
     loading: true,
@@ -49,7 +50,7 @@ const reducer = (s, a) => {
 
 export default function ProfilePage({ req, ctx }) {
     const { openModal, closeModal } = useModal();
-    const { showAlert } = useAlert();
+    
     const params = useParams();
     const supabase = supabaseBrowser();
     const [profile, setProfile] = useState(null);
@@ -126,18 +127,10 @@ export default function ProfilePage({ req, ctx }) {
                 const profileUrl = `${window.location.origin}/user/${profile?.username}`;
                 navigator.clipboard.writeText(profileUrl)
                     .then(() => {
-                        showAlert({
-                            message: 'Link copied to clipboard!',
-                            variant: 'success',
-                            timeoutMs: 3000
-                        });
+                        toast.success('Link copied to clipboard!');
                     })
                     .catch(() => {
-                        showAlert({
-                            message: 'Failed to copy link',
-                            variant: 'error',
-                            timeoutMs: 3000
-                        });
+                        toast.error('Failed to copy link');
                     });
                 break;
             };

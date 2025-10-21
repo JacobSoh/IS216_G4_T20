@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import AuthFormComponent from '@/components/AuthFormComponent';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import { useAlert } from '@/context/AlertContext';
+
 import { useModal } from '@/context/ModalContext';
+
+import { toast } from "sonner";
 
 export default function Login() {
     const [showLoading, setShowLoading] = useState(false);

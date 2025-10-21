@@ -20,9 +20,9 @@ export async function middleware(req) {
         return NextResponse.redirect(new URL('/', req.url));
     };
     
-    const isProtected =
-        pathname.startsWith('/profile') ||
-        pathname.startsWith('/auction');
+    const isProtected = false;
+        // pathname.startsWith('/profile') ||
+        // pathname.startsWith('/auction');
 
     if (isProtected && !isAuthed) {
         const loginUrl = new URL('/', req.url);
