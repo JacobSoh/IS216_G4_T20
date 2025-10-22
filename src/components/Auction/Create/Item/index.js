@@ -69,20 +69,14 @@ export default function AddItemModal({
     <FieldGroup>
       <CustomInput
         type="itemName"
-        value={form.itemName}
-        onChange={handleField}
         required={true}
       />
       <CustomInput
         type="minBid"
-        value={form.minBid}
-        onChange={handleField}
         required={true}
       />
       <CustomInput
         type="bidIncrement"
-        value={form.bidIncrement}
-        onChange={handleField}
       />
       <CustomFileInput
         type="itemFile"

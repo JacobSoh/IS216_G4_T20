@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { FieldGroup } from '@/components/ui/field';
 import { CustomInput } from '@/components/Form/CustomInput';
+import { CustomFileInput } from '@/components/Form/CustomFileInput';
 import { CustomerDatePicker } from '@/components/Form/CustomDatePicker';
 import { CustomTextarea } from '@/components/Form/CustomTextarea';
 
@@ -27,10 +28,9 @@ function reducer(s, a) {
 };
 
 export default function AuctionCreateForm({
- onSubmit
+  onSubmit
 }) {
   const { setModalHeader, setModalState, setModalForm } = useModal();
-  const [form, setForm] = useReducer(reducer, intial);
   const [showLoading, setShowLoading] = useState(false);
 
   const handleField = (f) => (e) => {
@@ -130,32 +130,39 @@ export default function AuctionCreateForm({
 
   // const badgeColorClass = items.length === 0 ? 'bg-[var(--custom-accent-red)] ring-[var(--custom-accent-red)]' : 'bg-[var(--custom-bright-blue)] ring-[var(--custom-bright-blue)]';
 
+  const filterRule = /^image\//i;
+
   return (
     <form id="auctionCreate" onSubmit={onSubmit}>
       <FieldGroup>
-        <CustomInput
-          type='auctionName'
-          value={form.auctionName}
-          onChange={handleField}
-          required={true}
-        />
-        <CustomTextarea
-          type="auctionDescription"
-          value={form.auctionDescription}
-          onChange={handleField}
-          required={true}
-        />
+        <div className='grid lg:grid-cols-2 justify-center items-center gap-2'>
+          <FieldGroup>
+            <CustomInput
+              type='auctionName'
+              required={true}
+            />
+            <CustomTextarea
+              type="auctionDescription"
+              required={true}
+            />
+          </FieldGroup>
+          <FieldGroup>
+            <CustomFileInput
+              type="auctionFile"
+              label="Upload Auction Image"
+              filterRule={filterRule}
+              maxLength={1}
+              required={true}
+            />
+          </FieldGroup>
+        </div>
         <div className='flex gap-2'>
           <CustomerDatePicker
             type="startDateTime"
-            value={form.startTime}
-            onChange={handleField}
             required={true}
           />
           <CustomerDatePicker
             type="endDateTime"
-            value={form.endTime}
-            onChange={handleField}
             required={true}
           />
         </div>

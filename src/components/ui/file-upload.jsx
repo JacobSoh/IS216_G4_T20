@@ -7,7 +7,6 @@ import { useDropzone } from "react-dropzone";
 import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
 import Image from 'next/image';
-import FileCarousel from '@/components/Auction/Sub/FileCarousel';
 import FileCard from '@/components/Auction/Sub/FileCard';
 
 const mainVariant = {

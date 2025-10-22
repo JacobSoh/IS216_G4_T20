@@ -5,7 +5,6 @@ import { FileUpload } from "@/components/ui/file-upload";
 export function CustomFileInput({
   type,
   label, 
-  onChange,
   err,
   required,
   filterRule,
@@ -22,7 +21,7 @@ export function CustomFileInput({
         {label}
       </FieldLabel>
       <div className={`w-full max-w-4xl relative mx-auto border border-dashed bg-white dark:bg-black border-neutral-200 dark:border-neutral-800 rounded-lg`}>
-        <FileUpload id={id} name={type} onChange={onChange} required={true} filterRule={filterRule} maxLength={maxLength}/>
+        <FileUpload id={id} name={type} required={true} filterRule={filterRule} maxLength={maxLength}/>
       </div>
       <FieldError>{err}</FieldError>
     </Field>

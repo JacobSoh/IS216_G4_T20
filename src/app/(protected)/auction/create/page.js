@@ -41,6 +41,7 @@ export default function AuctionCreate() {
 
     const auctionName = form.get("auctionName").trim();
     const auctionDescription = form.get("auctionDescription").trim();
+    const auctionFile = form.get("auctionFile").trim();
     const startDateTime = form.get("startDateTime").trim();
     const endDateTime = form.get("endDateTime").trim();
     

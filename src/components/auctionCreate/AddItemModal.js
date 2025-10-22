@@ -46,10 +46,6 @@ export default function AddItemModal({
   };
 
   const filterRule = /^image\//i;
-  function handleFiles(files) {
-    const imageFiles = Array.from(files).filter(f => filterRule.test(files));
-    setFiles(imageFiles);
-  }
   // function handleFileChange(e) { handleFiles(e.target.files); }
   // function handleDrop(e) { e.preventDefault(); handleFiles(e.dataTransfer.files); }
   // function handleDragEnter(e) { e.preventDefault(); setIsDrag(true); }
@@ -110,9 +106,8 @@ export default function AddItemModal({
         />
       </div>
       <CustomFileInput
-        type="item_file"
-        label="Upload Item Images"
-        onChange={handleFiles}
+        type="itemFile"
+        label="Upload Auction Image"
         filterRule={filterRule}
         required={true}
       />
