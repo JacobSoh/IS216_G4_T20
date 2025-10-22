@@ -1,7 +1,7 @@
 // FuturisticAuction.jsx
 'use client';
 import React, { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { createTimeline, stagger, splitText } from 'animejs';
@@ -15,6 +15,17 @@ export default function FuturisticAuction() {
   const scrollRef = useRef(null);
   const sectionRef = useRef(null);
   const heroRef = useRef(null);
+
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end end"],
+  });
+
+  // Scale video smoothly from 0.8x to 1.2x as user scrolls
+  const videoScale = useTransform(scrollYProgress, [0, 0.5], [0.8, 1.2]);
+  const videoOpacity = useTransform(scrollYProgress, [0, 0.3], [0.7, 1]);
+
 
   useEffect(() => {
     if (!heroRef.current) return;
@@ -253,23 +264,23 @@ export default function FuturisticAuction() {
       </section>
 
       {/* SECTION 3: Featured Auctions */}
-
-      <section className="section min-h-screen  bg-gradient-to-br from-purple-700 to-purple-800 px-12 py-30">
-        <div className="text-center mb-12">
+      <section className="section min-h-screen bg-gradient-to-br from-purple-700 to-purple-800 px-12 pt-4 pb-20">
+        {/* Header */}
+        <div className="text-center mb-20 mt-2">
           <Link
             href="/featured_auctions"
-            className="inline-block text-[8vw] text-black mb-4 hover:text-green-200 transition-colors duration-300 relative group"
+            className="inline-block text-[18vw] md:text-8xl lg:text-9xl font-bold text-purple-300 leading-none hover:text-white transition-colors duration-300 relative group"
           >
             Featured Auctions
-            <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-green-300 transition-all duration-300 group-hover:w-full" />
+            <span className="absolute bottom-0 left-0 w-0 h-[4px] bg-white transition-all duration-300 group-hover:w-full" />
           </Link>
 
-          <p className="max-w-3xl mx-auto text-black text-lg mt-4">
-            Browse through our carefully curated vintage collections.Gonna add some picture effect soon
+          <p className="max-w-3xl mx-auto text-purple-300 text-2xl mt-4">
+            Browse through our carefully curated vintage collections. Gonna add some picture effect soon.
           </p>
         </div>
 
-        {/* Grid layout: exactly 2 per row on all larger screens */}
+        {/* Grid layout: 3 per row on larger screens */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => (
@@ -281,92 +292,173 @@ export default function FuturisticAuction() {
                   ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${auction.thumbnail_bucket}/${auction.object_path}`
                   : null;
 
-
               return (
                 <AuctionHoverPicture
                   key={auction.aid}
                   name={auction.name}
                   picUrl={picUrl}
+                  hoverTextColor="white" // pass hover color prop if your component supports it
                 />
               );
             })}
         </div>
+      </section>
 
+      {/* SECTION 4: Live Auction */}
+      <section
+        id="auction"
+        ref={ref}
+        className="relative w-full h-[300vh] flex flex-col items-center justify-start overflow-hidden"
+      >
+        {/* Background Gradient */}
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-200 via-purple-300 to-purple-200"></div>
+
+        {/* Larger Expanding Video Placeholder with Glow */}
+        <motion.div
+          style={{ scale: videoScale, opacity: videoOpacity }}
+          className="sticky top-16 w-[85vw] h-[55vh] md:w-[75vw] md:h-[65vh] 
+               bg-purple-300/40 border-4 border-purple-500 rounded-3xl 
+               flex items-center justify-center text-purple-100 text-3xl font-semibold 
+               shadow-[0_0_40px_rgba(168,85,247,0.6),0_0_80px_rgba(168,85,247,0.4)] 
+               transition-all duration-500"
+        >
+          Video Placeholder
+        </motion.div>
+
+        {/* Content Below Video */}
+        <div className="relative mt-[130vh] w-full flex flex-col items-center justify-center z-10 text-center space-y-8">
+          {/* Glowing Placeholder Box */}
+          <div
+            className="w-96 h-64 bg-purple-300/30 border-4 border-purple-500 rounded-2xl 
+                 flex items-center justify-center text-purple-100 text-xl font-semibold
+                 shadow-[0_0_30px_rgba(168,85,247,0.6),0_0_60px_rgba(147,51,234,0.4)]
+                 hover:shadow-[0_0_60px_rgba(168,85,247,0.8),0_0_100px_rgba(147,51,234,0.6)]
+                 transition-all duration-500"
+          >
+            Placeholder Item
+          </div>
+
+          {/* Auction Info */}
+          <h2 className="text-5xl text-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.7)]">
+            LIVE AUCTION
+          </h2>
+          <p className="text-2xl text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
+            Clicks: {auctionClicks} / 3
+          </p>
+
+          {/* Button */}
+          <button
+            onClick={handleAuctionClick}
+            disabled={auctionClicks >= 3}
+            className={`px-16 py-6 text-2xl rounded-lg border-4 transition-all duration-300 ${auctionClicks >= 3
+              ? "bg-gradient-to-r from-green-500 to-emerald-400 border-green-400 shadow-[0_0_40px_rgba(16,185,129,0.6)]"
+              : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105 hover:shadow-[0_0_60px_rgba(168,85,247,0.8)]"
+              }`}
+          >
+            {auctionClicks >= 3 ? "BID PLACED ✓" : "PLACE BID"}
+          </button>
+        </div>
+      </section>
+
+      {/* ABOUT SECTION */}
+      <section className="section bg-purple-700 text-white w-full min-h-screen px-12 flex flex-col lg:flex-row items-start justify-start gap-12 py-12">
+
+        {/* Left Side — Large Placeholder Image + Text */}
+        <div className="flex-1 flex flex-col items-start justify-start space-y-6 w-1/2">
+          {/* Lorem Text */}
+          <p className="text-purple-200 leading-relaxed text-lg">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.
+            Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet.
+            Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta.
+          </p>
+
+          {/* Large Placeholder Image */}
+          <div className="w-full h-[65vh] bg-purple-400/50 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-white font-semibold shadow-[0_0_35px_rgba(168,85,247,0.7)]">
+            Large Placeholder
+          </div>
+        </div>
+
+        {/* Right Side — Smaller Image + Button, moved further down */}
+        <div className="flex-1 flex flex-col items-center justify-center space-y-4 mt-40 lg:mt-0 lg:translate-y-60">
+          {/* Small Placeholder */}
+          <div className="w-48 h-48 bg-purple-400/50 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-white font-semibold shadow-[0_0_25px_rgba(168,85,247,0.7)]">
+            Small Placeholder
+          </div>
+
+          {/* Button */}
+          <button
+            className="px-8 py-4 text-lg font-semibold rounded-xl border-2 border-purple-400 bg-purple-600/20 
+                 hover:bg-purple-600 hover:shadow-[0_0_30px_rgba(168,85,247,0.7)] transition-all duration-300 text-white"
+          >
+            Find Out More About Us
+          </button>
+        </div>
 
       </section>
 
 
 
 
-      {/* SECTION 4: Live Auction */}
-<section
-  id="auction"
-  className="relative w-full flex flex-col items-center justify-center overflow-hidden"
->
-  {/* Background Image */}
-  <div
-    className="w-full h-[90vh] bg-cover bg-center"
-    style={{
-      backgroundImage:
-        "url('https://img.freepik.com/premium-photo/empty-elegant-classic-theatre-with-spotlight-shot-from-stage-opera-house-with-beautiful-golden-decoration-ready-recieve-audience-play-ballet-show_263512-9763.jpg')",
-    }}
-  />
 
-  {/* Vertical Gradient on top portion */}
-  <div className="absolute top-0 left-0 w-full h-[45%] bg-gradient-to-b from-blue-900 to-yellow-200"></div>
+      {/* FAQ SECTION */}
+      <section className="bg-purple-300 text-white w-full flex flex-col lg:flex-row items-start justify-start gap-12 px-12 py-20">
 
-  {/* Content */}
-  <div className="absolute top-1/2 w-full flex flex-col items-center transform -translate-y-1/2 z-10">
-    <h2 className="text-5xl text-purple-400 mb-8 text-center">
-      LIVE AUCTION
-    </h2>
-    <p className="text-2xl mb-8">Clicks: {auctionClicks} / 3</p>
-    <button
-      onClick={handleAuctionClick}
-      disabled={auctionClicks >= 3}
-      className={`px-16 py-6 text-2xl rounded-lg border-4 transition-all duration-300 ${
-        auctionClicks >= 3
-          ? "bg-gradient-to-r from-green-500 to-emerald-400 border-green-400 shadow-[0_0_40px_rgba(16,185,129,0.6)]"
-          : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105"
-      }`}
-    >
-      {auctionClicks >= 3 ? "BID PLACED ✓" : "PLACE BID"}
-    </button>
-  </div>
-</section>
+        {/* Left Side — Image + Caption + Button */}
+        <div className="lg:w-1/3 flex flex-col items-center lg:items-start justify-start space-y-6 text-center lg:text-left">
+          {/* Placeholder Image */}
+          <div className="w-80 h-60 bg-purple-300/20 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-purple-800 font-semibold shadow-[0_0_25px_rgba(168,85,247,0.5)]">
+            Placeholder Image
+          </div>
 
-
-
-      {/* SECTION 5: About + FAQ */}
-      <section className="section bg-black text-white px-12 flex flex-col lg:flex-row items-start justify-center gap-12 max-w-6xl mx-auto h-screen">
-        <div className="flex-1 flex flex-col justify-start items-start mt-12">
-          <h2 className="text-3xl text-purple-500 mb-6">About Us</h2>
-          <p className="text-purple-200 leading-relaxed text-lg">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua...
+          {/* Caption */}
+          <p className="text-purple-800 text-lg leading-relaxed">
+            Still got unanswered questions?<br />
+            Or still wondering if <span className="text-purple-700 font-semibold">BidHub</span> is right for you?
           </p>
+
+          {/* Glowing Button */}
+          <button
+            className="px-8 py-4 mt-2 text-lg font-semibold rounded-xl border-2 border-purple-700 bg-purple-600/20 
+                 hover:bg-purple-600 hover:shadow-[0_0_30px_rgba(168,85,247,0.7)] transition-all duration-300 text-white"
+          >
+            Chat With Us
+          </button>
         </div>
 
-        <div className="flex-1 flex flex-col justify-start items-start mt-12">
-          <h2 className="text-3xl text-purple-500 mb-6">FAQ</h2>
+        {/* Right Side — FAQ (Takes 2/3 Width) */}
+        <div className="lg:w-2/3 w-full flex flex-col overflow-visible">
+          <h2 className="text-4xl text-purple-700 font-bold mb-8 text-center lg:text-left">
+            FAQ
+          </h2>
 
-          <Accordion type="single" collapsible className="space-y-2 w-full">
+          <Accordion type="single" collapsible className="space-y-4 w-full pb-12">
             {[
               "How does bidding work?",
               "Are items authenticated?",
               "What payment methods do you accept?",
               "Do you ship internationally?",
             ].map((q, i) => (
-              <AccordionItem key={i} value={`item-${i}`} className="border border-purple-400/40 rounded-lg">
-                <AccordionTrigger className="px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all">{q}</AccordionTrigger>
-                <AccordionContent className="px-6 py-4 text-purple-300 bg-black/50">
-                  This is the answer to "{q}". Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+              <AccordionItem
+                key={i}
+                value={`item-${i}`}
+                className="border border-purple-700 rounded-lg overflow-hidden"
+              >
+                <AccordionTrigger className="px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all text-lg font-medium text-purple-900">
+                  {q}
+                </AccordionTrigger>
+                <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed">
+                  This is the answer to "{q}". Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus luctus elit nec justo
+                  tempor, sit amet ultricies magna posuere.
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
         </div>
       </section>
+
+
+
+
 
       {/* Floating animation styles */}
       <style>{`
