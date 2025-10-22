@@ -1,33 +1,26 @@
 import { useId, useState } from "react";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const CONTROL_PRESETS = {
-  username: { label: "Username", inputType: "text", placeholder: "Enter your username" },
-  email: { label: "Email", inputType: "email", placeholder: "Enter your email" },
-  password: { label: "Password", inputType: "password", placeholder: "Enter your password" },
-  auctionName: { label: "Auction Name", inputType: "text", placeholder: "Enter your auction name" },
-  cfmPassword: { label: "Confirm Password", inputType: "password", placeholder: "Re-enter your password" },
-  itemName: { label: "Item Name", inputType: "text", placeholder: "Enter your item name" },
-  minBid: { label: "Min Bid ($)", inputType: "number", placeholder: "Minimum bid is $1" },
-  bidIncrement: { label: "Bid Increment", inputType: "number", placeholder: "Enter your bid increment (optional)" },
+  auctionDescription: { label: "Auction Description", placeholder: "Briefly describe your auction..." },
 };
 
 function resolveControl(type) {
   return CONTROL_PRESETS[type] ?? { label: "", inputType: "text", placeholder: "Enter your ..." };
 }
 
-export function CustomInput({
+export function CustomTextarea({
   type,
   err,
   required,
   label,
   placeholder,
   inputType,
+  row: rowProp,
   id: idProp,
   ...rest
 }) {
-
   const autoId = useId();
   const id = idProp ?? `fi-${type}-${autoId}`;
   
@@ -35,7 +28,8 @@ export function CustomInput({
   const finalLabel = label ?? preset.label;
   const finalType = inputType ?? preset.inputType;
   const finalPlaceholder = placeholder ?? preset.placeholder;
-  
+  const finalRows = rowProp ?? 5;
+
   const [value, setValue] = useState("");
 
   return (
@@ -43,14 +37,15 @@ export function CustomInput({
       <FieldLabel htmlFor={id}>
         {finalLabel}
       </FieldLabel>
-      <Input
+      <Textarea
         id={id}
-        name={type}
         type={finalType}
+        name={type}
         placeholder={finalPlaceholder}
         required={required}
         onChange={(e) => setValue(e.target.value)}
         value={value}
+        rows={finalRows}
       />
       <FieldError>{err}</FieldError>
     </Field>

@@ -8,9 +8,7 @@ import { DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { useModal } from '@/context/ModalContext';
 import { memo } from 'react';
 import { useIsActive } from '@/hooks/useIsActive';
-
 import { axiosBrowserClient } from '@/utils/axios/client';
-
 import { toast } from "sonner";
 
 import Login from '@/components/LR/Login';

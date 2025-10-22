@@ -1,11 +1,83 @@
 'use client';
 
-import AuctionCreateForm from '../../../components/auctionCreate/AuctionCreateForm';
+import { useState, useReducer } from 'react';
+import { Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  CreateEvent,
+  CreateItem
+} from '@/components/Auction/Create';
 
-export default function AuctionCreatePage() {
+import { useModal } from '@/context/ModalContext';
+
+export default function AuctionCreate() {
+  const [items, setItems] = useState([]);
+  const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal();
+
+  const handleAddItem = (e) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+
+    const itemName = form.get("itemName").trim();
+    const minBid = form.get("minBid").trim();
+    const bidIncrement = form.get("bidIncrement").trim();
+    const files = form.get("itemFile");
+
+    setItems((prev) => {
+      const next = {
+        itemName: itemName,
+        minBid: minBid,
+        bidIncrement: bidIncrement,
+        files: files
+      };
+      return [...prev, ...next];
+    });
+  };
+
+  const handleAddAuction = (e) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+
+    const auctionName = form.get("auctionName").trim();
+    const auctionDescription = form.get("auctionDescription").trim();
+    const startDateTime = form.get("startDateTime").trim();
+    const endDateTime = form.get("endDateTime").trim();
+    
+  };
   return (
-    <div className="h-screen w-screen bg-[var(--custom-bg-primary)] flex items-center justify-center">
-      <AuctionCreateForm />
-    </div>
+    <>
+      <div className="w-full flex justify-between items-center mb-8 max-w-4xl">
+        <h2 className="text-3xl font-bold text-[var(--custom-bright-blue)]">Auction Creation</h2>
+        <Button
+          type='submit'
+          variant="default"
+          form="auctionCreate"
+        >
+          Create Event
+        </Button>
+      </div>
+      <CreateEvent onSubmit={handleAddAuction} />
+      <div className="w-full flex justify-between items-center mb-8 max-w-4xl">
+        <h2 className="text-3xl font-bold text-[var(--custom-bright-blue)]">
+          Auction Items
+          <Badge variant="secondary">
+            {items.length}
+          </Badge>
+        </h2>
+        <Button type="button" variant="default" onClick={() => {
+          setModalForm({ isForm: true, onSubmit: handleAddItem });
+          setModalHeader({ title: 'Add Auction Item' });
+          setModalState({ open: true, content: <CreateItem maxLength={5} /> });
+          setModalFooter({ submitText: "Add Item" });
+        }}>
+          <Plus /> Add Item
+        </Button>
+      </div>
+      {items.length > 0 && (
+        <></>
+      )}
+    </>
+
   );
 }

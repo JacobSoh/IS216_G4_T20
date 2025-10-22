@@ -18,38 +18,16 @@ const reducer = (s, a) => {
 };
 
 export default function AddItemModal({
-  isOpen,
-  onClose,
-  onAdd,
-  itemName,
-  setItemName,
-  minBid,
-  setMinBid,
-  bidIncrement,
-  setBidIncrement,
-  images,
-  setImages
+  maxLength = 10
 }) {
   const [form, setForm] = useReducer(reducer, initial);
-  const [files, setFiles] = useState([]);
-
-  const fileInputRef = useRef();
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const [isDrag, setIsDrag] = useState(false);
-  const [error, setError] = useState(""); // error popup state
-
-  // if (!isOpen) return null;
-
   const handleField = (f) => (e) => {
     if (f === 'minBid' && e.target.value <= 0) return;
     return setForm({ type: "FIELD", f, value: e.target.value });
   };
 
   const filterRule = /^image\//i;
-  function handleFiles(files) {
-    const imageFiles = Array.from(files).filter(f => filterRule.test(files));
-    setFiles(imageFiles);
-  }
+
   // function handleFileChange(e) { handleFiles(e.target.files); }
   // function handleDrop(e) { e.preventDefault(); handleFiles(e.dataTransfer.files); }
   // function handleDragEnter(e) { e.preventDefault(); setIsDrag(true); }
@@ -82,10 +60,10 @@ export default function AddItemModal({
   //   </div>
   // );
 
-  const modalGlass = "bg-gradient-to-br from-[var(--custom-bg-secondary)] to-[var(--custom-bg-primary)] bg-opacity-70 rounded-2xl shadow-2xl border-2 border-[var(--custom-ocean-blue)]";
-  const modalAnim = "animate-fadeIn";
-  const blurOverlay = "backdrop-blur-[4px] bg-black/40";
-  const glowingBorder = isDrag ? "border-[var(--custom-cream-yellow)] shadow-[0_0_14px_4px_var(--custom-cream-yellow)]" : "border-[var(--custom-ocean-blue)]";
+  // const modalGlass = "bg-gradient-to-br from-[var(--custom-bg-secondary)] to-[var(--custom-bg-primary)] bg-opacity-70 rounded-2xl shadow-2xl border-2 border-[var(--custom-ocean-blue)]";
+  // const modalAnim = "animate-fadeIn";
+  // const blurOverlay = "backdrop-blur-[4px] bg-black/40";
+  // const glowingBorder = isDrag ? "border-[var(--custom-cream-yellow)] shadow-[0_0_14px_4px_var(--custom-cream-yellow)]" : "border-[var(--custom-ocean-blue)]";
 
   return (
     <FieldGroup>
@@ -95,26 +73,23 @@ export default function AddItemModal({
         onChange={handleField}
         required={true}
       />
-      <div className='grid lg:col-2'>
-        <CustomInput
-          type="minBid"
-          value={form.minBid}
-          onChange={handleField}
-          required={true}
-        />
-        <CustomInput
-          type="bidIncrement"
-          value={form.bidIncrement}
-          onChange={handleField}
-          required={true}
-        />
-      </div>
+      <CustomInput
+        type="minBid"
+        value={form.minBid}
+        onChange={handleField}
+        required={true}
+      />
+      <CustomInput
+        type="bidIncrement"
+        value={form.bidIncrement}
+        onChange={handleField}
+      />
       <CustomFileInput
-        type="item_file"
+        type="itemFile"
         label="Upload Item Images"
-        onChange={handleFiles}
         filterRule={filterRule}
         required={true}
+        maxLength={maxLength}
       />
     </FieldGroup>
   );

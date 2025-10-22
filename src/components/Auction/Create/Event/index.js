@@ -1,19 +1,18 @@
 import { useRef, useState, useEffect, useReducer } from 'react';
-import AddItemModal from './AddItemModal';
 import { useModal } from '@/context/ModalContext';
 import { Button } from '@/components/ui/button';
 
 import { Plus } from 'lucide-react';
 import { FieldGroup } from '@/components/ui/field';
 import { CustomInput } from '@/components/Form/CustomInput';
-import { CustomerDatePicker } from '../Form/CustomDatePicker';
-import { CustomTextarea } from '../Form/CustomTextarea';
+import { CustomerDatePicker } from '@/components/Form/CustomDatePicker';
+import { CustomTextarea } from '@/components/Form/CustomTextarea';
 
 const intial = {
   auctionName: "",
   auctionDescription: "",
-  startTime: new Date(Date.now()),
-  endTime: new Date(Date.now()),
+  startDateTime: new Date(Date.now()),
+  endDateTime: new Date(Date.now()),
 };
 
 function reducer(s, a) {
@@ -27,7 +26,9 @@ function reducer(s, a) {
   };
 };
 
-export default function AuctionCreateForm() {
+export default function AuctionCreateForm({
+ onSubmit
+}) {
   const { setModalHeader, setModalState, setModalForm } = useModal();
   const [form, setForm] = useReducer(reducer, intial);
   const [showLoading, setShowLoading] = useState(false);
@@ -36,101 +37,101 @@ export default function AuctionCreateForm() {
     return setForm({ type: "FIELD", f, value: e.target.value });
   };
 
-  const fileInputRef = useRef();
-  const startRef = useRef();
-  const endRef = useRef();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [items, setItems] = useState([]);
-  const [thumbnail, setThumbnail] = useState(null);
+  // const fileInputRef = useRef();
+  // const startRef = useRef();
+  // const endRef = useRef();
+  // const [modalOpen, setModalOpen] = useState(false);
+  // const [items, setItems] = useState([]);
+  // const [thumbnail, setThumbnail] = useState(null);
 
-  // States for AddItemModal
-  const [itemImages, setItemImages] = useState([]);
-  const [itemName, setItemName] = useState('');
-  const [minBid, setMinBid] = useState('');
-  const [bidIncrement, setBidIncrement] = useState('');
+  // // States for AddItemModal
+  // const [itemImages, setItemImages] = useState([]);
+  // const [itemName, setItemName] = useState('');
+  // const [minBid, setMinBid] = useState('');
+  // const [bidIncrement, setBidIncrement] = useState('');
 
-  // For per-item carousels
-  const [carouselIndexes, setCarouselIndexes] = useState([]);
+  // // For per-item carousels
+  // const [carouselIndexes, setCarouselIndexes] = useState([]);
 
-  useEffect(() => {
-    setCarouselIndexes(items.map(() => 0));
-  }, [items.length]);
+  // useEffect(() => {
+  //   setCarouselIndexes(items.map(() => 0));
+  // }, [items.length]);
 
-  useEffect(() => {
-    if (items.length === 0) return;
-    const interval = setInterval(() => {
-      setCarouselIndexes(prev =>
-        prev.map((currIdx, idx) => {
-          const arrLen = items[idx]?.images?.length || 1;
-          if (arrLen <= 1) return 0;
-          return (currIdx + 1) % arrLen;
-        })
-      );
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [items]);
+  // useEffect(() => {
+  //   if (items.length === 0) return;
+  //   const interval = setInterval(() => {
+  //     setCarouselIndexes(prev =>
+  //       prev.map((currIdx, idx) => {
+  //         const arrLen = items[idx]?.images?.length || 1;
+  //         if (arrLen <= 1) return 0;
+  //         return (currIdx + 1) % arrLen;
+  //       })
+  //     );
+  //   }, 2500);
+  //   return () => clearInterval(interval);
+  // }, [items]);
 
-  function handleDrop(e) {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setThumbnail(e.dataTransfer.files[0]);
-      fileInputRef.current.files = e.dataTransfer.files;
-    }
-  }
+  // function handleDrop(e) {
+  //   e.preventDefault();
+  //   if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+  //     setThumbnail(e.dataTransfer.files[0]);
+  //     fileInputRef.current.files = e.dataTransfer.files;
+  //   }
+  // }
 
-  function handleFileChange(e) {
-    if (e.target.files && e.target.files[0]) {
-      setThumbnail(e.target.files[0]);
-    }
-  }
+  // function handleFileChange(e) {
+  //   if (e.target.files && e.target.files[0]) {
+  //     setThumbnail(e.target.files[0]);
+  //   }
+  // }
 
-  function removeThumbnail() {
-    setThumbnail(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
+  // function removeThumbnail() {
+  //   setThumbnail(null);
+  //   if (fileInputRef.current) fileInputRef.current.value = "";
+  // }
 
-  // Edit item handler (opens modal pre-filled with item)
-  function handleEditItem(idx) {
-    const item = items[idx];
-    setItemName(item.itemName);
-    setMinBid(item.minBid);
-    setBidIncrement(item.bidIncrement);
-    setItemImages(item.images);
-    setModalOpen({ edit: true, idx });
-  }
+  // // Edit item handler (opens modal pre-filled with item)
+  // function handleEditItem(idx) {
+  //   const item = items[idx];
+  //   setItemName(item.itemName);
+  //   setMinBid(item.minBid);
+  //   setBidIncrement(item.bidIncrement);
+  //   setItemImages(item.images);
+  //   setModalOpen({ edit: true, idx });
+  // }
 
-  // Delete item handler
-  function handleDeleteItem(idx) {
-    setItems(items.filter((_, i) => i !== idx));
-    setCarouselIndexes(prev => prev.filter((_, i) => i !== idx));
-  }
+  // // Delete item handler
+  // function handleDeleteItem(idx) {
+  //   setItems(items.filter((_, i) => i !== idx));
+  //   setCarouselIndexes(prev => prev.filter((_, i) => i !== idx));
+  // }
 
-  // Save item, for add or edit
-  function handleSaveItem() {
-    if (modalOpen && modalOpen.edit === true) {
-      setItems(items.map((item, idx) =>
-        idx === modalOpen.idx
-          ? { itemName, minBid, bidIncrement, images: itemImages }
-          : item
-      ));
-      setCarouselIndexes(indexes =>
-        indexes.map((ci, idx) => (idx === modalOpen.idx ? 0 : ci))
-      );
-    } else {
-      setItems([...items, { itemName, minBid, bidIncrement, images: itemImages }]);
-      setCarouselIndexes(arr => [...arr, 0]);
-    }
-    setItemName('');
-    setMinBid('');
-    setBidIncrement('');
-    setItemImages([]);
-    setModalOpen(false);
-  }
+  // // Save item, for add or edit
+  // function handleSaveItem() {
+  //   if (modalOpen && modalOpen.edit === true) {
+  //     setItems(items.map((item, idx) =>
+  //       idx === modalOpen.idx
+  //         ? { itemName, minBid, bidIncrement, images: itemImages }
+  //         : item
+  //     ));
+  //     setCarouselIndexes(indexes =>
+  //       indexes.map((ci, idx) => (idx === modalOpen.idx ? 0 : ci))
+  //     );
+  //   } else {
+  //     setItems([...items, { itemName, minBid, bidIncrement, images: itemImages }]);
+  //     setCarouselIndexes(arr => [...arr, 0]);
+  //   }
+  //   setItemName('');
+  //   setMinBid('');
+  //   setBidIncrement('');
+  //   setItemImages([]);
+  //   setModalOpen(false);
+  // }
 
-  const badgeColorClass = items.length === 0 ? 'bg-[var(--custom-accent-red)] ring-[var(--custom-accent-red)]' : 'bg-[var(--custom-bright-blue)] ring-[var(--custom-bright-blue)]';
+  // const badgeColorClass = items.length === 0 ? 'bg-[var(--custom-accent-red)] ring-[var(--custom-accent-red)]' : 'bg-[var(--custom-bright-blue)] ring-[var(--custom-bright-blue)]';
 
   return (
-    <form>
+    <form id="auctionCreate" onSubmit={onSubmit}>
       <FieldGroup>
         <CustomInput
           type='auctionName'
@@ -144,18 +145,20 @@ export default function AuctionCreateForm() {
           onChange={handleField}
           required={true}
         />
-        <CustomerDatePicker
-          type="startTime"
-          value={form.startTime}
-          onChange={handleField}
-          required={true}
-        />
-        <CustomerDatePicker
-          type="endTime"
-          value={form.endTime}
-          onChange={handleField}
-          required={true}
-        />
+        <div className='flex gap-2'>
+          <CustomerDatePicker
+            type="startDateTime"
+            value={form.startTime}
+            onChange={handleField}
+            required={true}
+          />
+          <CustomerDatePicker
+            type="endDateTime"
+            value={form.endTime}
+            onChange={handleField}
+            required={true}
+          />
+        </div>
       </FieldGroup>
     </form>
   );
