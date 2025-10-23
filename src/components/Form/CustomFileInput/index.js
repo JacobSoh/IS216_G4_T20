@@ -20,7 +20,7 @@ export function CustomFileInput({
       <FieldLabel htmlFor={id}>
         {label}
       </FieldLabel>
-      <div className={`w-full max-w-4xl relative mx-auto border border-dashed bg-white dark:bg-black border-neutral-200 dark:border-neutral-800 rounded-lg`}>
+      <div className={`w-full max-w-4xl relative mx-auto border border-dashed rounded-lg bg-[var(--theme-surface)] border-[var(--theme-border)]`}>
         <FileUpload id={id} name={type} required={true} filterRule={filterRule} maxLength={maxLength}/>
       </div>
       <FieldError>{err}</FieldError>

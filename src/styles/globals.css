@@ -5,6 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+	/* Legacy custom vars (kept for compatibility) */
 	--custom-cream-yellow: #fff9af;
 	--custom-cream-yellow-darker: #fff371;
 	--custom-bright-blue: #33A1E0;
@@ -21,25 +22,50 @@
 	--custom-shadow: 0 4px 20px rgba(21, 77, 113, 0.2);
 	--custom-navbar-bg: #0f202ef2;
 	--custom-body-bg: var(--custom-bg-primary), var(--custom-bg-secondary);
+
+    /* Theme palette (global) */
+    --theme-primary: #4D067B;   /* main */
+    --theme-secondary: #B026FF; /* secondary */
+    --theme-accent: #B984D8;    /* accent */
+    --theme-cream: #F8E2D4;     /* cream */
+    --theme-gold: #E2BD6B;      /* gold */
+
+    /* Navbar tokens using theme palette */
+    --nav-bg: var(--theme-primary);
+    --nav-text: var(--theme-cream);
+    --nav-text-muted: var(--theme-accent);
+    --nav-hover-bg: var(--theme-secondary);
+    --nav-active-bg: var(--theme-secondary);
+    --nav-brand-text: var(--theme-cream);
+    --nav-cta-bg: var(--theme-gold);
+    --nav-cta-hover-bg: #d9aa54; /* slightly darker gold */
+    --nav-cta-text: var(--theme-primary);
+
+    /* App surfaces (inputs, cards) */
+    --theme-surface: var(--custom-bg-tertiary);
+    --theme-surface-contrast: var(--custom-text-primary);
+    --theme-border: var(--custom-border-color);
+    --theme-placeholder: var(--custom-text-muted);
 	--radius: 0.625rem;
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
+    /* Light app body to match purple nav */
+    --background: #ffffff; /* theme cream */
+    --foreground: #1F2937; /* gray-800 */
+    --card: #ffffff;
+    --card-foreground: #111827; /* gray-900 */
+    --popover: #ffffff;
+    --popover-foreground: #111827;
 	--primary: oklch(0.205 0 0);
 	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
+    --secondary: #F3F4F6; /* gray-100 */
+    --secondary-foreground: #1F2937;
+    --muted: #F3F4F6;
+    --muted-foreground: #6B7280; /* gray-500 */
+    --accent: #F3F4F6;
+    --accent-foreground: #1F2937;
+    --destructive: #DC2626; /* red-600 */
+    --border: #E5E7EB; /* gray-200 */
+    --input: #E5E7EB;
+    --ring: #7209B7; /* theme secondary */
 	--chart-1: oklch(0.646 0.222 41.116);
 	--chart-2: oklch(0.6 0.118 184.704);
 	--chart-3: oklch(0.398 0.07 227.392);

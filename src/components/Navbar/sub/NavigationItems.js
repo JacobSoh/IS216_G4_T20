@@ -20,11 +20,11 @@ import Register from '@/components/LR/Register';
 const cn = (...c) => c.filter(Boolean).join(' ');
 
 const styles = {
-    base: 'rounded-md px-3 py-2 font-medium',
-    inactive: 'text-gray-300 hover:bg-white/5 hover:text-white',
-    active: 'bg-gray-900 text-white',
-    cta: 'bg-(--custom-accent-red) text-white hover:bg-red-800',
-    xta: 'hover:bg-white/5'
+    base: 'rounded-md px-3 py-2 font-medium text-white',
+    inactive: 'hover:bg-[var(--nav-hover-bg)] hover:text-white',
+    active: 'bg-[var(--nav-active-bg)] text-white',
+    cta: 'bg-[var(--nav-cta-bg)] hover:bg-[var(--nav-cta-hover-bg)] text-[var(--nav-cta-text)]',
+    xta: 'hover:bg-[var(--nav-hover-bg)]'
 };
 
 // -------------------------

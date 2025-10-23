@@ -73,7 +73,7 @@ export default function Navbar({ fullScreen }) {
 	);
 
 	return (
-		<Disclosure as="nav" className={`${fullScreen?'hidden':'fixed inset-x-0 top-0 z-50 bg-gray-800'}`}>
+		<Disclosure as="nav" className="fixed inset-x-0 top-0 z-50 bg-[var(--nav-bg)]">
 			<div className="mx-auto max-w-7xl px-2 md:px-6 lg:px-8">
 				<div className="relative flex h-16 items-center justify-between">
 					<MobileMenu />
@@ -81,7 +81,7 @@ export default function Navbar({ fullScreen }) {
 					<div className="flex flex-1 items-center justify-center md:items-stretch md:justify-start">
 						<Link
 							href="/"
-							className="flex shrink-0 items-center text-2xl font-bold tracking-tight text-(--custom-cream-yellow)"
+							className="flex shrink-0 items-center text-2xl font-bold tracking-tight text-white"
 						>
 							BidHub
 						</Link>

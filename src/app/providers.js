@@ -49,23 +49,28 @@ export const useInitialAuthed = () => useContext(InitialAuthContext);
 
 export default function Providers({ initialAuthed, children }) {
   const pathname = usePathname();
-
-  // For navbar (example: hide navbar on auction pages)
-  // const hideNavbarOn = ['/'];
-  // const hideNavbar = hideNavbarOn.some(page => pathname.startsWith(page));
-
-  // For footer (hide footer on specific pages)
-  // const hideFooterOn = ['/'];
-  // const hideFooter = hideFooterOn.some(page => pathname.startsWith(page));
+  const isAuctionDetail = /^\/auction\/[^/]+$/.test(pathname) && pathname !== '/auction/create';
+  const isMinimalLayout = pathname === '/' || isAuctionDetail;
 
   return (
     <InitialAuthContext.Provider value={initialAuthed}>
       <ModalProvider>
-        <Navbar fullScreen={false} />
-        <div className={`container mx-auto min-h-dvh ${false ? '' : 'pt-16'}`}>
-          {children}
-        </div>
-        <Footer fullScreen={false} />
+        {
+          isMinimalLayout
+            ? (children)
+            : (
+              <>
+                <Navbar />
+                <div className={`container max-w-7xl px-2 md:px-6 lg:px-8 mx-auto min-h-screen pt-16`}>
+                  <div className="my-4 space-y-4">
+                    {children}
+                  </div>
+                </div>
+                <Footer />
+              </>
+            )
+        }
+
       </ModalProvider>
       <Toaster position="top-center" richColors offset="16px" closeButton />
     </InitialAuthContext.Provider>

@@ -31,7 +31,7 @@ export default function AuctionCreate() {
         bidIncrement: bidIncrement,
         files: files
       };
-      return [...prev, ...next];
+      return [...prev, next];
     });
   };
 
@@ -48,25 +48,25 @@ export default function AuctionCreate() {
   };
   return (
     <>
-      <div className="w-full flex justify-between items-center mb-8 max-w-4xl">
-        <h2 className="text-3xl font-bold text-[var(--custom-bright-blue)]">Auction Creation</h2>
+      <div className="w-full flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-brand">Auction Creation</h2>
         <Button
           type='submit'
-          variant="default"
           form="auctionCreate"
+          variant="brand"
         >
           Create Event
         </Button>
       </div>
       <CreateEvent onSubmit={handleAddAuction} />
-      <div className="w-full flex justify-between items-center mb-8 max-w-4xl">
-        <h2 className="text-3xl font-bold text-[var(--custom-bright-blue)]">
+      <div className="w-full flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-brand ">
           Auction Items
-          <Badge variant="secondary">
+          <Badge variant="brand">
             {items.length}
           </Badge>
         </h2>
-        <Button type="button" variant="default" onClick={() => {
+        <Button type="button" variant="brand" onClick={() => {
           setModalForm({ isForm: true, onSubmit: handleAddItem });
           setModalHeader({ title: 'Add Auction Item' });
           setModalState({ open: true, content: <CreateItem maxLength={5} /> });

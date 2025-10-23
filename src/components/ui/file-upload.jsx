@@ -112,16 +112,17 @@ export const FileUpload = ({
   };
 
   return (
-    <div className="w-full relative" {...getRootProps()}>
-      <div
-        className="absolute inset-0 overflow-hidden pointer-events-none
-        [mask-image:radial-gradient(ellipse_at_center,white,transparent)]">
-        <GridPattern />
-      </div>
+    <div className="w-full relative rounded-lg overflow-hidden" {...getRootProps()}>
+      {!files.length && (
+        <div
+          className="absolute inset-0 z-0 overflow-hidden pointer-events-none [mask-image:radial-gradient(ellipse_at_center,white,transparent)]">
+          <GridPattern />
+        </div>
+      )}
       <motion.div
         onClick={handleClick}
         whileHover="animate"
-        className="p-10 group/file block rounded-lg cursor-pointer w-full relative overflow-hidden">
+        className="p-8 group/file block cursor-pointer w-full relative bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-lg z-10">
         <input
           ref={fileInputRef}
           id={id}
@@ -133,11 +134,11 @@ export const FileUpload = ({
           multiple />
         <div className="flex flex-col items-center justify-center">
           <p
-            className="relative z-20 font-sans font-bold text-neutral-700 dark:text-neutral-300 text-base">
+            className="relative z-20 font-sans font-bold text-[var(--theme-surface-contrast)] text-base">
             Upload file {maxLength ? `[Max ${maxLength} files]` : ""}
           </p>
           <p
-            className="relative text-center z-20 font-sans font-normal text-neutral-400 dark:text-neutral-400 text-base mt-2">
+            className="relative text-center z-20 font-sans font-normal text-[var(--theme-placeholder)] text-base mt-2">
             Drag or drop your files here or click to upload
           </p>
           {!files.length && (
@@ -150,19 +151,19 @@ export const FileUpload = ({
                   damping: 20,
                 }}
                 className={cn(
-                  "relative group-hover/file:shadow-2xl z-40 bg-white dark:bg-neutral-900 flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md",
-                  "shadow-[0px_10px_50px_rgba(0,0,0,0.1)]"
+                  "relative z-40 flex items-center justify-center h-28 mt-2 w-full max-w-[7rem] mx-auto rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)]",
+                  "shadow-[0px_4px_18px_rgba(0,0,0,0.15)] group-hover/file:shadow-[0px_8px_26px_rgba(0,0,0,0.25)]"
                 )}>
                 {isDragActive ? (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-neutral-600 flex flex-col items-center">
+                    className="text-[var(--theme-placeholder)] flex flex-col items-center">
                     Drop it
-                    <Upload className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
+                    <Upload className="h-4 w-4 text-[var(--theme-placeholder)]" />
                   </motion.p>
                 ) : (
-                  <Upload className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />
+                  <Upload className="h-4 w-4 text-[var(--theme-placeholder)]" />
                 )}
               </motion.div>
             </div>
@@ -170,14 +171,14 @@ export const FileUpload = ({
         </div>
       </motion.div>
       {!!files.length && (
-        <div className="relative w-full max-w-xl mx-auto">
+        <div className="relative w-full max-w-xl mx-auto z-10">
           {files.length > 0 &&
             files.map((file, idx) => (
               <motion.div
                 key={"file" + idx}
                 className={cn(
-                  "relative overflow-hidden z-40 bg-white dark:bg-neutral-900 flex flex-col items-start justify-start md:h-24 p-4 mt-4 mx-auto rounded-md mx-5",
-                  "shadow-sm"
+                  "relative overflow-hidden z-40 flex flex-col items-start justify-start md:h-24 p-4 mt-4 mx-auto rounded-md mx-5 border border-[var(--theme-border)] bg-[var(--theme-surface)]",
+                  "shadow-[0px_2px_10px_rgba(0,0,0,0.12)]"
                 )}>
                 <FileCard file={file} idx={idx} removeAt={removeAt} />
               </motion.div>
@@ -193,7 +194,7 @@ export function GridPattern() {
   const rows = 11;
   return (
     <div
-      className="flex bg-gray-100 dark:bg-neutral-900 shrink-0 flex-wrap justify-center items-center gap-x-px gap-y-px  scale-105">
+      className="flex bg-white/60 dark:bg-neutral-900/60 shrink-0 flex-wrap justify-center items-center gap-x-px gap-y-px scale-105">
       {Array.from({ length: rows }).map((_, row) =>
         Array.from({ length: columns }).map((_, col) => {
           const index = row * columns + col;
@@ -201,8 +202,8 @@ export function GridPattern() {
             <div
               key={`${col}-${row}`}
               className={`w-10 h-10 flex shrink-0 rounded-[2px] ${index % 2 === 0
-                ? "bg-gray-50 dark:bg-neutral-950"
-                : "bg-gray-50 dark:bg-neutral-950 shadow-[0px_0px_1px_3px_rgba(255,255,255,1)_inset] dark:shadow-[0px_0px_1px_3px_rgba(0,0,0,1)_inset]"
+                ? "bg-white/70 dark:bg-neutral-950"
+                : "bg-white/80 dark:bg-neutral-950 shadow-[0px_0px_1px_2px_rgba(255,255,255,0.9)_inset] dark:shadow-[0px_0px_1px_2px_rgba(0,0,0,1)_inset]"
                 }`} />
           );
         }))}

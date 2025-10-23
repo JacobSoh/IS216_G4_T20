@@ -145,6 +145,16 @@ export default function AuctionCreateForm({
               type="auctionDescription"
               required={true}
             />
+            <div className='flex gap-2'>
+              <CustomerDatePicker
+                type="startDateTime"
+                required={true}
+              />
+              <CustomerDatePicker
+                type="endDateTime"
+                required={true}
+              />
+            </div>
           </FieldGroup>
           <FieldGroup>
             <CustomFileInput
@@ -156,16 +166,7 @@ export default function AuctionCreateForm({
             />
           </FieldGroup>
         </div>
-        <div className='flex gap-2'>
-          <CustomerDatePicker
-            type="startDateTime"
-            required={true}
-          />
-          <CustomerDatePicker
-            type="endDateTime"
-            required={true}
-          />
-        </div>
+
       </FieldGroup>
     </form>
   );
