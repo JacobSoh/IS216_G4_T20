@@ -53,8 +53,8 @@ G4 Group 20
 | <img src="photos/member2.jpg" width="80"> | Kai wen ? | Full Stack Developer - Auction Creation UI |
 | <img src="photos/member3.jpg" width="80"> | Jared Chan | Full Stack Developer - Auction UI |
 | <img src="photos/member4.jpg" width="80"> | Javen Tan|  Full Stack Developer - Firebase Integration and Frontend UI|
-| <img src="photos/member4.jpg" width="80"> | Joshua ?|  Full Stack Developer - IDK|
-| <img src="photos/member4.jpg" width="80"> | Soh Wei Rong, Jacob |  Full Stack Developer - IDK|
+| <img src="photos/member5.jpg" width="80"> | Joshua ?|  Full Stack Developer - IDK|
+| <img src="photos/member6.jpg" width="80"> | Soh Wei Rong, Jacob |  Full Stack Developer - IDK|
 
 > Place all headshot thumbnails in the `/photos` folder (JPEG or PNG).
 
