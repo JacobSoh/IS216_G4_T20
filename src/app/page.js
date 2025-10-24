@@ -1,12 +1,11 @@
-// FuturisticAuction.jsx
 'use client';
+
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { createTimeline, stagger, splitText } from 'animejs';
 import { supabaseBrowser } from "@/utils/supabase/client";
-import { AuctionMinimal, AuctionMinimalSkeleton } from "@/components/LandingAuction";
 import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/landingauctionhover";
 
 
@@ -154,7 +153,7 @@ export default function FuturisticAuction() {
         className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.08)_0%,transparent_60%)] pointer-events-none"
       />
 
-      {/* HERO SECTION */}
+      {/* Landing Section*/}
       <section ref={heroRef} className="section relative h-screen flex items-center justify-between px-12 pt-24 scroll-mt-24">
         <div className="absolute top-10 left-12 w-1/2 space-y-8 z-50">
           {/* Large text */}
@@ -237,7 +236,6 @@ export default function FuturisticAuction() {
         </button>
       </section>
 
-
       {/* SECTION 2: Info */}
       <section
         ref={sectionRef}
@@ -308,7 +306,7 @@ export default function FuturisticAuction() {
       <section
         id="auction"
         ref={ref}
-        className="relative w-full h-[300vh] flex flex-col items-center justify-start overflow-hidden"
+        className="relative w-full h-[200vh] flex flex-col items-center justify-start overflow-hidden"
       >
         {/* Background Gradient */}
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-200 via-purple-300 to-purple-200"></div>
@@ -326,7 +324,7 @@ export default function FuturisticAuction() {
         </motion.div>
 
         {/* Content Below Video */}
-        <div className="relative mt-[130vh] w-full flex flex-col items-center justify-center z-10 text-center space-y-8">
+        <div className="relative mt-[60vh] w-full flex flex-col items-center justify-center z-10 text-center space-y-8">
           {/* Glowing Placeholder Box */}
           <div
             className="w-96 h-64 bg-purple-300/30 border-4 border-purple-500 rounded-2xl 
@@ -396,12 +394,8 @@ export default function FuturisticAuction() {
 
       </section>
 
-
-
-
-
       {/* FAQ SECTION */}
-      <section className="bg-purple-300 text-white w-full flex flex-col lg:flex-row items-start justify-start gap-12 px-12 py-20">
+      <section className="bg-purple-300 text-white w-full h-[100vh] flex flex-col lg:flex-row items-start justify-start gap-12 px-12 py-20">
 
         {/* Left Side — Image + Caption + Button */}
         <div className="lg:w-1/3 flex flex-col items-center lg:items-start justify-start space-y-6 text-center lg:text-left">
@@ -446,7 +440,7 @@ export default function FuturisticAuction() {
                 <AccordionTrigger className="px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all text-lg font-medium text-purple-900">
                   {q}
                 </AccordionTrigger>
-                <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed">
+                <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed pb-1">
                   This is the answer to "{q}". Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus luctus elit nec justo
                   tempor, sit amet ultricies magna posuere.
                 </AccordionContent>
@@ -455,6 +449,53 @@ export default function FuturisticAuction() {
           </Accordion>
         </div>
       </section>
+
+      <footer className="relative w-screen h-[100vh] bg-gradient-to-b from-purple-300 to-purple-200 flex items-center justify-center">
+        {/* --- Footer Body --- */}
+        <div className="relative w-[97vw] h-[93vh] bg-slate-900 mx-auto border-3 border-indigo-600 my-auto flex flex-col md:flex-row items-center justify-center gap-16 p-10 rounded-[1rem] shadow-lg">
+
+          <div className="absolute -top-[10px] left-1/2 -translate-x-1/2 w-[95vh] h-[15px] bg-slate-900 rounded-t-[20px] border-t-3 border-indigo-600 flex items-center justify-center"></div>
+          <div className="absolute -bottom-[10px] left-1/2 -translate-x-1/2 w-[142vh] h-[10px] bg-slate-900 rounded-b-[50px] border-b-3 border-indigo-600 flex items-center justify-center"></div>
+
+          {/* --- Footer Content --- */}
+          <div className="flex flex-col md:flex-row items-stretch justify-between w-full text-center md:text-left gap-8">
+
+            {/* Left Links - 1/3 width */}
+            <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
+              <p className="text-sm text-purple-100 font-semibold">Pages</p>
+              <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Featured</a>
+              <a href="/Categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Categories</a>
+              <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">About Us</a>
+              <a href="/how_it_works" className="hover:text-purple-300 transition-all font-extrabold text-xl">How it works</a>
+            </div>
+
+            {/* Center Logo with text above */}
+            <div className="flex-1 flex flex-col items-center justify-center text-center ">
+              <p className="text-purple-200 text-[5vh] font-semibold mb-4">
+                Welcome to <br />
+                <span className="text-yellow-300">BidHub</span>
+              </p>
+              <div className="w-48 h-48 bg-purple-200 rounded-2xl flex items-center justify-center font-bold text-black text-xl shadow-md">
+                Logo / Image
+              </div>
+              <p className="mt-4 text-gray-300 text-sm">© 2025 Your Company</p>
+            </div>
+
+            {/* Right Links - 1/3 width */}
+            <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
+              <p className="text-sm text-purple-100 font-semibold">Get Started</p>
+              <a href="/signup" className="hover:text-purple-300 transition-all font-extrabold text-xl">Sign Up</a>
+              <a href="/sell" className="hover:text-purple-300 transition-all font-extrabold text-xl">Start Selling</a>
+              <a href="/contact" className="hover:text-purple-300 transition-all font-extrabold text-xl">Contact Us</a>
+            </div>
+
+
+          </div>
+        </div>
+      </footer>
+
+
+
 
 
 
