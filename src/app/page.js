@@ -7,6 +7,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { createTimeline, stagger, splitText } from 'animejs';
 import { supabaseBrowser } from "@/utils/supabase/client";
 import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/landingauctionhover";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import Slider from "react-slick";
 
 
 // ---------- Main Component ----------
@@ -25,6 +28,15 @@ export default function FuturisticAuction() {
   const videoScale = useTransform(scrollYProgress, [0, 0.5], [0.8, 1.2]);
   const videoOpacity = useTransform(scrollYProgress, [0, 0.3], [0.7, 1]);
 
+  var settings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 3,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 6000
+  };
 
   useEffect(() => {
     if (!heroRef.current) return;
@@ -277,10 +289,8 @@ export default function FuturisticAuction() {
             Browse through our carefully curated vintage collections. Gonna add some picture effect soon.
           </p>
         </div>
-
-        {/* Grid layout: 3 per row on larger screens */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {loading
+        <Slider {...settings}>
+            {loading
             ? Array.from({ length: 6 }).map((_, i) => (
               <AuctionHoverPictureSkeleton key={i} />
             ))
@@ -299,7 +309,8 @@ export default function FuturisticAuction() {
                 />
               );
             })}
-        </div>
+        </Slider>
+        {/* Grid layout: 3 per row on larger screens */}
       </section>
 
       {/* SECTION 4: Live Auction */}
@@ -440,7 +451,7 @@ export default function FuturisticAuction() {
                 <AccordionTrigger className="px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all text-lg font-medium text-purple-900">
                   {q}
                 </AccordionTrigger>
-                <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed pb-1">
+                <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed">
                   This is the answer to "{q}". Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus luctus elit nec justo
                   tempor, sit amet ultricies magna posuere.
                 </AccordionContent>
@@ -483,23 +494,15 @@ export default function FuturisticAuction() {
 
             {/* Right Links - 1/3 width */}
             <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
-              <p className="text-sm text-purple-100 font-semibold">Get Started</p>
-              <a href="/signup" className="hover:text-purple-300 transition-all font-extrabold text-xl">Sign Up</a>
-              <a href="/sell" className="hover:text-purple-300 transition-all font-extrabold text-xl">Start Selling</a>
-              <a href="/contact" className="hover:text-purple-300 transition-all font-extrabold text-xl">Contact Us</a>
+              <p className="text-sm text-purple-100 font-semibold">Start Now</p>
+              <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Login</a>
+              <a href="/Categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Sign Up</a>
+              <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">Contact Us</a>
             </div>
-
 
           </div>
         </div>
       </footer>
-
-
-
-
-
-
-
 
       {/* Floating animation styles */}
       <style>{`
