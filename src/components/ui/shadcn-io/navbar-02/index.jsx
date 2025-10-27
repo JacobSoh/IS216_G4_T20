@@ -108,7 +108,8 @@ export const Navbar02 = React.forwardRef((
                             {link.items?.map((item, itemIndex) => (
                               <li key={itemIndex}>
                                 <a
-                                  href={item.href}
+                                  href={item.href ?? '#'}
+                                  onClick={item.onClick}
                                   className="inline-flex w-full justify-start items-center gap-2 rounded-md px-2.5 py-2 text-sm font-medium text-white transition-colors no-underline bg-transparent hover:bg-[var(--theme-secondary)] focus-visible:ring-[color:var(--theme-secondary)]/40 focus:outline-none">
                                   {item.icon ? renderIcon(item.icon) : null}
                                   <span className="text-white">{item.label}</span>
@@ -192,7 +193,7 @@ export const Navbar02 = React.forwardRef((
                                 </NavigationMenuLink>
                               </div>
                               {link.items?.map((item, itemIndex) => (
-                                <ListItem key={itemIndex} title={item.label} href={item.href} type={link.type}>
+                                <ListItem key={itemIndex} title={item.label} href={item.href} onClick={item.onClick} type={link.type}>
                                   {item.description}
                                 </ListItem>
                               ))}
@@ -201,7 +202,7 @@ export const Navbar02 = React.forwardRef((
                             <div
                               className="grid w-[260px] gap-1 p-2 md:w-[300px] grid-cols-1">
                               {link.items?.map((item, itemIndex) => (
-                                <ListItem key={itemIndex} title={item.label} href={item.href} type={link.type}>
+                                <ListItem key={itemIndex} title={item.label} href={item.href} onClick={item.onClick} type={link.type}>
                                   {item.description}
                                 </ListItem>
                               ))}
@@ -213,6 +214,7 @@ export const Navbar02 = React.forwardRef((
                                   key={itemIndex}
                                   title={item.label}
                                   href={item.href}
+                                  onClick={item.onClick}
                                   icon={item.icon}
                                   type={link.type}>
                                   {item.description}
@@ -222,7 +224,7 @@ export const Navbar02 = React.forwardRef((
                           ) : (
                             <div className="grid gap-2 p-3 w-[260px] md:w-[300px] grid-cols-1">
                               {link.items?.map((item, itemIndex) => (
-                                <ListItem key={itemIndex} title={item.label} href={item.href} type={link.type}>
+                                <ListItem key={itemIndex} title={item.label} href={item.href} onClick={item.onClick} type={link.type}>
                                   {item.description}
                                 </ListItem>
                               ))}
@@ -281,12 +283,13 @@ export const Navbar02 = React.forwardRef((
 Navbar02.displayName = 'Navbar02';
 
 // ListItem component for navigation menu items
-const ListItem = React.forwardRef(({ className, title, children, icon, type, href = '#', ...props }, ref) => {
+const ListItem = React.forwardRef(({ className, title, children, icon, type, href = '#', onClick, ...props }, ref) => {
   return (
     <NavigationMenuLink asChild>
       <a
         ref={ref}
         href={href}
+        onClick={onClick}
         className={cn(
           'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors text-white hover:bg-[var(--theme-secondary)] hover:text-white focus:bg-[var(--theme-secondary)] focus:text-white cursor-pointer',
           className

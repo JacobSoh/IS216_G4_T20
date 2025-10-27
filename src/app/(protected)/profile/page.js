@@ -39,8 +39,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const [blocking, setBlocking] = useState(false);
 
-	useEffect(() => {
-		const loadProfileData = async () => {
+  useEffect(() => {
+    const loadProfileData = async () => {
 			try {
 				const profile = await getProfile();
 				await getAvatarPublicUrl(profile);
@@ -53,7 +53,9 @@ export default function ProfilePage() {
 			}
 		};
 		loadProfileData();
-	}, []);
+  }, []);
+
+  // Removed auto-open Settings logic; navigation tab now handles access
 
 	const handleDisplay = (type) => (e) => {
 		switch (type) {

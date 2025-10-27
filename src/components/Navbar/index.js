@@ -126,11 +126,38 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
     } catch {}
   }, [searchParams, pathname, isAuthed]);
 
+  // Build nav links with contextual Auction menu
+  const auctionMenu = {
+    label: 'Auction',
+    submenu: true,
+    type: 'simple',
+    items: [
+      { href: '/', label: 'Browse Auctions' },
+      ...(isAuthed ? [{ href: '/auction/create', label: 'Manage Auctions' }] : []),
+    ],
+  };
+
+  const navigationLinks = [
+    auctionMenu,
+    { href: '/categories', label: 'Categories', icon: 'BarChart3' },
+    {
+      label: 'About Us',
+      submenu: true,
+      type: 'simple',
+      items: [
+        { href: '/about', label: 'Overview' },
+        { href: '/how_it_works', label: 'How It Works' },
+        { href: '/contact', label: 'Contact Us' },
+      ],
+    },
+  ];
+
   return (
     <Navbar02
       className="fixed inset-x-0 top-0 z-50 bg-[var(--nav-bg)] text-white"
       logoHref="/"
       brandText="BidHub"
+      navigationLinks={navigationLinks}
       signInText={signInText}
       onSignInClick={onSignInClick}
       ctaText={ctaText}
