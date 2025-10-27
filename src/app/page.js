@@ -24,8 +24,42 @@ export default function FuturisticAuction() {
     offset: ["start start", "end end"],
   });
 
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [currentBid, setCurrentBid] = useState(100);
+  const [userBid, setUserBid] = useState("");
+  const [result, setResult] = useState("");
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      if (currentBid > 100) {
+        setResult("🎉 You won!");
+      } else {
+        setResult("❌ You lost!");
+      }
+    }
+  }, [timeLeft]);
+
+  const handleBid = () => {
+    if (Number(userBid) > currentBid) {
+      setCurrentBid(Number(userBid));
+      setResult("✅ New highest bid!");
+    } else {
+      setResult("⚠️ Bid must be higher!");
+    }
+  };
+
   // Scale video smoothly from 0.8x to 1.2x as user scrolls
-  const videoScale = useTransform(scrollYProgress, [0, 0.5], [0.8, 1.2]);
+  const videoScale = useTransform(scrollYProgress, [0, 0.5], [0.5, 1.2]);
   const videoOpacity = useTransform(scrollYProgress, [0, 0.3], [0.7, 1]);
 
   var settings = {
@@ -290,7 +324,7 @@ export default function FuturisticAuction() {
           </p>
         </div>
         <Slider {...settings}>
-            {loading
+          {loading
             ? Array.from({ length: 6 }).map((_, i) => (
               <AuctionHoverPictureSkeleton key={i} />
             ))
@@ -314,60 +348,116 @@ export default function FuturisticAuction() {
       </section>
 
       {/* SECTION 4: Live Auction */}
-      <section
-        id="auction"
-        ref={ref}
-        className="relative w-full h-[200vh] flex flex-col items-center justify-start overflow-hidden"
-      >
-        {/* Background Gradient */}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-200 via-purple-300 to-purple-200"></div>
+   <section
+  id="auction"
+  ref={ref}
+  className="relative w-full h-[170vh] flex flex-col items-center justify-start overflow-hidden"
+>
+  {/* Background Gradient */}
+  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-200 via-purple-300 to-purple-200"></div>
 
-        {/* Larger Expanding Video Placeholder with Glow */}
-        <motion.div
-          style={{ scale: videoScale, opacity: videoOpacity }}
-          className="sticky top-16 w-[85vw] h-[55vh] md:w-[75vw] md:h-[65vh] 
-               bg-purple-300/40 border-4 border-purple-500 rounded-3xl 
-               flex items-center justify-center text-purple-100 text-3xl font-semibold 
-               shadow-[0_0_40px_rgba(168,85,247,0.6),0_0_80px_rgba(168,85,247,0.4)] 
-               transition-all duration-500"
+  {/* Top Section: Video + Text */}
+  <div className="relative mt-[20vh] w-[85%] flex flex-col md:flex-row items-start justify-between z-10 space-y-16 md:space-y-0">
+    {/* Left Side: Video */}
+    <video
+      src="/assets/vidu-video-3006995670702686.mp4"
+      className="w-[60vw] md:w-[40vw] h-[30vh] md:h-[60vh] object-cover rounded-2xl z-20 transform transition-transform duration-500 ease-out hover:scale-110 shadow-[0_0_40px_rgba(168,85,247,0.6)]"
+      autoPlay
+      loop
+      muted
+      playsInline
+    />
+
+    {/* Right Side: Text */}
+    <div className="flex flex-col justify-center md:w-[45%] text-left space-y-6">
+      <h2 className="text-6xl font-bold text-yellow-200 drop-shadow-[0_0_15px_rgba(250,204,21,0.7)]">
+        How do I bid?
+      </h2>
+
+      <p className="text-lg text-white/90 leading-relaxed">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla facilisi.
+        Donec sed urna ut sapien convallis feugiat a a turpis. Integer non sapien
+        quis justo ullamcorper volutpat. Curabitur in elementum lacus.
+      </p>
+    </div>
+  </div>
+
+  {/* Bottom Section: Centered Try It Out + Placeholder + Button */}
+<div className="flex flex-col items-center justify-center text-center space-y-10 mt-40 z-10">
+  <h3 className="text-[6vh] font-semibold text-purple-700 drop-shadow-[0_0_12px_rgba(168,85,247,0.8)]">
+    Try it out now
+  </h3>
+
+  {/* Bidding Section */}
+  <div className="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center w-full md:w-[90%] gap-20 md:gap-56">
+    {/* LEFT SIDE — Timer and Info */}
+    <div className="flex flex-col items-center md:items-start text-left space-y-4 text-white">
+      <h4 className="text-4xl font-bold text-yellow-300 drop-shadow-[0_0_10px_rgba(250,204,21,0.7)]">
+        Time Left: {timeLeft}s
+      </h4>
+      <p className="text-2xl text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
+        Current Bid: ${currentBid}
+      </p>
+      {result && (
+        <p
+          className={`text-2xl font-semibold ${
+            result.includes("won")
+              ? "text-green-400"
+              : result.includes("lost")
+              ? "text-red-400"
+              : "text-yellow-200"
+          }`}
         >
-          Video Placeholder
-        </motion.div>
+          {result}
+        </p>
+      )}
+    </div>
 
-        {/* Content Below Video */}
-        <div className="relative mt-[60vh] w-full flex flex-col items-center justify-center z-10 text-center space-y-8">
-          {/* Glowing Placeholder Box */}
-          <div
-            className="w-96 h-64 bg-purple-300/30 border-4 border-purple-500 rounded-2xl 
-                 flex items-center justify-center text-purple-100 text-xl font-semibold
-                 shadow-[0_0_30px_rgba(168,85,247,0.6),0_0_60px_rgba(147,51,234,0.4)]
-                 hover:shadow-[0_0_60px_rgba(168,85,247,0.8),0_0_100px_rgba(147,51,234,0.6)]
-                 transition-all duration-500"
-          >
-            Placeholder Item
-          </div>
+    {/* CENTER — Placeholder Image */}
+    <div
+      className="w-96 h-64 bg-purple-300/30 border-4 border-purple-500 rounded-2xl 
+      flex items-center justify-center text-purple-100 text-xl font-semibold
+      shadow-[0_0_30px_rgba(168,85,247,0.6),0_0_60px_rgba(147,51,234,0.4)]
+      hover:shadow-[0_0_60px_rgba(168,85,247,0.8),0_0_100px_rgba(147,51,234,0.6)]
+      transition-all duration-500"
+    >
+      Placeholder Item
+    </div>
 
-          {/* Auction Info */}
-          <h2 className="text-5xl text-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.7)]">
-            LIVE AUCTION
-          </h2>
-          <p className="text-2xl text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
-            Clicks: {auctionClicks} / 3
-          </p>
+    {/* RIGHT SIDE — Number Input + Button */}
+    <div className="flex flex-col items-center md:items-end space-y-6">
+      {/* Number Input */}
+      <input
+        type="number"
+        placeholder="Enter your bid"
+        value={userBid}
+        onChange={(e) => setUserBid(e.target.value)}
+        className="px-6 py-3 rounded-lg border-2 border-purple-400 bg-purple-100 text-purple-800 text-xl text-center focus:outline-none focus:ring-2 focus:ring-purple-400"
+      />
 
-          {/* Button */}
-          <button
-            onClick={handleAuctionClick}
-            disabled={auctionClicks >= 3}
-            className={`px-16 py-6 text-2xl rounded-lg border-4 transition-all duration-300 ${auctionClicks >= 3
-              ? "bg-gradient-to-r from-green-500 to-emerald-400 border-green-400 shadow-[0_0_40px_rgba(16,185,129,0.6)]"
-              : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105 hover:shadow-[0_0_60px_rgba(168,85,247,0.8)]"
-              }`}
-          >
-            {auctionClicks >= 3 ? "BID PLACED ✓" : "PLACE BID"}
-          </button>
-        </div>
-      </section>
+      {/* Auction Button */}
+      <button
+        onClick={handleBid}
+        disabled={timeLeft <= 0}
+        className={`px-12 py-4 text-2xl rounded-lg border-4 transition-all duration-300 ${
+          timeLeft <= 0
+            ? "bg-gradient-to-r from-gray-400 to-gray-300 border-gray-400 text-gray-100 cursor-not-allowed"
+            : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105 hover:shadow-[0_0_60px_rgba(168,85,247,0.8)] text-white"
+        }`}
+      >
+        Place Bid
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+</section>
+
+
+
 
       {/* ABOUT SECTION */}
       <section className="section bg-purple-700 text-white w-full min-h-screen px-12 flex flex-col lg:flex-row items-start justify-start gap-12 py-12">
@@ -404,6 +494,7 @@ export default function FuturisticAuction() {
         </div>
 
       </section>
+
 
       {/* FAQ SECTION */}
       <section className="bg-purple-300 text-white w-full h-[100vh] flex flex-col lg:flex-row items-start justify-start gap-12 px-12 py-20">
@@ -460,49 +551,68 @@ export default function FuturisticAuction() {
           </Accordion>
         </div>
       </section>
+      <footer className="relative w-screen h-[100vh] bg-gradient-to-b from-purple-300 to-purple-200 flex items-center justify-center overflow-visible">
 
-      <footer className="relative w-screen h-[100vh] bg-gradient-to-b from-purple-300 to-purple-200 flex items-center justify-center">
-        {/* --- Footer Body --- */}
-        <div className="relative w-[97vw] h-[93vh] bg-slate-900 mx-auto border-3 border-indigo-600 my-auto flex flex-col md:flex-row items-center justify-center gap-16 p-10 rounded-[1rem] shadow-lg">
+        {/* --- Slate Container --- */}
+        <div className="relative w-[97vw] h-[93vh] mx-auto">
 
-          <div className="absolute -top-[10px] left-1/2 -translate-x-1/2 w-[95vh] h-[15px] bg-slate-900 rounded-t-[20px] border-t-3 border-indigo-600 flex items-center justify-center"></div>
-          <div className="absolute -bottom-[10px] left-1/2 -translate-x-1/2 w-[142vh] h-[10px] bg-slate-900 rounded-b-[50px] border-b-3 border-indigo-600 flex items-center justify-center"></div>
+          {/* Top Bar - highest z-index */}
+          <div className="absolute -top-[10px] left-1/2 -translate-x-1/2 w-[95vh] h-[15px] bg-slate-900 rounded-t-[20px] border-t-3 border-indigo-600 z-50"></div>
 
-          {/* --- Footer Content --- */}
-          <div className="flex flex-col md:flex-row items-stretch justify-between w-full text-center md:text-left gap-8">
+          {/* Bottom Bar - highest z-index */}
+          <div className="absolute -bottom-[10px] left-1/2 -translate-x-1/2 w-[142vh] h-[15px] bg-slate-900 rounded-b-[50px] border-b-3 border-indigo-600 z-50"></div>
 
-            {/* Left Links - 1/3 width */}
-            <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
-              <p className="text-sm text-purple-100 font-semibold">Pages</p>
-              <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Featured</a>
-              <a href="/Categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Categories</a>
-              <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">About Us</a>
-              <a href="/how_it_works" className="hover:text-purple-300 transition-all font-extrabold text-xl">How it works</a>
-            </div>
+          {/* Main Slate Box */}
+          <div className="relative w-full h-full bg-slate-900 border-3 border-indigo-600 rounded-[1rem] shadow-lg z-10 overflow-hidden flex flex-col md:flex-row items-center justify-center gap-16 p-10">
 
-            {/* Center Logo with text above */}
-            <div className="flex-1 flex flex-col items-center justify-center text-center ">
-              <p className="text-purple-200 text-[5vh] font-semibold mb-4">
-                Welcome to <br />
-                <span className="text-yellow-300">BidHub</span>
-              </p>
-              <div className="w-48 h-48 bg-purple-200 rounded-2xl flex items-center justify-center font-bold text-black text-xl shadow-md">
-                Logo / Image
+            {/* Overlay Image */}
+            <img
+              src="\assets\Footerimage.png"
+              alt="footer overlay"
+              className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-overlay pointer-events-none z-20 rounded-[1rem]"
+            />
+
+            {/* Footer Content above overlay */}
+            <div className="relative flex flex-col md:flex-row items-stretch justify-between w-full text-center md:text-left gap-8 z-30">
+
+              {/* Left Links */}
+              <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
+                <p className="text-sm text-purple-100 font-semibold">Pages</p>
+                <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Featured</a>
+                <a href="/categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Categories</a>
+                <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">About Us</a>
+                <a href="/how_it_works" className="hover:text-purple-300 transition-all font-extrabold text-xl">How it works</a>
               </div>
-              <p className="mt-4 text-gray-300 text-sm">© 2025 Your Company</p>
-            </div>
 
-            {/* Right Links - 1/3 width */}
-            <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
-              <p className="text-sm text-purple-100 font-semibold">Start Now</p>
-              <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Login</a>
-              <a href="/Categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Sign Up</a>
-              <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">Contact Us</a>
-            </div>
+              {/* Center Logo + Text */}
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <p className="text-purple-200 text-[5vh] font-semibold mb-4">
+                  Welcome to <br />
+                  <span className="text-yellow-300">BidHub</span>
+                </p>
+                <div className="w-48 h-48 bg-purple-200 rounded-2xl flex items-center justify-center font-bold text-black text-xl shadow-md">
+                  Logo / Image
+                </div>
+                <p className="mt-4 text-gray-300 text-sm">© 2025 Your Company</p>
+              </div>
 
+              {/* Right Links */}
+              <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
+                <p className="text-sm text-purple-100 font-semibold">Start Now</p>
+                <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Login</a>
+                <a href="/categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Sign Up</a>
+                <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">Contact Us</a>
+              </div>
+
+            </div>
           </div>
         </div>
       </footer>
+
+
+
+
+
 
       {/* Floating animation styles */}
       <style>{`

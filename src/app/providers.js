@@ -49,13 +49,13 @@ export const useInitialAuthed = () => useContext(InitialAuthContext);
 export default function Providers({ initialAuthed, children }) {
   const pathname = usePathname();
 
-  // For navbar (example: hide navbar on auction pages)
-  const hideNavbarOn = ['/'];
-  const hideNavbar = hideNavbarOn.some(page => pathname.startsWith(page));
+  // For navbar (hide only on '/')
+const hideNavbarOn = ['/'];
+const hideNavbar = hideNavbarOn.some(page => pathname === page);
 
-  // For footer (hide footer on specific pages)
-  const hideFooterOn = ['/'];
-  const hideFooter = hideFooterOn.some(page => pathname.startsWith(page));
+// For footer (hide only on '/')
+const hideFooterOn = ['/'];
+const hideFooter = hideFooterOn.some(page => pathname === page);
 
   return (
     <InitialAuthContext.Provider value={initialAuthed}>
