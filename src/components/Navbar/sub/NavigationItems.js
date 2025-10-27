@@ -8,7 +8,7 @@ import { DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { useModal } from '@/context/ModalContext';
 import { memo } from 'react';
 import { useIsActive } from '@/hooks/useIsActive';
-import { axiosBrowserClient } from '@/utils/axios/client';
+// replaced axiosBrowserClient with fetch
 import { toast } from "sonner";
 
 import Login from '@/components/LR/Login';
@@ -99,8 +99,15 @@ function handleAction(action, setModalHeader, setModalState, setModalForm, logou
                     const password = form.get('password')?.trim();
                     const username = form.get('username')?.trim();
                     try {
-                        const res = await axiosBrowserClient.post('/auth/register', { email, password, username });
-                        if (res.status !== 200) return toast.error('Something went wrong.');
+                        const resp = await fetch(`${window.location.origin}/api/auth/register`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ email, password, username })
+                        });
+                        if (!resp.ok) {
+                          const err = await resp.json().catch(() => ({}));
+                          return toast.error(err?.error || 'Something went wrong.');
+                        }
                         setModalState({ open: false });
                         return toast.success('Registration success! Please verify your email.');
                     } catch (error) {

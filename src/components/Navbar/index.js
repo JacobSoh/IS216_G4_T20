@@ -9,7 +9,7 @@ import Login from '@/components/LR/Login';
 import Register from '@/components/LR/Register';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { validateRegistration } from '@/lib/validators';
-import { axiosBrowserClient } from '@/utils/axios/client';
+// replaced axiosBrowserClient with fetch
 
 // Navigation items are defined in the Navbar02 component
 
@@ -61,9 +61,9 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
 
         try {
           // Pre-check with server API to see if email/username exists
-          const data = await axiosBrowserClient('/auth', {
-            params: { email, username }
-          });
+          const q = new URLSearchParams({ email, username }).toString();
+          const res = await fetch(`${window.location.origin}/api/auth?${q}`);
+          const data = await res.json();
           console.log(data);
           if (data.exists) return toast.error("Email already exists.");
           if (data.usernameExists) return toast.error("Username already exists.");

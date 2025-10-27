@@ -227,12 +227,7 @@ export default function Settings({ onClose }) {
                 {/* Form Fields */}
                 <div className="space-y-4">
                     {/* Username - Full Width */}
-                    <CustomInput 
-                        type="username"
-                        regex={usernameRe}
-                        regexMessage='Name must be valid!'
-                    />
-                    {/* <InputControl
+                    <InputControl
                         labelText="Username"
                         formName="username"
                         type="text"
@@ -241,10 +236,10 @@ export default function Settings({ onClose }) {
                         value={form.username}
                         onChange={handleField('username')}
                         inputErr={usernameErr}
-                    /> */}
+                    />
 
                     {/* Name Fields - Grid */}
-                    {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <InputControl
                             labelText="First Name"
                             formName="firstName"
@@ -272,10 +267,10 @@ export default function Settings({ onClose }) {
                             value={form.lastName}
                             onChange={handleField('lastName')}
                         />
-                    </div> */}
+                    </div>
 
                     {/* Street Address - Full Width */}
-                    {/* <InputControl
+                    <InputControl
                         labelText="Street Address"
                         formName="street"
                         type="text"
@@ -283,10 +278,10 @@ export default function Settings({ onClose }) {
                         placeholder="Your Street Address"
                         value={form.street}
                         onChange={handleField('street')}
-                    /> */}
+                    />
 
                     {/* City, State, ZIP - Grid */}
-                    {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <InputControl
                             labelText="City"
                             formName="city"
@@ -314,7 +309,7 @@ export default function Settings({ onClose }) {
                             value={form.zip}
                             onChange={handleField('zip')}
                         />
-                    </div> */}
+                    </div>
                 </div>
 
                 {/* Error Message */}

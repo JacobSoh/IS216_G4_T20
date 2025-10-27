@@ -22,7 +22,7 @@ import * as THREE from 'three'
 import { useAuctionLive } from '@/hooks/useAuctionLive'
 import { useAuctionChat } from '@/hooks/useAuctionChat'
 import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen'
-import { axiosBrowserClient } from '@/utils/axios/client'
+// replaced axiosBrowserClient with fetch
 import { buildStoragePublicUrl } from '@/utils/storage'
 import { supabaseBrowser } from '@/utils/supabase/client'
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/solid'
@@ -1799,10 +1799,11 @@ useEffect(() => {
   const placeBidInternal = async (parsedAmount) => {
     try {
       setIsBidding(true)
-      await axiosBrowserClient.post(`/api/auctions/${aid}/bid`, {
-        iid: currentLot.activeItem.iid,
-        amount: parsedAmount
-      })
+      await fetch(`${window.location.origin}/api/auctions/${aid}/bid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ iid: currentLot.activeItem.iid, amount: parsedAmount })
+      }).then(async (r) => { if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error || 'Unable to place bid'); } });
       const nextRequired = parsedAmount + bidIncrementValue
       setCurrentLot((prev) => {
         if (!prev) {
@@ -1867,9 +1868,11 @@ useEffect(() => {
     }
     try {
       setIsSendingChat(true)
-      await axiosBrowserClient.post(`/api/auctions/${aid}/chat`, {
-        message: chatInput.trim()
-      })
+      await fetch(`${window.location.origin}/api/auctions/${aid}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: chatInput.trim() })
+      }).then(async (r) => { if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error || 'Unable to send message'); } });
       setChatInput('')
       setChatFeedback('Message sent')
       // Refresh to get the latest messages from server including the new one

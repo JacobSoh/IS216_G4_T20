@@ -1,5 +1,4 @@
 import { User } from "@/models/user";
-import { axiosBrowserClient } from "@/utils/axios/client";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 async function getUserByUsername(username, sb) {

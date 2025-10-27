@@ -45,6 +45,7 @@ export class User {
         this.object_path = profile.object_path;
         this.wallet_balance = profile.wallet_balance.toFixed(2);
         this.wallet_held = profile.wallet_held.toFixed(2);
+        this.address = profile.address || '';
 
         this.total_reviews = review?.total ?? 0,
         this.total_stars = review?.total_stars ?? 0,

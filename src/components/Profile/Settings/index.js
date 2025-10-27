@@ -1,113 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabaseBrowser } from '@/utils/supabase/client';
-import { CustomInput } from '@/components/Form';
 import { usernameRe } from '@/lib/validators';
-import { useModal } from '@/context/ModalContext';
-import { toast } from 'sonner';
+import { FieldGroup } from '@/components/ui/field';
+import { CustomInput, CustomAddressInput } from '@/components/Form';
 
-export default function Settings() {
-  const supabase = supabaseBrowser();
-  const { setModalForm, setModalState } = useModal();
+export default function Settings({ profile }) {
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [userId, setUserId] = useState(null);
   const [avatarBucket, setAvatarBucket] = useState('avatar');
   const [avatarPath, setAvatarPath] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
   const [initialUsername, setInitialUsername] = useState('');
+  const [addrDisplay, setAddrDisplay] = useState('');
 
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-        if (authError || !authUser) throw new Error('Not authenticated');
-
-        setUserId(authUser.id);
-
-        const { data: profileData, error: profileError } = await supabase
-          .from('profile')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-        if (profileError) throw new Error('Failed to load profile');
-
-        setInitialUsername(profileData.username || '');
-
-        if (profileData.object_path) {
-          setAvatarPath(profileData.object_path);
-          setAvatarBucket(profileData.avatar_bucket || 'avatar');
-          const { data } = supabase.storage
-            .from(profileData.avatar_bucket || 'avatar')
-            .getPublicUrl(profileData.object_path);
-          setAvatarPreview(data.publicUrl);
-        }
-      } catch (err) {
-        console.error('Failed to load user data:', err);
-        setError('Failed to load user data');
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-    loadUserData();
-  }, [supabase]);
-
-  useEffect(() => {
-    // Wire modal form submission to use FormData, similar to ToggleLR
-    setModalForm({
-      isForm: true,
-      onSubmit: async (e) => {
-        e.preventDefault();
-        const f = new FormData(e.currentTarget);
-
-        try {
-          if (!userId) throw new Error('User not loaded');
-
-          const username = f.get('username')?.toString().trim() || '';
-          const avatarFile = f.get('avatar');
-
-          let newAvatarPath = avatarPath;
-
-          // Upload avatar if a new file is chosen
-          if (avatarFile && avatarFile.size > 0) {
-            if (!avatarFile.type?.startsWith('image/')) throw new Error('Please select a valid image file');
-            if (avatarFile.size > 5 * 1024 * 1024) throw new Error('Image size should be less than 5MB');
-
-            const fileExt = avatarFile.name.split('.').pop();
-            const fileName = `${userId}-${Date.now()}.${fileExt}`;
-
-            if (avatarPath) {
-              await supabase.storage.from(avatarBucket).remove([avatarPath]);
-            }
-
-            const { error: uploadError } = await supabase.storage
-              .from(avatarBucket)
-              .upload(fileName, avatarFile, { cacheControl: '3600', upsert: false });
-            if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-            newAvatarPath = fileName;
-          }
-
-          const { error: updateError } = await supabase
-            .from('profile')
-            .update({
-              username,
-              object_path: newAvatarPath,
-            })
-            .eq('id', userId);
-          if (updateError) throw new Error(`Update failed: ${updateError.message}`);
-
-          toast.success('Profile updated');
-          setModalState({ open: false });
-          setTimeout(() => window.location.reload(), 350);
-        } catch (err) {
-          toast.error(err?.message || 'Failed to update profile');
-        }
-      },
-    });
-  }, [setModalForm, setModalState, supabase, userId, avatarBucket, avatarPath]);
+    setInitialUsername(profile?.username || '');
+    setAvatarPath(profile?.object_path || null);
+    // Only use local preview for newly selected files; do not seed with avatar_url
+    setAvatarPreview('');
+    setAvatarBucket(profile?.avatar_bucket || 'avatar');
+    setInitialLoading(false);
+  }, [profile]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
@@ -118,6 +33,8 @@ export default function Settings() {
     setAvatarPreview(URL.createObjectURL(file));
   };
 
+  // Address selection no longer populates structured fields; using only display string
+
   if (initialLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
@@ -127,16 +44,18 @@ export default function Settings() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+    <div className="p-6 space-y-6">
       {/* Avatar Upload */}
       <div className="flex flex-col items-center gap-4 mb-6">
         <div className="relative w-32 h-32 flex-shrink-0">
           <div className="w-full h-full rounded-full overflow-hidden ring-4 ring-gray-600 bg-gray-700">
             {avatarPreview ? (
               <img src={avatarPreview} alt="Avatar Preview" className="w-full h-full object-cover" />
+            ) : profile?.object_path ? (
+              <img src={profile?.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white text-4xl font-bold">
-                {initialUsername?.[0]?.toUpperCase() || 'U'}
+                {profile?.username?.[0]?.toUpperCase() || 'U'}
               </div>
             )}
           </div>
@@ -160,14 +79,18 @@ export default function Settings() {
       </div>
 
       {/* Fields */}
-      <div className="space-y-4">
+      <FieldGroup>
         <CustomInput
           type="username"
-          defaultValue={initialUsername}
+          defaultValue={profile?.username}
           regex={usernameRe}
           regexMessage="Name must be valid!"
         />
-      </div>
+        <CustomInput type="firstname" defaultValue={profile?.first_name} required={true} />
+        <CustomInput type="middlename" defaultValue={profile?.middle_name} />
+        <CustomInput type="lastname" defaultValue={profile?.last_name} required={true} />
+        <CustomAddressInput name="address" defaultValue={profile?.address} />
+      </FieldGroup>
 
       {error && (
         <div className="bg-red-900/30 border border-red-500 text-red-400 px-4 py-3 rounded-md">{error}</div>
