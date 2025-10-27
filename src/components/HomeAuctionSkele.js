@@ -7,7 +7,7 @@ import React from "react";
  * - Mimics the layout of AuctionCard with shimmer animation.
  */
 const AuctionCardSkeleton = () => (
-  <div className="bg-white rounded-lg overflow-hidden border border-gray-200 animate-pulse">
+  <div className="bg-white rounded-md overflow-hidden border border-gray-200 animate-pulse">
     {/* Image placeholder */}
     <div className="h-40 bg-gray-200" />
 

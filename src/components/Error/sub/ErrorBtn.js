@@ -13,7 +13,7 @@ export default function ErrorBtn() {
                 text-black bg-[var(--custom-cream-yellow)]
                 hover:bg-[var(--custom-cream-yellow-darker)]
                 focus:ring-4 focus:ring-yellow-500
-                rounded-lg focus:outline-none
+                rounded-md focus:outline-none
             '
             href='/'
         >

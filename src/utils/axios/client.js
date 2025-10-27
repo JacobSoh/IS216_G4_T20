@@ -2,11 +2,20 @@
 
 import axios from 'axios'
 
-const rawBase = process.env.NEXT_PUBLIC_API_BASE_URL || ''
-const normalizedBase = rawBase ? rawBase.replace(/\/+$/, '') : ''
+// Dynamically determine base URL from browser location
+// This allows it to work on any port (3000, 3001, etc.)
+const getBaseURL = () => {
+  if (typeof window !== 'undefined') {
+    // Use the current browser origin + /api
+    return `${window.location.origin}/api`
+  }
+  // Fallback to env variable for server-side
+  const rawBase = process.env.NEXT_PUBLIC_API_BASE_URL || ''
+  return rawBase ? rawBase.replace(/\/+$/, '') : ''
+}
 
 export const axiosBrowserClient = axios.create({
-  baseURL: normalizedBase || undefined,
+  baseURL: getBaseURL() || undefined,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: false
 })

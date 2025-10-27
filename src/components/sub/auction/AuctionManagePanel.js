@@ -99,7 +99,7 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
         </div>
       )}
 
-      <div className="rounded-xl border border-[var(--custom-border-color)] bg-[var(--custom-bg-secondary)] p-4">
+      <div className="rounded-md border border-[var(--custom-border-color)] bg-[var(--custom-bg-secondary)] p-4">
         <h2 className="text-lg font-semibold text-[var(--custom-text-primary)] mb-4">
           Lots ({items.length})
         </h2>
@@ -110,7 +110,7 @@ export default function AuctionManagePanel({ aid, initialLiveData }) {
             return (
               <div
                 key={item.iid}
-                className={`rounded-lg border px-4 py-3 ${isActive ? 'border-[var(--custom-bright-blue)] bg-[var(--custom-bg-primary)]/60' : 'border-[var(--custom-border-color)] bg-[var(--custom-bg-primary)]/40'}`}
+                className={`rounded-md border px-4 py-3 ${isActive ? 'border-[var(--custom-bright-blue)] bg-[var(--custom-bg-primary)]/60' : 'border-[var(--custom-border-color)] bg-[var(--custom-bg-primary)]/40'}`}
               >
                 <div className="flex items-center justify-between">
                   <div>

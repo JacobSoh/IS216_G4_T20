@@ -1,0 +1,12 @@
+# Force CRLF for all text
+* text eol=crlf
+
+# Treat binaries as binary (no EOL changes)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.ico binary
+*.woff binary
+*.woff2 binary

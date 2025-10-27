@@ -263,7 +263,7 @@ function ModalAuctionCard({ lotData, onClose }) {
   } = lotData
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto bg-[#050910] border-2 border-white/[0.14] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <div className="relative w-full max-w-6xl mx-auto bg-[#050910] border-2 border-white/[0.14] rounded-md shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
       {/* Close Button Inside Card */}
       <button
         type="button"
@@ -293,7 +293,7 @@ function ModalAuctionCard({ lotData, onClose }) {
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
           {/* Left: Main Image */}
-          <div className="flex-1 lg:flex-[1.2] rounded-xl md:rounded-2xl overflow-hidden relative bg-[#0c121f] min-h-[250px] md:min-h-[320px]">
+          <div className="flex-1 lg:flex-[1.2] rounded-md md:rounded-md overflow-hidden relative bg-[#0c121f] min-h-[250px] md:min-h-[320px]">
             <Image
               src={imageUrl}
               alt={title}
@@ -310,7 +310,7 @@ function ModalAuctionCard({ lotData, onClose }) {
           {/* Right: Bid Info */}
           <div className="flex-1 flex flex-col gap-3 md:gap-4">
             {/* Current Bid */}
-            <div className="bg-[#0f1827]/92 rounded-xl md:rounded-2xl p-4 md:p-5 border border-[#6dd6ff]/12">
+            <div className="bg-[#0f1827]/92 rounded-md md:rounded-md p-4 md:p-5 border border-[#6dd6ff]/12">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs md:text-sm text-[#94a3b8] uppercase">{priceLabel}</span>
                 <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#fff9af]">${priceValue}</span>
@@ -328,7 +328,7 @@ function ModalAuctionCard({ lotData, onClose }) {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3 md:gap-4 bg-[#0c121f]/92 rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/[0.15]">
+            <div className="grid grid-cols-2 gap-3 md:gap-4 bg-[#0c121f]/92 rounded-md md:rounded-md p-4 md:p-5 border border-white/[0.15]">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] md:text-xs text-[#94a3b8] uppercase">Time Remaining</span>
                 <span className="text-sm md:text-base lg:text-lg font-semibold text-white">{timeRemaining}</span>
@@ -340,8 +340,8 @@ function ModalAuctionCard({ lotData, onClose }) {
             </div>
 
             {/* Next Lot Preview */}
-            <div className="flex gap-3 items-center bg-[#080c15]/92 rounded-xl md:rounded-2xl p-3 md:p-4 border border-dashed border-white/[0.25]">
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden bg-[#111827] flex-shrink-0">
+            <div className="flex gap-3 items-center bg-[#080c15]/92 rounded-md md:rounded-md p-3 md:p-4 border border-dashed border-white/[0.25]">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-md overflow-hidden bg-[#111827] flex-shrink-0">
                 <Image
                   src={nextLotImage}
                   alt="Upcoming lot preview"

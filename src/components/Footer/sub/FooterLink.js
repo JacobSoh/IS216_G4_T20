@@ -4,11 +4,11 @@ import Link from "next/link";
 export default function FooterLink({ title, links=[], isLink=true, message=null }) {
     return (
         <section>
-            <h3 className={`text-lg font-bold tracking-tight ${isLink?'text-white':'text-(--custom-cream-yellow)'}`}>{title}</h3>
-            <div className={`mt-3 text-white text-sm ${isLink?'flex flex-col items-start justify-start':null}`}>
+            <h3 className={`text-lg font-bold tracking-tight ${isLink?'text-white':'text-white'}`}>{title}</h3>
+            <div className={`mt-3 text-white/90 text-sm ${isLink?'flex flex-col items-start justify-start':null}`}>
                 {!isLink && message}
                 {isLink && links.map(s => (
-                    <Link key={s.name + '_footer_link'} href={s.href} className='text-sm no-underline'>
+                    <Link key={s.name + '_footer_link'} href={s.href} className='text-sm no-underline hover:text-white/90'>
                         {s.name}
                     </Link>
                 ))}

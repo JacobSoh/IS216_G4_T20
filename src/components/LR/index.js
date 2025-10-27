@@ -1,2 +1,2 @@
-export { default as Login } from './LoginComponent';
-export { default as Register } from './RegisterComponent';
+export { default as Login } from './Login';
+export { default as Register } from './Register';

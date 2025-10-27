@@ -10,6 +10,9 @@ const baseAuctionSelect = `
   end_time,
   thumbnail_bucket,
   object_path,
+  time_interval,
+  timer_started_at,
+  timer_duration_seconds,
   owner:profile!auction_oid_fkey (
     id,
     username,
@@ -82,4 +85,40 @@ export async function delAuctionById(aid, oid) {
 
 export async function retrieveAuctionDetail(aid) {
   return retrieveAuctionById(aid)
+}
+
+/**
+ * Update auction timer fields
+ * @param {string} aid - Auction ID
+ * @param {object} timerData - { timer_started_at, timer_duration_seconds }
+ */
+export async function updateAuctionTimer(aid, timerData) {
+  const sb = supabaseServer()
+  const { data, error } = await (
+    await sb
+  ).from('auction')
+    .update(timerData)
+    .eq('aid', aid)
+    .select(baseAuctionSelect)
+    .single()
+  if (error) throw error
+  return data ?? null
+}
+
+export async function closeAuctionRecord(aid, { end_time }) {
+  const sb = supabaseServer()
+  const payload = {
+    end_time,
+    timer_started_at: null,
+    timer_duration_seconds: null
+  }
+  const { data, error } = await (
+    await sb
+  ).from('auction')
+    .update(payload)
+    .eq('aid', aid)
+    .select(baseAuctionSelect)
+    .single()
+  if (error) throw error
+  return data ?? null
 }
