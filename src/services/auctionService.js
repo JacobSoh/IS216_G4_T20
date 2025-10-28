@@ -3,6 +3,7 @@ import 'server-only'
 import { Auction } from '@/models/auction'
 import {
   retrieveAllAuctions,
+  retrieveAuctionsByOwner,
   insertAuction,
   retrieveAuctionById,
   upAuctionById,
@@ -138,6 +139,12 @@ export async function getAllAuctions() {
   const data = await retrieveAllAuctions()
   if (!data) throw new Error('Auctions not found')
   return data.map(enhanceAuctionRecord)
+}
+
+export async function getAuctionsByOwner(oid) {
+  if (!oid) throw new Error('Missing owner id')
+  const data = await retrieveAuctionsByOwner(oid)
+  return (data ?? []).map(enhanceAuctionRecord)
 }
 
 export async function setAuction(param) {

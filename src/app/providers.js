@@ -50,7 +50,7 @@ export const useInitialAuthed = () => useContext(InitialAuthContext);
 
 export default function Providers({ initialAuthed, children }) {
   const pathname = usePathname();
-  const isAuctionDetail = /^\/auction\/[^/]+$/.test(pathname) && pathname !== '/auction/create';
+  const isAuctionDetail = /^\/auction\/view\/[^/]+$/.test(pathname) && pathname !== '/auction/create';
   const isMinimalLayout = pathname === '/' || isAuctionDetail;
 
   // One-time email verification toast from middleware flash cookie
@@ -72,13 +72,12 @@ export default function Providers({ initialAuthed, children }) {
   return (
     <InitialAuthContext.Provider value={initialAuthed}>
       <ModalProvider>
-        <Navbar />
         {
           isMinimalLayout
             ? (children)
             : (
               <>
-                
+                <Navbar />
                 <div className="min-h-screen flex flex-col">
                   <main className={`flex-1 container max-w-7xl px-2 md:px-6 lg:px-8 mx-auto pt-16`}>
                     <div className="my-4 space-y-4">
