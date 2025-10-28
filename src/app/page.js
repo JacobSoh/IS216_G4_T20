@@ -10,6 +10,7 @@ import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/l
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
+import BubbleNav from "@/components/testnav";
 
 
 // ---------- Main Component ----------
@@ -187,6 +188,7 @@ export default function FuturisticAuction() {
   return (
     <div ref={scrollRef} className="scroll-smooth h-screen overflow-y-scroll snap-y snap-mandatory bg-black text-white relative">
       {/* Border frame */}
+      <BubbleNav/>
       <motion.div
         animate={{ opacity: showFrame ? 1 : 0 }}
         transition={{ duration: 0.4 }}
