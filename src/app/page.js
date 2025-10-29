@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { createTimeline, stagger, splitText } from 'animejs';
 import { supabaseBrowser } from "@/utils/supabase/client";
-import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/landingauctionhover";
+import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
