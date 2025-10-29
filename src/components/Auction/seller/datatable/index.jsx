@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { ArrowUpDown, Eye, Pencil, ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CustomInput } from "@/components/Form";
 import {
   Table,
   TableBody,
@@ -46,8 +46,6 @@ function formatDate(iso) {
 const statusOrder = { draft: 0, scheduled: 1, live: 2, ended: 3 };
 
 export default function SellerDatatable({ auctions = [] }) {
-  const router = useRouter();
-
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [sortKey, setSortKey] = useState("status");
@@ -94,7 +92,7 @@ export default function SellerDatatable({ auctions = [] }) {
         case "status":
         default:
           return dir * (statusOrder[a._status] - statusOrder[b._status]);
-      }
+      };
     });
     return arr;
   }, [filtered, sortKey, sortDir]);
@@ -124,7 +122,7 @@ export default function SellerDatatable({ auctions = [] }) {
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
         <div className="flex-1 min-w-0">
           <div className="relative">
-            <Input
+            <CustomInput
               placeholder="Search auctions by title…"
               value={query}
               onChange={(e) => {
@@ -194,10 +192,10 @@ export default function SellerDatatable({ auctions = [] }) {
                   <TableCell className="text-right">{a.bids ?? 0}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => router.push(`/auction/${a.aid}`)}>
+                      <Button variant="outline" size="sm" onClick={() => redirect(`/auction/view/${a.aid}`)}>
                         <Eye /> View
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => router.push(`/auction/seller/edit/${a.aid}`)}>
+                      <Button variant="secondary" size="sm" onClick={() => redirect(`/auction/seller/edit/${a.aid}`)}>
                         <Pencil /> Edit
                       </Button>
                     </div>

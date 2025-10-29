@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation';
 
 import AuctionManagePanel from '@/components/auction/AuctionManagePanel'
 import { getAuctionLiveState, getAuctionChatMessages } from '@/services/auctionService'
@@ -15,21 +15,19 @@ export default async function AuctionManagePage({ params }) {
     getAuctionLiveState(aid),
     getAuctionChatMessages(aid, { limit: 200 }),
     getServerUser()
-  ])
+  ]);
+
   if (!snapshot) {
     console.log('[AuctionManagePage] No snapshot retrieved for aid', aid)
     notFound()
-  }
-  if (!user) {
-    console.log('[AuctionManagePage] No authenticated user, redirecting to login', { aid })
-    redirect(`/login?next=/auction/${aid}/manage`)
-  }
+  };
+
   const endTimeIso = snapshot.auction?.end_time ?? null
   const hasEnded = endTimeIso ? Date.now() >= new Date(endTimeIso).getTime() : false
   if (hasEnded) {
     console.log('[AuctionManagePage] Auction already ended, redirecting to ended page', { aid, endTimeIso })
-    redirect(`/auction/${aid}/ended`)
-  }
+    redirect(`/auction/view/${aid}/ended`)
+  };
 
   const ownerCandidates = [
     snapshot.auction?.oid,
@@ -48,7 +46,7 @@ export default async function AuctionManagePage({ params }) {
       ownerCandidates,
       userId: user.id
     })
-    redirect(`/auction/${aid}`)
+    redirect(`/auction/view/${aid}`)
   }
 
   return (

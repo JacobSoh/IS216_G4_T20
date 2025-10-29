@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, redirect } from 'next/navigation';
 import { Navbar02 } from '@/components/ui/shadcn-io/navbar-02';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useModal } from '@/context/ModalContext';
@@ -101,7 +101,7 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
 
   const onCtaClick = () => {
     if (isAuthed) {
-      router.push('/profile');
+      redirect('/profile');
     } else {
       openRegister();
     }

@@ -1,20 +1,18 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.jsx";
 import SellerDatatable from "@/components/auction/seller/datatable";
 import SellerDashboard from "@/components/auction/seller/dashboard";
 
 export default function SellerConsole({ auctions = [] }) {
-  console.log(auctions);
-  const router = useRouter();
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-brand">Seller Console</h2>
-        <Button variant="brand" onClick={() => router.push('/auction/seller/create')}>Create Auction</Button>
+        <Button variant="brand" onClick={() => redirect('/auction/seller/create')}>Create Auction</Button>
       </div>
 
       <div className="bg-slate-800 rounded-md overflow-hidden shadow-xl border border-slate-700">
