@@ -29,28 +29,62 @@ export function useSupabaseAuth(initialAuthedProp) {
         }
     }, [router]);
 
-    const logout = useCallback(async () => {
-        await sbRef.current.auth.signOut();
+    const LOGOUT_FLAG = 'app:isLoggingOut';
+
+    // Instant, safe logout: optimistic UI + immediate redirect
+    const logout = useCallback(async (options = {}) => {
+        const { redirectTo = '/' } = options;
+
+        // 1) Optimistic local state and guard across pages
+        try {
+            if (typeof window !== 'undefined') sessionStorage.setItem(LOGOUT_FLAG, '1');
+        } catch {}
         setIsAuthed(false);
-        safeRefresh();
-    }, [safeRefresh]);
+
+        // 2) Kick off sign-out in the background
+        const signOutPromise = sbRef.current.auth.signOut().catch(() => {}).finally(() => {
+            try { if (typeof window !== 'undefined') sessionStorage.removeItem(LOGOUT_FLAG); } catch {}
+        });
+
+        // 3) Immediate hard redirect to a safe page (no back to protected)
+        try {
+            if (typeof window !== 'undefined') {
+                window.location.replace(redirectTo);
+                // After replace, code continues until navigation commits; no need to await
+            } else {
+                router.replace(redirectTo);
+            }
+        } catch {
+            // As a fallback, refresh the router to re-render unauth state
+            safeRefresh();
+        }
+
+        // Do not await signOut; return promise in case caller wants to
+        return signOutPromise;
+    }, [router, safeRefresh]);
 
     useEffect(() => {
         let mounted = true;
         const sb = sbRef.current;
 
+        // If a logout is in progress (from another page), keep UI logged out immediately
+        const isLoggingOut = typeof window !== 'undefined' && (() => {
+            try { return sessionStorage.getItem(LOGOUT_FLAG) === '1'; } catch { return false; }
+        })();
+
         // 1) Instant local read (no network)
         (async () => {
             const { data: { session } } = await sb.auth.getSession();
             if (!mounted) return;
-            setIsAuthed(!!session?.user);
+            // Respect logout-in-progress flag to avoid flash of authed UI
+            setIsAuthed(isLoggingOut ? false : !!session?.user);
             setReady(true);
 
             // 2) Background verify (handles revoked tokens)
             try {
                 const { data: { user } } = await sb.auth.getUser();
                 if (!mounted) return;
-                setIsAuthed(!!user);
+                setIsAuthed(isLoggingOut ? false : !!user);
             } catch { /* ignore */ }
         })();
 

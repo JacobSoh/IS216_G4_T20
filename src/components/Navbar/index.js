@@ -91,8 +91,9 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
 
   const onSignInClick = async () => {
     if (isAuthed) {
-      await logout();
-      toast.success('Sucessfully logged out');
+      // Instant logout + redirect handled inside hook
+      logout({ redirectTo: '/' });
+      // Optional: no toast due to immediate navigation; keep UX clean
     } else {
       openLogin();
     }
@@ -143,6 +144,7 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
       signInText={signInText}
       onSignInClick={onSignInClick}
       ctaText={ctaText}
+      ctaHref={isAuthed ? '/profile' : undefined}
       onCtaClick={onCtaClick}
     />
   );

@@ -1,9 +1,6 @@
 'use client';
 import React from "react";
 import { Clock } from "lucide-react";
-'use client';
-import React from "react";
-import { Clock } from "lucide-react";
 
 const AuctionCard = ({
   aid,
