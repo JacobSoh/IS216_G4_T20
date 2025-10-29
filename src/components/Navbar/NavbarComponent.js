@@ -11,7 +11,7 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 const NAV_ITEMS = [
 	{
 		label: 'Live Auctions',
-		href: '/',
+		href: '/featured_auctions',
 	},
 	{
 		label: 'Categories',
