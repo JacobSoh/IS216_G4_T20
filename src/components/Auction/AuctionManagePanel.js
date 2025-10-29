@@ -16,8 +16,8 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 // New color palette constants
 const COLORS = {
   deepPurple: '#4D067B',
-  richPurple: '#7209B7',
-  lightPurple: '#B984DB',
+  richPurple: '#B026FF',
+  lightPurple: '#B984D8',
   warmCream: '#F8E2D4',
   goldenTan: '#E2BD6B'
 }
