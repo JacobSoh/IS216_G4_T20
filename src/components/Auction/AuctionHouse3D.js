@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Suspense, useRef, useEffect, useState, useMemo, createContext, useContext } from 'react'
+import React, { Suspense, useRef, useEffect, useState, useMemo, createContext, useContext } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   OrbitControls,
@@ -26,6 +26,8 @@ import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from '
 import { buildStoragePublicUrl } from '@/utils/storage'
 import { supabaseBrowser } from '@/utils/supabase/client'
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/solid'
+import { Field, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 
 const pad = (value) => String(Math.max(0, Math.floor(value))).padStart(2, '0')
 
@@ -189,10 +191,44 @@ const TIER_CONFIG = [
   { name: 'balcony', y: 4, z: 23, rows: 4, seatsPerRow: 12, platformHeight: 1.0 }
 ]
 
-const SEAT_COLOR_BY_TIER = ['#4D067B', '#7209B7', '#B984DB']
-const OCCUPANT_PALETTE = ['#F8E2D4', '#E2BD6B', '#B984DB', '#F8E2D4', '#7209B7', '#B984DB']
-const ACCENT_PALETTE = ['#4D067B', '#7209B7', '#4D067B', '#7209B7', '#4D067B']
-function ConfettiParticle({ position, velocity, color, startTime }) {
+// Helper function to get CSS variable color
+const getCSSColor = (varName) => {
+  if (typeof window === 'undefined') return '#000000'
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#000000'
+}
+
+// Initialize color palettes from CSS variables
+const SEAT_COLOR_BY_TIER = [
+  getCSSColor('--theme-primary'),    // #4D067B
+  getCSSColor('--theme-secondary'),  // #B026FF
+  getCSSColor('--theme-accent')      // #B984D8
+]
+const OCCUPANT_PALETTE = [
+  getCSSColor('--theme-cream'),      // #F8E2D4
+  getCSSColor('--theme-gold'),       // #E2BD6B
+  getCSSColor('--theme-accent'),     // #B984D8
+  getCSSColor('--theme-cream'),      // #F8E2D4
+  getCSSColor('--theme-secondary'),  // #B026FF
+  getCSSColor('--theme-accent')      // #B984D8
+]
+const ACCENT_PALETTE = [
+  getCSSColor('--theme-primary'),    // #4D067B
+  getCSSColor('--theme-secondary'),  // #B026FF
+  getCSSColor('--theme-primary'),    // #4D067B
+  getCSSColor('--theme-secondary'),  // #B026FF
+  getCSSColor('--theme-primary')     // #4D067B
+]
+
+// Cached THREE.Color objects for performance (initialized from CSS variables)
+const CACHED_COLORS = {
+  darkPurple: new THREE.Color('#0a0414'),                        // Background (not in global palette)
+  primary: new THREE.Color(getCSSColor('--theme-primary')),     // #4D067B
+  secondary: new THREE.Color(getCSSColor('--theme-secondary')), // #B026FF
+  accent: new THREE.Color(getCSSColor('--theme-accent')),       // #B984D8
+  cream: new THREE.Color(getCSSColor('--theme-cream')),         // #F8E2D4
+  gold: new THREE.Color(getCSSColor('--theme-gold'))            // #E2BD6B
+}
+const ConfettiParticle = React.memo(function ConfettiParticle({ position, velocity, color, startTime }) {
   const meshRef = useRef()
   const startTimeRef = useRef(null)
 
@@ -236,7 +272,7 @@ function ConfettiParticle({ position, velocity, color, startTime }) {
       />
     </mesh>
   )
-}
+})
 
 function ConfettiExplosion({ triggerTime, position = [0, 6, -4] }) {
   const [confetti, setConfetti] = useState([])
@@ -246,7 +282,17 @@ function ConfettiExplosion({ triggerTime, position = [0, 6, -4] }) {
 
     // Create extravagant confetti burst - 300 pieces!
     const pieces = []
-    const colors = ['#E2BD6B', '#F8E2D4', '#B984DB', '#7209B7', '#E2BD6B', '#F8E2D4', '#B984DB', '#7209B7', '#FFFFFF']
+    const colors = [
+      getCSSColor('--theme-gold'),      // #E2BD6B
+      getCSSColor('--theme-cream'),     // #F8E2D4
+      getCSSColor('--theme-accent'),    // #B984D8
+      getCSSColor('--theme-secondary'), // #B026FF
+      getCSSColor('--theme-gold'),      // #E2BD6B
+      getCSSColor('--theme-cream'),     // #F8E2D4
+      getCSSColor('--theme-accent'),    // #B984D8
+      getCSSColor('--theme-secondary'), // #B026FF
+      '#FFFFFF'
+    ]
 
     for (let i = 0; i < 300; i++) {
       const angle = (Math.random() * Math.PI * 2)
@@ -325,7 +371,7 @@ function AuctioneerSpeechBubble({ message, visible }) {
       {/* Speech bubble background - bigger and more obvious */}
       <RoundedBox ref={bubbleRef} args={[9, 3, 0.15]} radius={0.3}>
         <meshStandardMaterial
-          color="#F8E2D4"
+          color={getCSSColor('--theme-cream')}
           transparent
           opacity={opacity}
           roughness={0.2}
@@ -336,12 +382,12 @@ function AuctioneerSpeechBubble({ message, visible }) {
       {/* Speech bubble border - thicker gold border */}
       <RoundedBox args={[9.3, 3.3, 0.12]} radius={0.32} position={[0, 0, -0.08]}>
         <meshStandardMaterial
-          color="#E2BD6B"
+          color={getCSSColor('--theme-gold')}
           transparent
           opacity={opacity}
           roughness={0.1}
           metalness={0.8}
-          emissive="#E2BD6B"
+          emissive={getCSSColor('--theme-gold')}
           emissiveIntensity={0.4}
         />
       </RoundedBox>
@@ -350,7 +396,7 @@ function AuctioneerSpeechBubble({ message, visible }) {
       <group position={[4, -1, 0]}>
         <Box args={[0.8, 0.8, 0.12]} rotation={[0, 0, Math.PI / 4]}>
           <meshStandardMaterial
-            color="#F8E2D4"
+            color={getCSSColor('--theme-cream')}
             transparent
             opacity={opacity}
             roughness={0.2}
@@ -383,7 +429,7 @@ function AuctioneerSpeechBubble({ message, visible }) {
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            color: '#4D067B',
+            color: getCSSColor('--theme-primary'),
             fontSize: '16px',
             fontWeight: 'bold',
             fontFamily: 'sans-serif',
@@ -474,7 +520,7 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {/* Main Backdrop */}
         <Plane args={[20, 12]}>
           <meshStandardMaterial
-            color={new THREE.Color('#0a0414')}
+            color={CACHED_COLORS.darkPurple}
             roughness={0.9}
             toneMapped={false}
           />
@@ -488,10 +534,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
           rotation={[0, 0, 0]}
         >
           <meshStandardMaterial
-            color={new THREE.Color('#7209B7')}
+            color={CACHED_COLORS.secondary}
             roughness={0.2}
             metalness={0.7}
-            emissive={new THREE.Color('#7209B7')}
+            emissive={CACHED_COLORS.secondary}
             emissiveIntensity={0.5}
           />
         </Torus>
@@ -499,10 +545,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {/* Gold Crown */}
         <Box ref={neonCrownRef} args={[6, 1.5, 0.3]} position={[0, 8, 0.2]}>
           <meshStandardMaterial
-            color={new THREE.Color('#E2BD6B')}
+            color={CACHED_COLORS.gold}
             roughness={0.1}
             metalness={0.9}
-            emissive={new THREE.Color('#E2BD6B')}
+            emissive={CACHED_COLORS.gold}
             emissiveIntensity={0.4}
           />
         </Box>
@@ -511,10 +557,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {[-1, 1].map((side) => (
           <Box key={side} args={[0.3, 1, 18]} position={[side * 9.5, 0, 0.3]} rotation={[0, 0, side * 0.1]}>
             <meshStandardMaterial
-              color="#E2BD6B"
+              color={getCSSColor('--theme-gold')}
               roughness={0.2}
               metalness={0.8}
-              emissive="#E2BD6B"
+              emissive={getCSSColor('--theme-gold')}
               emissiveIntensity={0.3}
             />
           </Box>
@@ -530,10 +576,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {/* Gold Screen Frame */}
         <RoundedBox args={[13.8, 7, 0.12]} radius={0.22} position={[0, 0, -0.12]}>
           <meshStandardMaterial
-            color="#E2BD6B"
+            color={getCSSColor('--theme-gold')}
             metalness={0.8}
             roughness={0.2}
-            emissive="#E2BD6B"
+            emissive={getCSSColor('--theme-gold')}
             emissiveIntensity={0.3}
           />
         </RoundedBox>
@@ -541,10 +587,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {/* Purple inner frame accent */}
         <RoundedBox args={[13.4, 6.6, 0.08]} radius={0.18} position={[0, 0, -0.08]}>
           <meshStandardMaterial
-            color="#4D067B"
+            color={getCSSColor('--theme-primary')}
             metalness={0.5}
             roughness={0.3}
-            emissive="#7209B7"
+            emissive={getCSSColor('--theme-secondary')}
             emissiveIntensity={0.2}
           />
         </RoundedBox>
@@ -561,10 +607,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {/* Podium Base - Dark purple */}
         <Cylinder args={[1.5, 2, 2.5, 8]} position={[0, 0.25, 0]}>
           <meshStandardMaterial
-            color="#4D067B"
+            color={getCSSColor('--theme-primary')}
             roughness={0.3}
             metalness={0.5}
-            emissive="#7209B7"
+            emissive={getCSSColor('--theme-secondary')}
             emissiveIntensity={0.1}
           />
         </Cylinder>
@@ -572,10 +618,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {/* Gold Podium Top */}
         <Cylinder args={[1.8, 1.8, 0.2, 8]} position={[0, 1.6, 0]}>
           <meshStandardMaterial
-            color="#E2BD6B"
+            color={getCSSColor('--theme-gold')}
             roughness={0.1}
             metalness={0.9}
-            emissive="#E2BD6B"
+            emissive={getCSSColor('--theme-gold')}
             emissiveIntensity={0.2}
           />
         </Cylinder>
@@ -583,10 +629,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {/* Gold accent ring */}
         <Torus args={[1.6, 0.1, 8, 32]} position={[0, 1.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <meshStandardMaterial
-            color="#E2BD6B"
+            color={getCSSColor('--theme-gold')}
             roughness={0.2}
             metalness={0.8}
-            emissive="#E2BD6B"
+            emissive={getCSSColor('--theme-gold')}
             emissiveIntensity={0.3}
           />
         </Torus>
@@ -623,10 +669,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {/* Left Curtain */}
         <Plane args={[3, 15]} position={[-11, 3, -2]} rotation={[0, 0.2, 0]}>
           <meshStandardMaterial
-            color="#4D067B"
+            color={getCSSColor('--theme-primary')}
             roughness={0.7}
             side={THREE.DoubleSide}
-            emissive="#7209B7"
+            emissive={getCSSColor('--theme-secondary')}
             emissiveIntensity={0.1}
           />
         </Plane>
@@ -634,10 +680,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
         {/* Right Curtain */}
         <Plane args={[3, 15]} position={[11, 3, -2]} rotation={[0, -0.2, 0]}>
           <meshStandardMaterial
-            color="#4D067B"
+            color={getCSSColor('--theme-primary')}
             roughness={0.7}
             side={THREE.DoubleSide}
-            emissive="#7209B7"
+            emissive={getCSSColor('--theme-secondary')}
             emissiveIntensity={0.1}
           />
         </Plane>
@@ -647,10 +693,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
       <group ref={discoBallRef} position={[0, 12, -2]}>
         <Sphere args={[1.5, 16, 16]}>
           <meshStandardMaterial
-            color="#7209B7"
+            color={getCSSColor('--theme-secondary')}
             metalness={0.95}
             roughness={0.05}
-            emissive="#7209B7"
+            emissive={getCSSColor('--theme-secondary')}
             emissiveIntensity={0.5}
           />
         </Sphere>
@@ -665,10 +711,10 @@ function GrandStage({ confettiTrigger, bidAnnouncement }) {
               position={[Math.cos(angle) * 2, -0.5, Math.sin(angle) * 2]}
             >
               <meshStandardMaterial
-                color="#7209B7"
+                color={getCSSColor('--theme-secondary')}
                 metalness={0.8}
                 roughness={0.1}
-                emissive="#7209B7"
+                emissive={getCSSColor('--theme-secondary')}
                 emissiveIntensity={1.2}
               />
             </Sphere>
@@ -706,10 +752,10 @@ function GrandTheatre() {
             position={[0, -3.98, 5]}
           >
             <meshStandardMaterial
-              color="#7209B7"
+              color={getCSSColor('--theme-secondary')}
               roughness={0.1}
               metalness={0.6}
-              emissive="#7209B7"
+              emissive={getCSSColor('--theme-secondary')}
               emissiveIntensity={0.3 + i * 0.1}
             />
           </Ring>
@@ -722,10 +768,10 @@ function GrandTheatre() {
           position={[0, -3.95, 5]}
         >
           <meshStandardMaterial
-            color="#7209B7"
+            color={getCSSColor('--theme-secondary')}
             roughness={0.1}
             metalness={0.7}
-            emissive="#7209B7"
+            emissive={getCSSColor('--theme-secondary')}
             emissiveIntensity={0.5}
           />
         </Cylinder>
@@ -768,10 +814,10 @@ function GrandTheatre() {
                 position={[58 * side, 12.5, z + 5]}
               >
                 <meshStandardMaterial
-                  color="#4D067B"
+                  color={getCSSColor('--theme-primary')}
                   roughness={0.3}
                   metalness={0.4}
-                  emissive="#7209B7"
+                  emissive={getCSSColor('--theme-secondary')}
                   emissiveIntensity={0.2}
                 />
               </Cylinder>
@@ -781,10 +827,10 @@ function GrandTheatre() {
                 position={[58 * side, 24, z + 5]}
               >
                 <meshStandardMaterial
-                  color="#E2BD6B"
+                  color={getCSSColor('--theme-gold')}
                   roughness={0.1}
                   metalness={0.9}
-                  emissive="#E2BD6B"
+                  emissive={getCSSColor('--theme-gold')}
                   emissiveIntensity={0.3}
                 />
               </Cylinder>
@@ -799,10 +845,10 @@ function GrandTheatre() {
               position={[59.5 * side, 10, z + 5]}
             >
               <meshStandardMaterial
-                color="#7209B7"
+                color={getCSSColor('--theme-secondary')}
                 roughness={0.2}
                 metalness={0.6}
-                emissive="#7209B7"
+                emissive={getCSSColor('--theme-secondary')}
                 emissiveIntensity={0.4}
               />
             </Box>
@@ -826,10 +872,10 @@ function GrandTheatre() {
           position={[0, -5, -0.5]}
         >
           <meshStandardMaterial
-            color="#7209B7"
+            color={getCSSColor('--theme-secondary')}
             roughness={0.1}
             metalness={0.8}
-            emissive="#7209B7"
+            emissive={getCSSColor('--theme-secondary')}
             emissiveIntensity={0.6}
           />
         </Torus>
@@ -837,10 +883,10 @@ function GrandTheatre() {
         {/* Club Entrance Doors */}
         <Box args={[12, 18, 0.5]} position={[0, -8, -0.3]}>
           <meshStandardMaterial
-            color="#4D067B"
+            color={getCSSColor('--theme-primary')}
             roughness={0.3}
             metalness={0.5}
-            emissive="#7209B7"
+            emissive={getCSSColor('--theme-secondary')}
             emissiveIntensity={0.2}
           />
         </Box>
@@ -903,13 +949,25 @@ function TheatreTieredSeating() {
   }, [tiers])
 
   const occupantAssignments = useMemo(() => {
+    // Use seeded random based on seat key for deterministic colors
+    const seededRandom = (seed) => {
+      let x = Math.sin(seed) * 10000
+      return x - Math.floor(x)
+    }
+
     const assignments = new Map()
     seatMeta.forEach((seat) => {
       if (seat.key === viewerSeatKey) return
 
-      if (Math.random() < 0.5) {
-        const bodyColor = occupantPalette[Math.floor(Math.random() * occupantPalette.length)]
-        const accentColor = accentPalette[Math.floor(Math.random() * accentPalette.length)]
+      // Create a numeric seed from the seat key string
+      const seed = seat.key.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+
+      // Use seeded random to determine if seat is occupied
+      if (seededRandom(seed) < 0.5) {
+        const bodyColorIndex = Math.floor(seededRandom(seed + 1) * occupantPalette.length)
+        const accentColorIndex = Math.floor(seededRandom(seed + 2) * accentPalette.length)
+        const bodyColor = occupantPalette[bodyColorIndex]
+        const accentColor = accentPalette[accentColorIndex]
         assignments.set(seat.key, { bodyColor, accentColor })
       }
     })
@@ -1171,38 +1229,43 @@ function LockedSeatController() {
     }
   }, [camera, gl])
 
-  // Continuously enforce position lock
+  // Enforce position lock only when necessary (skip equals check - just copy if locked)
+  const lastLockedState = useRef(false)
   useFrame(() => {
-    if (isLocked && !camera.position.equals(fixedPosition.current)) {
+    if (isLocked) {
+      // Always enforce when locked (small performance cost, but ensures lock)
       camera.position.copy(fixedPosition.current)
     }
+    lastLockedState.current = isLocked
   })
 
   return null // No OrbitControls - we handle everything manually
 }
 
-function LightBeam({ position, targetPosition, color = "#7209B7", opacity = 0.12 }) {
+function LightBeam({ position, targetPosition, color = getCSSColor('--theme-secondary'), opacity = 0.12 }) {
   const beamRef = useRef()
+  // Reuse Vector3 objects to avoid allocation every frame
+  const startVec = useRef(new THREE.Vector3())
+  const endVec = useRef(new THREE.Vector3())
+  const directionVec = useRef(new THREE.Vector3())
+  const midpointVec = useRef(new THREE.Vector3())
 
   useFrame(() => {
     if (!beamRef.current || !targetPosition) return
 
-    // Calculate direction and distance
-    const start = new THREE.Vector3(...position)
-    const end = new THREE.Vector3(
-      targetPosition.x,
-      targetPosition.y,
-      targetPosition.z
-    )
-    const direction = new THREE.Vector3().subVectors(end, start)
-    const distance = direction.length()
+    // Reuse existing vectors instead of creating new ones
+    startVec.current.set(position[0], position[1], position[2])
+    endVec.current.set(targetPosition.x, targetPosition.y, targetPosition.z)
+
+    directionVec.current.subVectors(endVec.current, startVec.current)
+    const distance = directionVec.current.length()
 
     // Position beam in the middle
-    const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5)
-    beamRef.current.position.copy(midpoint)
+    midpointVec.current.addVectors(startVec.current, endVec.current).multiplyScalar(0.5)
+    beamRef.current.position.copy(midpointVec.current)
 
     // Orient beam to point at target
-    beamRef.current.lookAt(end)
+    beamRef.current.lookAt(endVec.current)
     beamRef.current.rotateX(Math.PI / 2)
 
     // Scale beam to reach target
@@ -1290,7 +1353,7 @@ function MovingSpotlights() {
               angle={0.4}
               penumbra={0.6}
               intensity={6}
-              color="#7209B7"
+              color={getCSSColor('--theme-secondary')}
               distance={50}
               decay={1.8}
             />
@@ -1300,7 +1363,7 @@ function MovingSpotlights() {
             <LightBeam
               position={pos}
               targetPosition={targetPositions[i]}
-              color="#7209B7"
+              color={getCSSColor('--theme-secondary')}
               opacity={0.12}
             />
 
@@ -1318,19 +1381,6 @@ function MovingSpotlights() {
 }
 
 function DiscoLights() {
-  const [flashStates, setFlashStates] = useState(Array(12).fill(1))
-
-  useFrame((state) => {
-    const time = state.clock.elapsedTime
-
-    // Random flashing effect - each light has a chance to flash
-    setFlashStates(prev => prev.map((_, i) => {
-      const base = Math.sin(time * 2 + i) * 0.5 + 0.5
-      const random = Math.random() > 0.85 ? Math.random() * 2 : 1
-      return base * random
-    }))
-  })
-
   const positions = [
     [-20, 15, -10], [20, 15, -10],
     [-15, 18, 0], [15, 18, 0],
@@ -1340,16 +1390,39 @@ function DiscoLights() {
     [0, 20, -5], [0, 20, 15]
   ]
 
+  const lightsRef = useRef([])
+  const flashStatesRef = useRef(Array(12).fill(1))
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime
+
+    // Random flashing effect - each light has a chance to flash
+    // Update ref and directly modify light intensity without state update
+    flashStatesRef.current = flashStatesRef.current.map((_, i) => {
+      const base = Math.sin(time * 2 + i) * 0.5 + 0.5
+      const random = Math.random() > 0.85 ? Math.random() * 2 : 1
+      return base * random
+    })
+
+    // Directly update light intensities
+    lightsRef.current.forEach((light, i) => {
+      if (light) {
+        light.intensity = flashStatesRef.current[i] * 3
+      }
+    })
+  })
+
   return (
     <>
       {positions.map((pos, i) => (
         <spotLight
           key={i}
+          ref={(el) => { lightsRef.current[i] = el }}
           position={pos}
           angle={0.4}
           penumbra={0.5}
-          intensity={flashStates[i] * 3}
-          color="#7209B7"
+          intensity={3}
+          color={getCSSColor('--theme-secondary')}
           distance={30}
           decay={2}
         />
@@ -1364,7 +1437,7 @@ function TheatreLighting() {
   return (
     <>
       {/* Club ambient lighting */}
-      <ambientLight intensity={0.1} color="#4D067B" />
+      <ambientLight intensity={0.1} color={getCSSColor('--theme-primary')} />
 
       {/* Main stage neon purple spotlight */}
       <spotLight
@@ -1372,11 +1445,11 @@ function TheatreLighting() {
         angle={0.6}
         penumbra={0.4}
         intensity={3}
-        color="#7209B7"
+        color={getCSSColor('--theme-secondary')}
         target-position={[0, 2, -15]}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
       />
 
       {/* Side stage neon lights */}
@@ -1385,7 +1458,7 @@ function TheatreLighting() {
         angle={0.5}
         penumbra={0.6}
         intensity={2.5}
-        color="#B984DB"
+        color={getCSSColor('--theme-accent')}
         target-position={[0, 4, -15]}
       />
       <spotLight
@@ -1393,7 +1466,7 @@ function TheatreLighting() {
         angle={0.5}
         penumbra={0.6}
         intensity={2.5}
-        color="#B984DB"
+        color={getCSSColor('--theme-accent')}
         target-position={[0, 4, -15]}
       />
 
@@ -1404,7 +1477,7 @@ function TheatreLighting() {
         angle={0.3}
         penumbra={0.3}
         intensity={2}
-        color="#7209B7"
+        color={getCSSColor('--theme-secondary')}
         target-position={[0, 2, -15]}
       />
 
@@ -1412,7 +1485,7 @@ function TheatreLighting() {
       <pointLight
         position={[0, 12, -2]}
         intensity={2}
-        color="#7209B7"
+        color={getCSSColor('--theme-secondary')}
         distance={20}
         decay={1.5}
       />
@@ -1425,7 +1498,7 @@ function TheatreLighting() {
             key={i}
             position={[Math.cos(angle) * 20, 8, Math.sin(angle) * 20]}
             intensity={0.8}
-            color="#7209B7"
+            color={getCSSColor('--theme-secondary')}
             distance={25}
           />
         )
@@ -1435,7 +1508,7 @@ function TheatreLighting() {
       <pointLight
         position={[0, 4, -14]}
         intensity={1.2}
-        color="#7209B7"
+        color={getCSSColor('--theme-secondary')}
         distance={15}
       />
 
@@ -1448,7 +1521,7 @@ function TheatreLighting() {
             key={i}
             position={[25 * side, 6, z]}
             intensity={1}
-            color="#7209B7"
+            color={getCSSColor('--theme-secondary')}
             distance={10}
           />
         )
@@ -1461,7 +1534,7 @@ function TheatreLighting() {
             key={`${side}-${level}`}
             position={[25 * side, 2 + level * 5, 0]}
             intensity={0.7}
-            color="#7209B7"
+            color={getCSSColor('--theme-secondary')}
             distance={18}
           />
         ))
@@ -1544,39 +1617,42 @@ export default function AuctionHouse3D({
     participantCountRef.current = participantCount
   }, [participantCount])
 
+  // Consolidated timer: auction end time + item timer + nowTs - all in ONE interval
   useEffect(() => {
-    if (!snapshot?.auction?.end_time) return undefined
-    const endTime = new Date(snapshot.auction.end_time)
-    const updateTicker = () => {
-      setCurrentLot((prev) => ({
-        ...prev,
-        timeRemaining: formatTimeRemaining(endTime)
-      }))
-    }
-    updateTicker()
-    const id = window.setInterval(updateTicker, 1000)
-    return () => window.clearInterval(id)
-  }, [snapshot?.auction?.end_time])
+    const endTime = snapshot?.auction?.end_time ? new Date(snapshot.auction.end_time) : null
 
-  // Item timer countdown calculation
-  useEffect(() => {
-    if (!currentLot.itemTimerStartedAt || !currentLot.itemTimerSeconds) {
-      setItemTimerSeconds(null)
-      return
+    const updateAllTimers = () => {
+      const now = Date.now()
+      setNowTs(now)
+
+      // Update auction end time
+      if (endTime) {
+        const timeRemaining = formatTimeRemaining(endTime)
+        setCurrentLot((prev) => {
+          if (prev.timeRemaining === timeRemaining) return prev
+          return { ...prev, timeRemaining }
+        })
+      }
+
+      // Update item timer
+      if (currentLot.itemTimerStartedAt && currentLot.itemTimerSeconds) {
+        const startedAt = currentLot.itemTimerStartedAt
+        const duration = currentLot.itemTimerSeconds
+        const elapsed = Math.floor((now - startedAt.getTime()) / 1000)
+        const remaining = Math.max(0, duration - elapsed)
+        setItemTimerSeconds(remaining)
+      } else {
+        setItemTimerSeconds(null)
+      }
     }
 
-    const updateItemTimer = () => {
-      const startedAt = currentLot.itemTimerStartedAt
-      const duration = currentLot.itemTimerSeconds
-      const elapsed = Math.floor((Date.now() - startedAt.getTime()) / 1000)
-      const remaining = Math.max(0, duration - elapsed)
-      setItemTimerSeconds(remaining)
-    }
+    // Initial update
+    updateAllTimers()
 
-    updateItemTimer()
-    const intervalId = setInterval(updateItemTimer, 1000)
+    // Single consolidated interval
+    const intervalId = setInterval(updateAllTimers, 1000)
     return () => clearInterval(intervalId)
-  }, [currentLot.itemTimerStartedAt, currentLot.itemTimerSeconds])
+  }, [snapshot?.auction?.end_time, currentLot.itemTimerStartedAt, currentLot.itemTimerSeconds])
 
   useEffect(() => {
     if (!aid) return undefined
@@ -1665,10 +1741,7 @@ useEffect(() => {
   return () => window.clearTimeout(id)
 }, [bidFeedback])
 
-useEffect(() => {
-  const id = window.setInterval(() => setNowTs(Date.now()), 1000)
-  return () => window.clearInterval(id)
-}, [])
+// Removed standalone nowTs timer - now consolidated with other timers above
 
 useEffect(() => {
   if (isChatPanelOpen) {
@@ -1918,7 +1991,7 @@ useEffect(() => {
     return (
       <div className="w-full h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#7209B7] border-t-transparent mx-auto mb-4 shadow-[0_0_30px_rgba(176,38,255,0.6)]"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[var(--theme-secondary)] border-t-transparent mx-auto mb-4 shadow-[0_0_30px_rgba(176,38,255,0.6)]"></div>
           <p className="text-white text-lg">Loading Auction House...</p>
         </div>
       </div>
@@ -1929,7 +2002,7 @@ useEffect(() => {
     return (
       <div className="w-full h-screen bg-black flex flex-col items-center justify-center px-6 text-center gap-6">
         <div className="space-y-4 max-w-xl">
-          <p className="text-xs uppercase tracking-[0.32em] text-[#7209B7] animate-pulse">Auction Preview</p>
+          <p className="text-xs uppercase tracking-[0.32em] text-[var(--theme-secondary)] animate-pulse">Auction Preview</p>
           <h1 className="text-3xl md:text-4xl font-bold text-white">Auction starting soon</h1>
           <p className="text-purple-200">
             The house opens at{' '}
@@ -1939,7 +2012,7 @@ useEffect(() => {
         </div>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-xl border border-[#7209B7]/50 px-5 py-3 text-sm font-semibold text-white hover:bg-[#7209B7]/20 transition shadow-[0_0_20px_rgba(176,38,255,0.3)]"
+          className="inline-flex items-center gap-2 rounded-xl border border-[var(--theme-secondary)]/50 px-5 py-3 text-sm font-semibold text-white hover:bg-[var(--theme-secondary)]/20 transition shadow-[0_0_20px_rgba(176,38,255,0.3)]"
         >
           Return Home
         </Link>
@@ -1951,7 +2024,7 @@ useEffect(() => {
     return (
       <div className="w-full h-screen bg-black flex flex-col items-center justify-center px-6 text-center gap-6">
         <div className="space-y-4 max-w-xl">
-          <p className="text-xs uppercase tracking-[0.32em] text-[#7209B7]">Auction Closed</p>
+          <p className="text-xs uppercase tracking-[0.32em] text-[var(--theme-secondary)]">Auction Closed</p>
           <h1 className="text-3xl md:text-4xl font-bold text-white">This auction has ended</h1>
           <p className="text-purple-200">
             This auction has ended, feel free to explore other auctions.
@@ -1959,7 +2032,7 @@ useEffect(() => {
         </div>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-xl border border-[#7209B7]/50 px-5 py-3 text-sm font-semibold text-white hover:bg-[#7209B7]/20 transition shadow-[0_0_20px_rgba(176,38,255,0.3)]"
+          className="inline-flex items-center gap-2 rounded-xl border border-[var(--theme-secondary)]/50 px-5 py-3 text-sm font-semibold text-white hover:bg-[var(--theme-secondary)]/20 transition shadow-[0_0_20px_rgba(176,38,255,0.3)]"
         >
           Return Home
         </Link>
@@ -2007,7 +2080,7 @@ useEffect(() => {
         <>
           <div className="absolute top-6 left-6 z-10 pointer-events-auto">
             <Link href="/">
-              <button className="bg-black/70 hover:bg-[#7209B7]/30 text-white px-6 py-3 rounded-xl border border-[#7209B7]/40 backdrop-blur-sm font-semibold transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+              <button className="bg-black/70 hover:bg-[var(--theme-secondary)]/30 text-white px-6 py-3 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm font-semibold transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(176,38,255,0.3)]">
                 <span>←</span> Home
               </button>
             </Link>
@@ -2015,10 +2088,10 @@ useEffect(() => {
 
           {/* Status Bar - Top Right */}
           <div className="absolute top-6 right-6 text-white z-10 flex flex-col gap-3">
-            <div className="bg-black/70 p-4 rounded-xl border border-[#7209B7]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+            <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 ${isFetching ? 'bg-[#7209B7] animate-ping' : 'bg-[#7209B7] animate-pulse'} rounded-full`}></div>
-                <span className="text-sm font-medium uppercase tracking-wide text-[#7209B7]">Live Auction</span>
+                <div className={`w-3 h-3 ${isFetching ? 'bg-[var(--theme-secondary)] animate-ping' : 'bg-[var(--theme-secondary)] animate-pulse'} rounded-full`}></div>
+                <span className="text-sm font-medium uppercase tracking-wide text-[var(--theme-secondary)]">Live Auction</span>
               </div>
               <div className="space-y-1">
                 <p className="text-purple-200 text-xs">
@@ -2036,7 +2109,7 @@ useEffect(() => {
             </div>
 
             {/* Music Controls */}
-            <div className="bg-black/70 p-4 rounded-xl border border-[#7209B7]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+            <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
               <div className="flex items-center gap-3 mb-2">
                 <button
                   onClick={() => setIsMusicMuted(!isMusicMuted)}
@@ -2057,9 +2130,9 @@ useEffect(() => {
                   value={musicVolume}
                   onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
                   disabled={isMusicMuted}
-                  className="w-24 h-1 bg-[#4D067B] rounded-lg appearance-none cursor-pointer accent-[#7209B7]"
+                  className="w-24 h-1 bg-[var(--theme-primary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-secondary)]"
                   style={{
-                    background: `linear-gradient(to right, #7209B7 0%, #7209B7 ${musicVolume * 100}%, #4D067B ${musicVolume * 100}%, #4D067B 100%)`,
+                    background: `linear-gradient(to right, var(--theme-secondary) 0%, var(--theme-secondary) ${musicVolume * 100}%, var(--theme-primary) ${musicVolume * 100}%, var(--theme-primary) 100%)`,
                     opacity: isMusicMuted ? 0.5 : 1
                   }}
                 />
@@ -2072,7 +2145,7 @@ useEffect(() => {
           <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 z-[100]">
             <button
               onClick={() => setIsBidPanelOpen(!isBidPanelOpen)}
-              className="w-12 h-12 md:w-14 md:h-14 bg-[#7209B7] hover:bg-[#4D067B] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center text-xl md:text-2xl transition-all"
+              className="w-12 h-12 md:w-14 md:h-14 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center text-xl md:text-2xl transition-all"
               title="Place Bid"
             >
               🔨
@@ -2083,19 +2156,19 @@ useEffect(() => {
           <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 z-[100]">
             <button
               onClick={() => setIsChatPanelOpen(!isChatPanelOpen)}
-              className="w-12 h-12 md:w-14 md:h-14 bg-[#7209B7] hover:bg-[#4D067B] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center text-xl md:text-2xl transition-all"
+              className="w-12 h-12 md:w-14 md:h-14 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center transition-all p-2.5 md:p-3"
               title="Live Chat"
             >
-              <ChatBubbleLeftIcon />
+              <ChatBubbleLeftIcon className="w-5 h-5 md:w-6 md:h-6" />
             </button>
           </div>
 
           {/* Bidding Panel Popup - Bottom Left */}
           {isBidPanelOpen && (
             <div className="absolute bottom-20 left-4 md:bottom-24 md:left-6 w-[calc(100vw-2rem)] max-w-sm md:w-96 text-white z-[200]">
-              <div className="bg-black/90 p-4 md:p-6 rounded-xl border border-[#7209B7]/50 backdrop-blur-sm shadow-[0_0_40px_rgba(176,38,255,0.5)]">
+              <div className="bg-black/90 p-4 md:p-6 rounded-xl border border-[var(--theme-secondary)]/50 backdrop-blur-sm shadow-[0_0_40px_rgba(176,38,255,0.5)]">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg md:text-xl font-bold text-[#7209B7]">
+                  <h3 className="text-lg md:text-xl font-bold text-[var(--theme-secondary)]">
                     🔨 Place Your Bid
                   </h3>
                   <button
@@ -2108,11 +2181,11 @@ useEffect(() => {
 
                 <div className="space-y-4">
                   {/* Current Bid Info */}
-                  <div className="bg-[#4D067B]/80 p-3 md:p-4 rounded-lg space-y-2 border border-[#7209B7]/30">
+                  <div className="bg-[var(--theme-primary)]/80 p-3 md:p-4 rounded-lg space-y-2 border border-[var(--theme-secondary)]/30">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-purple-300 text-xs md:text-sm uppercase tracking-wide">Current Bid</p>
-                        <p className="text-xl md:text-2xl font-bold text-[#E2BD6B]">${lotBidValue.toLocaleString()}</p>
+                        <p className="text-xl md:text-2xl font-bold text-[var(--theme-gold)]">${lotBidValue.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-purple-300 text-xs md:text-sm uppercase tracking-wide">Min Increment</p>
@@ -2122,11 +2195,11 @@ useEffect(() => {
                   </div>
 
                   {/* Bid Input */}
-                  <div>
-                    <label className="text-xs md:text-sm text-purple-200 mb-2 block">
+                  <Field>
+                    <FieldLabel className="text-xs md:text-sm text-purple-200 mb-2">
                       Your Bid Amount
-                    </label>
-                    <input
+                    </FieldLabel>
+                    <Input
                       type="number"
                       inputMode="decimal"
                       step={bidIncrementValue}
@@ -2139,7 +2212,6 @@ useEffect(() => {
                         }
                       }}
                       placeholder={`Min: $${nextBidMinimum.toFixed(2)}`}
-                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-black/60 border border-[#7209B7]/40 rounded-lg text-white text-sm md:text-base focus:outline-none focus:border-[#7209B7] focus:shadow-[0_0_10px_rgba(176,38,255,0.3)]"
                     />
                     {bidValidationError && (
                       <p className="mt-2 text-[11px] md:text-xs text-red-400">
@@ -2151,18 +2223,18 @@ useEffect(() => {
                         Enter in increments of ${bidIncrementValue.toFixed(2)}.
                       </p>
                     )}
-                  </div>
+                  </Field>
 
                   {/* Place Bid Button */}
                   <button
                     onClick={handleBidSubmit}
                     disabled={isBidding}
-                    className="w-full py-3 md:py-4 bg-[#7209B7] hover:bg-[#4D067B] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all text-sm md:text-base shadow-[0_0_20px_rgba(176,38,255,0.4)]"
+                    className="w-full py-3 md:py-4 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all text-sm md:text-base shadow-[0_0_20px_rgba(176,38,255,0.4)]"
                   >
                     {isBidding ? 'Submitting...' : 'Place Bid'}
                   </button>
                   {bidFeedback && (
-                    <p className="text-xs md:text-sm text-[#7209B7]">{bidFeedback}</p>
+                    <p className="text-xs md:text-sm text-[var(--theme-secondary)]">{bidFeedback}</p>
                   )}
                 </div>
               </div>
@@ -2172,12 +2244,12 @@ useEffect(() => {
           {/* Chat Panel Popup - Bottom Right */}
           {isChatPanelOpen && (
             <div className="absolute bottom-20 right-4 md:bottom-24 md:right-6 w-[calc(100vw-2rem)] max-w-sm md:w-96 h-80 md:h-96 text-white z-[200]">
-              <div className="bg-black/90 rounded-xl border border-[#7209B7]/50 backdrop-blur-sm shadow-[0_0_40px_rgba(176,38,255,0.5)] h-full flex flex-col">
+              <div className="bg-black/90 rounded-xl border border-[var(--theme-secondary)]/50 backdrop-blur-sm shadow-[0_0_40px_rgba(176,38,255,0.5)] h-full flex flex-col">
                 {/* Chat Header */}
-                <div className="p-3 md:p-4 border-b border-[#7209B7]/30 flex justify-between items-center">
+                <div className="p-3 md:p-4 border-b border-[var(--theme-secondary)]/30 flex justify-between items-center">
                   <div>
-                    <h3 className="text-base md:text-lg font-bold text-[#7209B7]">
-                      <ChatBubbleLeftIcon/> Live Chat
+                    <h3 className="text-base md:text-lg font-bold text-[var(--theme-secondary)]">
+                      Live Chat
                     </h3>
                     <p className="text-xs text-purple-300">
                       {chatParticipantCount} messages • {isChatFetching ? 'Updating…' : 'Live'}
@@ -2185,7 +2257,7 @@ useEffect(() => {
                   </div>
                   <button
                     onClick={() => setIsChatPanelOpen(false)}
-                    className="text-purple-300 hover:text-white text-xl"
+                    className="text-purple-300 hover:text-white text-xl transition-colors"
                   >
                     ✕
                   </button>
@@ -2209,7 +2281,7 @@ useEffect(() => {
                           <Image
                             src={avatarUrl}
                             alt={chat.sender?.username ?? 'Guest avatar'}
-                            className="h-7 w-7 rounded-full object-cover border border-[#7209B7]/40"
+                            className="h-7 w-7 rounded-full object-cover border border-[var(--theme-secondary)]/40"
                             width={28}
                             height={28}
                           />
@@ -2218,14 +2290,14 @@ useEffect(() => {
                           <div
                             className={`rounded-2xl px-3 py-2 shadow-sm ${
                               isOwn
-                                ? 'bg-[#7209B7] text-white rounded-br-md'
-                                : 'bg-[#4D067B] text-white border border-[#7209B7]/30 rounded-bl-md'
+                                ? 'bg-[var(--theme-secondary)] text-white rounded-br-md'
+                                : 'bg-[var(--theme-primary)] text-white border border-[var(--theme-secondary)]/30 rounded-bl-md'
                             }`}
                           >
                             <p className="text-[10px] font-semibold mb-0.5 opacity-90 flex items-center gap-1.5">
                               <span>{chat.sender?.username ?? 'Guest'}</span>
                               {isOwnerMessage && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] uppercase tracking-wider" style={{ backgroundColor: '#F8E2D4', color: '#4D067B' }}>
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] uppercase tracking-wider" style={{ backgroundColor: 'var(--theme-cream)', color: 'var(--theme-primary)' }}>
                                   Owner
                                 </span>
                               )}
@@ -2245,25 +2317,27 @@ useEffect(() => {
                 </div>
 
                 {/* Chat Input */}
-                <div className="p-3 md:p-4 border-t border-[#7209B7]/30">
-                  <form className="flex gap-2" onSubmit={handleChatSubmit}>
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(event) => setChatInput(event.target.value)}
-                      placeholder="Type a message..."
-                      className="flex-1 px-2 md:px-3 py-2 bg-black/60 border border-[#7209B7]/40 rounded-lg text-xs md:text-sm text-white focus:outline-none focus:border-[#7209B7] focus:shadow-[0_0_10px_rgba(176,38,255,0.3)]"
-                    />
+                <div className="p-3 md:p-4 border-t border-[var(--theme-secondary)]/30">
+                  <form className="flex gap-2 w-full" onSubmit={handleChatSubmit}>
+                    <div className="flex-1 min-w-0">
+                      <Input
+                        type="text"
+                        value={chatInput}
+                        onChange={(event) => setChatInput(event.target.value)}
+                        placeholder="Type a message..."
+                        className="w-full"
+                      />
+                    </div>
                     <button
                       type="submit"
                       disabled={isSendingChat || !chatInput.trim()}
-                      className="px-3 md:px-4 py-2 bg-[#7209B7] hover:bg-[#4D067B] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-all text-xs md:text-sm shadow-[0_0_15px_rgba(176,38,255,0.4)]"
+                      className="px-3 md:px-4 py-2 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-all text-xs md:text-sm shadow-[0_0_15px_rgba(176,38,255,0.4)] flex-shrink-0"
                     >
                       {isSendingChat ? 'Sending…' : 'Send'}
                     </button>
                   </form>
                   {chatFeedback && (
-                    <p className="mt-2 text-[11px] md:text-xs text-[#7209B7]">{chatFeedback}</p>
+                    <p className="mt-2 text-[11px] md:text-xs text-[var(--theme-secondary)]">{chatFeedback}</p>
                   )}
                 </div>
               </div>
@@ -2293,34 +2367,34 @@ useEffect(() => {
           <div
             className="rounded-2xl border-2 p-6 md:p-8 max-w-md w-full"
             style={{
-              borderColor: '#7209B7',
+              borderColor: 'var(--theme-secondary)',
               backgroundColor: '#130a1f',
-              boxShadow: '0 0 60px rgba(114, 9, 183, 0.6)'
+              boxShadow: '0 0 60px rgba(176, 38, 255, 0.6)'
             }}
           >
-            <h3 className="text-xl md:text-2xl font-bold mb-4" style={{ color: '#F8E2D4' }}>
+            <h3 className="text-xl md:text-2xl font-bold mb-4" style={{ color: 'var(--theme-cream)' }}>
               🔨 Confirm Your Bid
             </h3>
 
-            <p className="text-sm md:text-base mb-6" style={{ color: '#B984DB' }}>
+            <p className="text-sm md:text-base mb-6" style={{ color: 'var(--theme-accent)' }}>
               You are about to place a bid. Please review the details below:
             </p>
 
-            <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: '1px solid rgba(114, 9, 183, 0.4)' }}>
+            <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: '1px solid rgba(176, 38, 255, 0.4)' }}>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs uppercase font-semibold" style={{ color: '#B984DB' }}>Item</span>
+                <span className="text-xs uppercase font-semibold" style={{ color: 'var(--theme-accent)' }}>Item</span>
               </div>
-              <p className="font-bold text-base md:text-lg mb-3" style={{ color: '#F8E2D4' }}>{bidConfirmModal.itemName}</p>
+              <p className="font-bold text-base md:text-lg mb-3" style={{ color: 'var(--theme-cream)' }}>{bidConfirmModal.itemName}</p>
 
-              <div className="pt-3 border-t" style={{ borderColor: 'rgba(114, 9, 183, 0.3)' }}>
-                <span className="text-xs uppercase font-semibold block mb-1" style={{ color: '#B984DB' }}>Your Bid Amount</span>
-                <p className="text-2xl md:text-3xl font-bold" style={{ color: '#E2BD6B' }}>
+              <div className="pt-3 border-t" style={{ borderColor: 'rgba(176, 38, 255, 0.3)' }}>
+                <span className="text-xs uppercase font-semibold block mb-1" style={{ color: 'var(--theme-accent)' }}>Your Bid Amount</span>
+                <p className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--theme-gold)' }}>
                   ${bidConfirmModal.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
 
-            <p className="text-xs md:text-sm mb-6" style={{ color: '#B984DB' }}>
+            <p className="text-xs md:text-sm mb-6" style={{ color: 'var(--theme-accent)' }}>
               Do you want to place this bid?
             </p>
 
@@ -2330,7 +2404,7 @@ useEffect(() => {
                 className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-80"
                 style={{
                   backgroundColor: '#444',
-                  color: '#F8E2D4'
+                  color: 'var(--theme-cream)'
                 }}
               >
                 Cancel
@@ -2339,8 +2413,8 @@ useEffect(() => {
                 onClick={bidConfirmModal.onConfirm}
                 className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-90"
                 style={{
-                  backgroundColor: '#E2BD6B',
-                  color: '#4D067B'
+                  backgroundColor: 'var(--theme-gold)',
+                  color: 'var(--theme-primary)'
                 }}
               >
                 Confirm Bid
