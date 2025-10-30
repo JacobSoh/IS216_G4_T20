@@ -589,67 +589,6 @@ export default function FuturisticAuction() {
         </div>
       </section>
 
-      {/* Custom Footer */}
-      <footer className="relative w-screen h-[100vh] bg-gradient-to-b from-purple-300 to-purple-200 flex items-center justify-center overflow-visible">
-
-        {/* --- Slate Container --- */}
-        <div className="relative w-[97vw] h-[93vh] mx-auto">
-
-          {/* Top Bar - highest z-index */}
-          <div className="absolute -top-[10px] left-1/2 -translate-x-1/2 w-[95vh] h-[15px] bg-slate-900 rounded-t-[20px] border-t-3 border-indigo-600 z-50"></div>
-
-          {/* Bottom Bar - highest z-index */}
-          <div className="absolute -bottom-[10px] left-1/2 -translate-x-1/2 w-[142vh] h-[15px] bg-slate-900 rounded-b-[50px] border-b-3 border-indigo-600 z-50"></div>
-
-          {/* Main Slate Box */}
-          <div className="relative w-full h-full bg-slate-900 border-3 border-indigo-600 rounded-[1rem] shadow-lg z-10 overflow-hidden flex flex-col md:flex-row items-center justify-center gap-16 p-10">
-
-            {/* Overlay Image */}
-            <img
-              src="\assets\Footerimage.png"
-              alt="footer overlay"
-              className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-overlay pointer-events-none z-20 rounded-[1rem]"
-            />
-
-            {/* Footer Content above overlay */}
-            <div className="relative flex flex-col md:flex-row items-stretch justify-between w-full text-center md:text-left gap-8 z-30">
-
-              {/* Left Links */}
-              <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
-                <p className="text-sm text-purple-100 font-semibold">Pages</p>
-                <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Featured</a>
-                <a href="/categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Categories</a>
-                <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">About Us</a>
-                <a href="/how_it_works" className="hover:text-purple-300 transition-all font-extrabold text-xl">How it works</a>
-              </div>
-
-              {/* Center Logo + Text */}
-              <div className="flex-1 flex flex-col items-center justify-center text-center">
-                <p className="text-purple-200 text-[5vh] font-semibold mb-4">
-                  Welcome to <br />
-                  <span className="text-yellow-300">BidHub</span>
-                </p>
-                <img
-                  src="assets/logo.png"
-                  alt="Logo"
-                  className="w-48 h-48 rounded-2xl duration-300"
-                />
-                <p className="mt-4 text-gray-300 text-sm">© 2025 BidHub</p>
-              </div>
-
-              {/* Right Links */}
-              <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
-                <p className="text-sm text-purple-100 font-semibold">Start Now</p>
-                <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Login</a>
-                <a href="/categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Sign Up</a>
-                <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">Contact Us</a>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </footer>
-
       {/* Floating animation styles */}
       <style>{`
         .animate-float { animation: floatUp 2s ease-out forwards; }
