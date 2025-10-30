@@ -186,3 +186,23 @@ export const BigAuctionCard = ({ name, description, picUrl, endTime, currentBid 
     </div>
   );
 };
+
+export const BigAuctionCardSkeleton = () => {
+  return (
+    <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.3)] animate-pulse">
+      {/* Image Placeholder */}
+      <div className="w-full h-[500px] bg-purple-900/20" />
+
+      {/* Info Panel Placeholder */}
+      <div className="absolute bottom-6 left-6 bg-purple-300/20 backdrop-blur-sm rounded-xl p-6 w-[90%] max-w-[600px]">
+        <div className="h-8 bg-purple-400/40 rounded w-1/2 mb-3" />
+        <div className="h-4 bg-purple-400/30 rounded w-3/4 mb-2" />
+        <div className="h-4 bg-purple-400/30 rounded w-1/2 mb-4" />
+        <div className="flex justify-between mt-4">
+          <div className="h-5 bg-purple-400/30 rounded w-1/3" />
+          <div className="h-5 bg-purple-400/30 rounded w-1/3" />
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/utils/supabase/client";
-import { BigAuctionCard, AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
+import { BigAuctionCard, BigAuctionCardSkeleton, AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
 
 export default function AuctionsPage() {
   const [auctions, setAuctions] = useState([]);
@@ -104,13 +104,13 @@ export default function AuctionsPage() {
         </Link>
       ) : (
         <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden">
-          <AuctionHoverPictureSkeleton key="skeleton-carousel" />
+          <BigAuctionCardSkeleton key="big-auction-skeleton" />
         </div>
       )}
 
 
       {/* Category Carousel */}
-      <div className="overflow-x-auto flex space-x-4 px-4 py-4 scrollbar-hide">
+      <div className="overflow-x-auto flex space-x-4 my-5 px-4 py-4 scrollbar-hide">
         {categories.length === 0 ? (
           <p className="text-purple-300 px-4">No categories found.</p>
         ) : (
