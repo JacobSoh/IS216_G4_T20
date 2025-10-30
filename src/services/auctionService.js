@@ -3,7 +3,6 @@ import 'server-only'
 import { Auction } from '@/models/auction'
 import {
   retrieveAllAuctions,
-  retrieveAuctionsByOwner,
   insertAuction,
   retrieveAuctionById,
   upAuctionById,
@@ -24,12 +23,6 @@ import {
 } from '@/repositories/bidHistoryRepo'
 import { insertItemSold } from '@/repositories/itemsSoldRepo'
 import { buildStoragePublicUrl } from '@/utils/storage'
-import {
-  transferWalletFunds
-} from '@/repositories/profileRepo'
-import {
-  insertWalletTransaction
-} from '@/repositories/walletTransactionRepo'
 
 const REQUIRED_FIELDS = ['oid', 'name', 'start_time', 'end_time', 'thumbnail_bucket', 'object_path']
 
@@ -145,12 +138,6 @@ export async function getAllAuctions() {
   const data = await retrieveAllAuctions()
   if (!data) throw new Error('Auctions not found')
   return data.map(enhanceAuctionRecord)
-}
-
-export async function getAuctionsByOwner(oid) {
-  if (!oid) throw new Error('Missing owner id')
-  const data = await retrieveAuctionsByOwner(oid)
-  return (data ?? []).map(enhanceAuctionRecord)
 }
 
 export async function setAuction(param) {
@@ -330,55 +317,15 @@ export async function closeItemSale({ aid, iid, actorId }) {
     currentBid.uid !== auctionRecord.oid
   )
 
-  // If there are bids, complete the payment and log to items_sold table
-  let paymentTransactionId = null
-
+  // If there are bids, log to items_sold table
   if (hasBids) {
-    const buyerId = currentBid.uid
-    const sellerId = itemRecord.oid
-    const finalPrice = Number(currentBid.current_price)
-
-    try {
-      // Transfer funds directly from buyer to seller
-      await transferWalletFunds(buyerId, sellerId, finalPrice)
-
-      // Create payment transaction record for buyer
-      const paymentTransaction = await insertWalletTransaction({
-        uid: buyerId,
-        transaction_type: 'payment',
-        amount: finalPrice,
-        status: 'completed',
-        related_item_id: iid,
-        description: `Payment for item: ${itemRecord.title}`,
-        completed_at: new Date().toISOString()
-      })
-
-      paymentTransactionId = paymentTransaction?.tid ?? null
-
-      // Create credit transaction for seller
-      await insertWalletTransaction({
-        uid: sellerId,
-        transaction_type: 'sale',
-        amount: finalPrice,
-        status: 'completed',
-        related_item_id: iid,
-        description: `Sale of item: ${itemRecord.title}`,
-        completed_at: new Date().toISOString()
-      })
-    } catch (error) {
-      console.error('Error processing payment:', error)
-      throw new Error(`Failed to process payment: ${error.message}`)
-    }
-
-    // Log to items_sold table
     const itemSoldPayload = {
       iid,
       aid,
-      buyer_id: buyerId,
-      seller_id: sellerId,
-      final_price: finalPrice,
-      sold_at: new Date().toISOString(),
-      payment_transaction_id: paymentTransactionId
+      buyer_id: currentBid.uid,
+      seller_id: itemRecord.oid,
+      final_price: currentBid.current_price,
+      sold_at: new Date().toISOString()
     }
     await insertItemSold(itemSoldPayload)
   }
@@ -397,8 +344,7 @@ export async function closeItemSale({ aid, iid, actorId }) {
     itemId: iid,
     buyerId: hasBids ? currentBid.uid : null,
     finalPrice: hasBids ? currentBid.current_price : null,
-    hasBids,
-    paymentTransactionId
+    hasBids
   }
 }
 

@@ -30,7 +30,7 @@ export default async function AuctionViewerPage({ params }) {
   })
   if (ownerId && ownerId === user.id) {
     console.log('[AuctionViewerPage] User is owner, redirecting to manage', { aid })
-    redirect(`/auction/view/${aid}/manage`)
+    redirect(`/auction/${aid}/manage`)
   }
 
   return (

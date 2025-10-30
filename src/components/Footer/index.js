@@ -8,7 +8,7 @@ import {
 
 export default function Footer({ fullScreen }) {
     return (
-        <footer className="z-10 bg-[var(--nav-bg)] text-white border-t border-[color:var(--theme-secondary)]/30" suppressHydrationWarning>
+        <footer className="z-10 bg-[var(--nav-bg)] text-white border-t border-[color:var(--theme-secondary)]/30">
             <FooterBottom />
         </footer>
     );

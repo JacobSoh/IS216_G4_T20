@@ -40,21 +40,8 @@ const AuctionCard = ({
             {endTime && <span>Ends: {endTime}</span>}
           </div>
         )}
-        {/* Optional start/end times */}
-        {(startTime || endTime) && (
-          <div className="flex justify-between items-center mb-3 text-xs text-gray-200">
-            {startTime && <span>Starts: {startTime}</span>}
-            {endTime && <span>Ends: {endTime}</span>}
-          </div>
-        )}
       </div>
 
-      {/* Button */}
-      {!hideButton && (
-        <button className="w-full bg-[#33A1E0] text-white py-2 rounded font-medium hover:bg-[#2492d2] transition-colors text-sm mt-auto">
-          {buttonText}
-        </button>
-      )}
       {/* Button */}
       {!hideButton && (
         <button className="w-full bg-[#33A1E0] text-white py-2 rounded font-medium hover:bg-[#2492d2] transition-colors text-sm mt-auto">

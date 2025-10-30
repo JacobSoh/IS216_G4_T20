@@ -2,9 +2,23 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Suspense, useRef, useEffect, useState, useMemo } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { Environment } from '@react-three/drei'
+import { Suspense, useRef, useEffect, useState, useMemo, createContext, useContext } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import {
+  OrbitControls,
+  Environment,
+  Text,
+  Box,
+  Plane,
+  Sphere,
+  RoundedBox,
+  Html,
+  Cylinder,
+  Ring,
+  Torus,
+  useTexture
+} from '@react-three/drei'
+import * as THREE from 'three'
 import { useAuctionLive } from '@/hooks/useAuctionLive'
 import { useAuctionChat } from '@/hooks/useAuctionChat'
 import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen'
@@ -12,14 +26,6 @@ import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from '
 import { buildStoragePublicUrl } from '@/utils/storage'
 import { supabaseBrowser } from '@/utils/supabase/client'
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/solid'
-import BiddingModal from './AuctionHouse3D/BiddingModal'
-import BidConfirmationModal from './AuctionHouse3D/BidConfirmationModal'
-import ChatModal from './AuctionHouse3D/ChatModal'
-import GrandStage from './AuctionHouse3D/Scene3D/GrandStage'
-import GrandTheatre from './AuctionHouse3D/Scene3D/GrandTheatre'
-import GrandSeating from './AuctionHouse3D/Scene3D/GrandSeating' // Previously TheatreTieredSeating
-import LockedSeatController from './AuctionHouse3D/Scene3D/LockedSeatController'
-import TheatreLighting from './AuctionHouse3D/Scene3D/TheatreLighting'
 
 const pad = (value) => String(Math.max(0, Math.floor(value))).padStart(2, '0')
 
@@ -177,6 +183,1299 @@ const buildLotFromSnapshot = (snapshot) => {
   }
 }
 
+const TIER_CONFIG = [
+  { name: 'orchestra', y: -3, z: 5, rows: 8, seatsPerRow: 16, platformHeight: 0.5 },
+  { name: 'mezzanine', y: 0, z: 15, rows: 6, seatsPerRow: 14, platformHeight: 0.8 },
+  { name: 'balcony', y: 4, z: 23, rows: 4, seatsPerRow: 12, platformHeight: 1.0 }
+]
+
+const SEAT_COLOR_BY_TIER = ['#4D067B', '#7209B7', '#B984DB']
+const OCCUPANT_PALETTE = ['#F8E2D4', '#E2BD6B', '#B984DB', '#F8E2D4', '#7209B7', '#B984DB']
+const ACCENT_PALETTE = ['#4D067B', '#7209B7', '#4D067B', '#7209B7', '#4D067B']
+function ConfettiParticle({ position, velocity, color, startTime }) {
+  const meshRef = useRef()
+  const startTimeRef = useRef(null)
+
+  useFrame((state) => {
+    if (!meshRef.current) return
+
+    // Initialize start time on first frame
+    if (startTimeRef.current === null) {
+      startTimeRef.current = state.clock.elapsedTime
+    }
+
+    const elapsed = state.clock.elapsedTime - startTimeRef.current
+    if (elapsed > 4) {
+      meshRef.current.visible = false
+      return
+    }
+
+    // Physics simulation
+    const gravity = -9.8
+    const drag = 0.98
+
+    meshRef.current.position.x = position[0] + velocity.x * elapsed * drag
+    meshRef.current.position.y = position[1] + velocity.y * elapsed + 0.5 * gravity * elapsed * elapsed
+    meshRef.current.position.z = position[2] + velocity.z * elapsed * drag
+
+    // Faster rotation for more flutter effect
+    meshRef.current.rotation.x += 0.15
+    meshRef.current.rotation.y += 0.2
+    meshRef.current.rotation.z += 0.08
+  })
+
+  return (
+    <mesh ref={meshRef} position={position}>
+      <boxGeometry args={[0.25, 0.25, 0.03]} />
+      <meshStandardMaterial
+        color={color}
+        metalness={0.9}
+        roughness={0.1}
+        emissive={color}
+        emissiveIntensity={0.3}
+      />
+    </mesh>
+  )
+}
+
+function ConfettiExplosion({ triggerTime, position = [0, 6, -4] }) {
+  const [confetti, setConfetti] = useState([])
+
+  useEffect(() => {
+    if (!triggerTime) return
+
+    // Create extravagant confetti burst - 300 pieces!
+    const pieces = []
+    const colors = ['#E2BD6B', '#F8E2D4', '#B984DB', '#7209B7', '#E2BD6B', '#F8E2D4', '#B984DB', '#7209B7', '#FFFFFF']
+
+    for (let i = 0; i < 300; i++) {
+      const angle = (Math.random() * Math.PI * 2)
+      // More variation in speed for dramatic effect
+      const speed = 6 + Math.random() * 18
+      // Higher upward bias for more spectacular burst
+      const upwardBias = 0.7 + Math.random() * 0.8
+
+      pieces.push({
+        id: `${triggerTime}-${i}`,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        velocity: {
+          x: Math.cos(angle) * speed,
+          y: speed * upwardBias,
+          z: Math.sin(angle) * speed
+        }
+      })
+    }
+
+    setConfetti(pieces)
+
+    // Clean up after animation - slightly longer for more pieces
+    const timeout = setTimeout(() => {
+      setConfetti([])
+    }, 4500)
+
+    return () => clearTimeout(timeout)
+  }, [triggerTime])
+
+  if (!triggerTime || confetti.length === 0) return null
+
+  return (
+    <group position={position}>
+      {confetti.map((piece) => (
+        <ConfettiParticle
+          key={piece.id}
+          position={[0, 0, 0]}
+          velocity={piece.velocity}
+          color={piece.color}
+          startTime={triggerTime}
+        />
+      ))}
+    </group>
+  )
+}
+
+function AuctioneerSpeechBubble({ message, visible }) {
+  const bubbleRef = useRef()
+  const [opacity, setOpacity] = useState(0)
+
+  useEffect(() => {
+    if (visible && message) {
+      setOpacity(1)
+      const timeout = setTimeout(() => {
+        setOpacity(0)
+      }, 3000) // Show for 3 seconds
+      return () => clearTimeout(timeout)
+    } else {
+      setOpacity(0)
+    }
+  }, [visible, message])
+
+  useFrame(() => {
+    if (bubbleRef.current) {
+      // Smooth opacity transition
+      const currentOpacity = bubbleRef.current.material.opacity
+      const targetOpacity = opacity
+      bubbleRef.current.material.opacity += (targetOpacity - currentOpacity) * 0.1
+    }
+  })
+
+  if (!message) return null
+
+  return (
+    <group position={[-5, 2, 0]}>
+      {/* Speech bubble background - bigger and more obvious */}
+      <RoundedBox ref={bubbleRef} args={[9, 3, 0.15]} radius={0.3}>
+        <meshStandardMaterial
+          color="#F8E2D4"
+          transparent
+          opacity={opacity}
+          roughness={0.2}
+          metalness={0.1}
+        />
+      </RoundedBox>
+
+      {/* Speech bubble border - thicker gold border */}
+      <RoundedBox args={[9.3, 3.3, 0.12]} radius={0.32} position={[0, 0, -0.08]}>
+        <meshStandardMaterial
+          color="#E2BD6B"
+          transparent
+          opacity={opacity}
+          roughness={0.1}
+          metalness={0.8}
+          emissive="#E2BD6B"
+          emissiveIntensity={0.4}
+        />
+      </RoundedBox>
+
+      {/* Speech bubble tail pointing to auctioneer - positioned on the right side now */}
+      <group position={[4, -1, 0]}>
+        <Box args={[0.8, 0.8, 0.12]} rotation={[0, 0, Math.PI / 4]}>
+          <meshStandardMaterial
+            color="#F8E2D4"
+            transparent
+            opacity={opacity}
+            roughness={0.2}
+            metalness={0.1}
+          />
+        </Box>
+      </group>
+
+      {/* Text */}
+      <Html
+        transform
+        position={[0, 0, 0.15]}
+        style={{
+          opacity: opacity,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: 'none',
+          width: '450px',
+          height: '150px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            padding: '24px 32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            color: '#4D067B',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            fontFamily: 'sans-serif',
+            lineHeight: '1.4',
+            wordWrap: 'break-word',
+            overflow: 'hidden',
+            overflowWrap: 'break-word',
+            hyphens: 'auto'
+          }}
+        >
+          {message}
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+function GrandStage({ confettiTrigger, bidAnnouncement }) {
+  const stageRef = useRef()
+  const screenRef = useRef()
+  const auctioneerRef = useRef()
+  const neonArchRef = useRef()
+  const neonCrownRef = useRef()
+  const discoBallRef = useRef()
+
+  // Pulsing neon animation
+  useFrame((state) => {
+    const time = state.clock.elapsedTime
+
+    // Pulse the neon arch
+    if (neonArchRef.current) {
+      neonArchRef.current.material.emissiveIntensity = 0.5 + Math.sin(time * 2) * 0.3
+    }
+
+    // Pulse the neon crown
+    if (neonCrownRef.current) {
+      neonCrownRef.current.material.emissiveIntensity = 0.4 + Math.sin(time * 3) * 0.3
+    }
+
+    // Rotate disco ball
+    if (discoBallRef.current) {
+      discoBallRef.current.rotation.y = time * 0.5
+      discoBallRef.current.children.forEach((child, i) => {
+        child.material.emissiveIntensity = 1.2 + Math.sin(time * 4 + i) * 0.5
+      })
+    }
+  })
+
+  return (
+    <group position={[0, 0, -15]}>
+      {/* Extended Stage Platform for Auctioneer */}
+      <group>
+        {/* Main Stage - Much Longer for Space */}
+        <Box args={[35, 1.2, 18]} position={[0, -2, 3]}>
+          <meshStandardMaterial
+            color="#2d1810"
+            roughness={0.4}
+            metalness={0.1}
+          />
+        </Box>
+
+        {/* Stage Apron - Extended Forward */}
+        <Box args={[37, 0.8, 6]} position={[0, -2.7, 9]}>
+          <meshStandardMaterial
+            color="#3d2820"
+            roughness={0.3}
+            metalness={0.15}
+          />
+        </Box>
+
+        {/* Stage Steps - Wider and Further */}
+        {[0, 1, 2].map((step) => (
+          <Box
+            key={step}
+            args={[39, 0.3, 1.5]}
+            position={[0, -3.2 - step * 0.3, 12 + step * 1.5]}
+          >
+            <meshStandardMaterial
+              color={`hsl(${25 + step * 5}, 30%, ${15 + step * 2}%)`}
+              roughness={0.5}
+            />
+          </Box>
+        ))}
+      </group>
+
+      {/* Ornate Stage Backdrop */}
+      <group position={[0, 3, -4]}>
+        {/* Main Backdrop */}
+        <Plane args={[20, 12]}>
+          <meshStandardMaterial
+            color={new THREE.Color('#0a0414')}
+            roughness={0.9}
+            toneMapped={false}
+          />
+        </Plane>
+
+        {/* Decorative Arch */}
+        <Torus
+          ref={neonArchRef}
+          args={[9, 0.8, 8, 20]}
+          position={[0, 0, 0.1]}
+          rotation={[0, 0, 0]}
+        >
+          <meshStandardMaterial
+            color={new THREE.Color('#7209B7')}
+            roughness={0.2}
+            metalness={0.7}
+            emissive={new THREE.Color('#7209B7')}
+            emissiveIntensity={0.5}
+          />
+        </Torus>
+
+        {/* Gold Crown */}
+        <Box ref={neonCrownRef} args={[6, 1.5, 0.3]} position={[0, 8, 0.2]}>
+          <meshStandardMaterial
+            color={new THREE.Color('#E2BD6B')}
+            roughness={0.1}
+            metalness={0.9}
+            emissive={new THREE.Color('#E2BD6B')}
+            emissiveIntensity={0.4}
+          />
+        </Box>
+
+        {/* Gold accent strips on arch */}
+        {[-1, 1].map((side) => (
+          <Box key={side} args={[0.3, 1, 18]} position={[side * 9.5, 0, 0.3]} rotation={[0, 0, side * 0.1]}>
+            <meshStandardMaterial
+              color="#E2BD6B"
+              roughness={0.2}
+              metalness={0.8}
+              emissive="#E2BD6B"
+              emissiveIntensity={0.3}
+            />
+          </Box>
+        ))}
+      </group>
+
+      {/* Stage Screen */}
+      <group position={[0, 3.6, -4.2]}>
+        <RoundedBox ref={screenRef} args={[13.2, 6.4, 0.2]} radius={0.16}>
+          <meshStandardMaterial color="#050510" emissive="#0a0820" emissiveIntensity={0.32} />
+        </RoundedBox>
+
+        {/* Gold Screen Frame */}
+        <RoundedBox args={[13.8, 7, 0.12]} radius={0.22} position={[0, 0, -0.12]}>
+          <meshStandardMaterial
+            color="#E2BD6B"
+            metalness={0.8}
+            roughness={0.2}
+            emissive="#E2BD6B"
+            emissiveIntensity={0.3}
+          />
+        </RoundedBox>
+
+        {/* Purple inner frame accent */}
+        <RoundedBox args={[13.4, 6.6, 0.08]} radius={0.18} position={[0, 0, -0.08]}>
+          <meshStandardMaterial
+            color="#4D067B"
+            metalness={0.5}
+            roughness={0.3}
+            emissive="#7209B7"
+            emissiveIntensity={0.2}
+          />
+        </RoundedBox>
+
+        {/* Enhanced Auction Screen */}
+        <AuctionScreen position={[0, 1, 0.1]} scale={[1.1, 1.1, 1]} />
+      </group>
+
+      {/* Confetti effect positioned behind screen */}
+      <ConfettiExplosion triggerTime={confettiTrigger} position={[0, 6, -4]} />
+
+      {/* Auctioneer Podium - Further Left on Stage */}
+      <group position={[-12, -1, 8]}>
+        {/* Podium Base - Dark purple */}
+        <Cylinder args={[1.5, 2, 2.5, 8]} position={[0, 0.25, 0]}>
+          <meshStandardMaterial
+            color="#4D067B"
+            roughness={0.3}
+            metalness={0.5}
+            emissive="#7209B7"
+            emissiveIntensity={0.1}
+          />
+        </Cylinder>
+
+        {/* Gold Podium Top */}
+        <Cylinder args={[1.8, 1.8, 0.2, 8]} position={[0, 1.6, 0]}>
+          <meshStandardMaterial
+            color="#E2BD6B"
+            roughness={0.1}
+            metalness={0.9}
+            emissive="#E2BD6B"
+            emissiveIntensity={0.2}
+          />
+        </Cylinder>
+
+        {/* Gold accent ring */}
+        <Torus args={[1.6, 0.1, 8, 32]} position={[0, 1.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <meshStandardMaterial
+            color="#E2BD6B"
+            roughness={0.2}
+            metalness={0.8}
+            emissive="#E2BD6B"
+            emissiveIntensity={0.3}
+          />
+        </Torus>
+
+        {/* Auctioneer Figure */}
+        <group ref={auctioneerRef} position={[0, 2.8, 0]}>
+          {/* Body */}
+          <Cylinder args={[0.4, 0.6, 1.8]} position={[0, 0, 0]}>
+            <meshStandardMaterial color="#2C1810" roughness={0.8} />
+          </Cylinder>
+
+          {/* Head */}
+          <Sphere args={[0.3]} position={[0, 1.2, 0]}>
+            <meshStandardMaterial color="#D2B48C" roughness={0.6} />
+          </Sphere>
+
+          {/* Gavel Arm - Pointing toward center */}
+          <Box args={[0.1, 0.8, 0.1]} position={[0.5, 0.4, 0]} rotation={[0, 0, -0.3]}>
+            <meshStandardMaterial color="#D2B48C" roughness={0.6} />
+          </Box>
+
+          {/* Gavel */}
+          <Cylinder args={[0.08, 0.08, 0.4]} position={[0.8, 0.8, 0]} rotation={[0, 0, -0.3]}>
+            <meshStandardMaterial color="#8B4513" roughness={0.4} />
+          </Cylinder>
+
+          {/* Speech Bubble */}
+          <AuctioneerSpeechBubble message={bidAnnouncement?.message} visible={!!bidAnnouncement} />
+        </group>
+      </group>
+
+      {/* Stage Curtains */}
+      <group>
+        {/* Left Curtain */}
+        <Plane args={[3, 15]} position={[-11, 3, -2]} rotation={[0, 0.2, 0]}>
+          <meshStandardMaterial
+            color="#4D067B"
+            roughness={0.7}
+            side={THREE.DoubleSide}
+            emissive="#7209B7"
+            emissiveIntensity={0.1}
+          />
+        </Plane>
+
+        {/* Right Curtain */}
+        <Plane args={[3, 15]} position={[11, 3, -2]} rotation={[0, -0.2, 0]}>
+          <meshStandardMaterial
+            color="#4D067B"
+            roughness={0.7}
+            side={THREE.DoubleSide}
+            emissive="#7209B7"
+            emissiveIntensity={0.1}
+          />
+        </Plane>
+      </group>
+
+      {/* Disco Ball Above Stage */}
+      <group ref={discoBallRef} position={[0, 12, -2]}>
+        <Sphere args={[1.5, 16, 16]}>
+          <meshStandardMaterial
+            color="#7209B7"
+            metalness={0.95}
+            roughness={0.05}
+            emissive="#7209B7"
+            emissiveIntensity={0.5}
+          />
+        </Sphere>
+
+        {/* Neon Ring Around Disco Ball */}
+        {Array.from({ length: 8 }).map((_, i) => {
+          const angle = (i / 8) * Math.PI * 2
+          return (
+            <Sphere
+              key={i}
+              args={[0.2]}
+              position={[Math.cos(angle) * 2, -0.5, Math.sin(angle) * 2]}
+            >
+              <meshStandardMaterial
+                color="#7209B7"
+                metalness={0.8}
+                roughness={0.1}
+                emissive="#7209B7"
+                emissiveIntensity={1.2}
+              />
+            </Sphere>
+          )
+        })}
+      </group>
+    </group>
+  )
+}
+
+function GrandTheatre() {
+  // User sits at (0, 7, 27) - Simple box enclosure that works
+  return (
+    <group>
+      {/* Club Floor with Neon Pattern */}
+      <group>
+        <Plane
+          args={[120, 120]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, -4, 5]}
+        >
+          <meshStandardMaterial
+            color="#0a0414"
+            roughness={0.3}
+            metalness={0.4}
+          />
+        </Plane>
+
+        {/* Neon Floor Pattern Rings */}
+        {[15, 25, 35, 45].map((radius, i) => (
+          <Ring
+            key={i}
+            args={[radius - 0.2, radius + 0.2, 64]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            position={[0, -3.98, 5]}
+          >
+            <meshStandardMaterial
+              color="#7209B7"
+              roughness={0.1}
+              metalness={0.6}
+              emissive="#7209B7"
+              emissiveIntensity={0.3 + i * 0.1}
+            />
+          </Ring>
+        ))}
+
+        {/* Center Neon Medallion */}
+        <Cylinder
+          args={[8, 8, 0.1]}
+          rotation={[0, 0, 0]}
+          position={[0, -3.95, 5]}
+        >
+          <meshStandardMaterial
+            color="#7209B7"
+            roughness={0.1}
+            metalness={0.7}
+            emissive="#7209B7"
+            emissiveIntensity={0.5}
+          />
+        </Cylinder>
+      </group>
+
+      {/* Dark Club Ceiling */}
+      <Plane
+        args={[120, 120]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 30, 5]}
+      >
+        <meshStandardMaterial
+          color="#000000"
+          roughness={0.9}
+          metalness={0.05}
+        />
+      </Plane>
+
+      {/* Club Side Walls with Neon Accents */}
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          {/* Main Wall */}
+          <Plane
+            args={[120, 35]}
+            rotation={[0, Math.PI / 2 * side, 0]}
+            position={[60 * side, 12.5, 5]}
+          >
+            <meshStandardMaterial
+              color="#0d0518"
+              roughness={0.7}
+              metalness={0.2}
+            />
+          </Plane>
+
+          {/* Neon Columns - Better Positioned */}
+          {[-30, -10, 10, 30, 50].map((z) => (
+            <group key={z}>
+              <Cylinder
+                args={[1.2, 1, 25]}
+                position={[58 * side, 12.5, z + 5]}
+              >
+                <meshStandardMaterial
+                  color="#4D067B"
+                  roughness={0.3}
+                  metalness={0.4}
+                  emissive="#7209B7"
+                  emissiveIntensity={0.2}
+                />
+              </Cylinder>
+              {/* Gold Column Capital */}
+              <Cylinder
+                args={[1.8, 1.2, 2]}
+                position={[58 * side, 24, z + 5]}
+              >
+                <meshStandardMaterial
+                  color="#E2BD6B"
+                  roughness={0.1}
+                  metalness={0.9}
+                  emissive="#E2BD6B"
+                  emissiveIntensity={0.3}
+                />
+              </Cylinder>
+            </group>
+          ))}
+
+          {/* Neon Wall Strips - Better Spaced */}
+          {[-20, 0, 20, 40].map((z) => (
+            <Box
+              key={z}
+              args={[0.3, 20, 12]}
+              position={[59.5 * side, 10, z + 5]}
+            >
+              <meshStandardMaterial
+                color="#7209B7"
+                roughness={0.2}
+                metalness={0.6}
+                emissive="#7209B7"
+                emissiveIntensity={0.4}
+              />
+            </Box>
+          ))}
+        </group>
+      ))}
+
+      {/* Rear Wall with Club Entrance */}
+      <group position={[0, 12.5, 65]}>
+        <Plane args={[120, 35]}>
+          <meshStandardMaterial
+            color="#0d0518"
+            roughness={0.7}
+            metalness={0.2}
+          />
+        </Plane>
+
+        {/* Neon Entrance Arch */}
+        <Torus
+          args={[8, 1.5, 16, 32]}
+          position={[0, -5, -0.5]}
+        >
+          <meshStandardMaterial
+            color="#7209B7"
+            roughness={0.1}
+            metalness={0.8}
+            emissive="#7209B7"
+            emissiveIntensity={0.6}
+          />
+        </Torus>
+
+        {/* Club Entrance Doors */}
+        <Box args={[12, 18, 0.5]} position={[0, -8, -0.3]}>
+          <meshStandardMaterial
+            color="#4D067B"
+            roughness={0.3}
+            metalness={0.5}
+            emissive="#7209B7"
+            emissiveIntensity={0.2}
+          />
+        </Box>
+      </group>
+
+      {/* Front Wall Behind Stage */}
+      <group position={[0, 12.5, -30]}>
+        <Plane args={[120, 35]}>
+          <meshStandardMaterial
+            color="#0d0518"
+            roughness={0.7}
+            metalness={0.2}
+          />
+        </Plane>
+
+      </group>
+    </group>
+  )
+}
+
+function TheatreTieredSeating() {
+  const tiers = TIER_CONFIG
+  const seatColorByTier = SEAT_COLOR_BY_TIER
+  const occupantPalette = OCCUPANT_PALETTE
+  const accentPalette = ACCENT_PALETTE
+
+  const { seatMeta, viewerSeatKey } = useMemo(() => {
+    const viewerPosition = new THREE.Vector3(0, 7, 27)
+    const meta = []
+
+    tiers.forEach((tier, tierIndex) => {
+      for (let row = 0; row < tier.rows; row++) {
+        for (let seat = 0; seat < tier.seatsPerRow; seat++) {
+          const seatX = (seat - tier.seatsPerRow / 2 + 0.5) * 1.5
+          const seatZ = tier.z + row * 2
+          const seatY = tier.y
+          const seatKey = `${tier.name}-${row}-${seat}`
+
+          meta.push({
+            key: seatKey,
+            tierIndex,
+            position: [seatX, seatY, seatZ]
+          })
+        }
+      }
+    })
+
+    let closestSeatKey = null
+    let minDistance = Infinity
+    meta.forEach((seat) => {
+      const seatVec = new THREE.Vector3(...seat.position)
+      const distance = seatVec.distanceTo(viewerPosition)
+      if (distance < minDistance) {
+        minDistance = distance
+        closestSeatKey = seat.key
+      }
+    })
+
+    return { seatMeta: meta, viewerSeatKey: closestSeatKey }
+  }, [tiers])
+
+  const occupantAssignments = useMemo(() => {
+    const assignments = new Map()
+    seatMeta.forEach((seat) => {
+      if (seat.key === viewerSeatKey) return
+
+      if (Math.random() < 0.5) {
+        const bodyColor = occupantPalette[Math.floor(Math.random() * occupantPalette.length)]
+        const accentColor = accentPalette[Math.floor(Math.random() * accentPalette.length)]
+        assignments.set(seat.key, { bodyColor, accentColor })
+      }
+    })
+    return assignments
+  }, [seatMeta, viewerSeatKey, occupantPalette, accentPalette])
+
+  const platforms = tiers.map((tier) => (
+    <Box
+      key={`platform-${tier.name}`}
+      args={[tier.seatsPerRow * 1.5 + 4, tier.platformHeight, tier.rows * 2 + 2]}
+      position={[0, tier.y - tier.platformHeight / 2, tier.z + tier.rows]}
+    >
+      <meshStandardMaterial
+        color="#3D2817"
+        roughness={0.4}
+        metalness={0.1}
+      />
+    </Box>
+  ))
+
+  const seatGroups = seatMeta.map((seat) => {
+    const seatColor = seatColorByTier[seat.tierIndex] || seatColorByTier[0]
+    const occupant = occupantAssignments.get(seat.key)
+
+    return (
+      <group
+        key={seat.key}
+        position={seat.position}
+      >
+        {/* Seat Back */}
+        <Box args={[0.8, 1.6, 0.12]} position={[0, 0.8, 0.3]}>
+          <meshStandardMaterial
+            color={seatColor}
+            roughness={0.5}
+          />
+        </Box>
+
+        {/* Seat Cushion */}
+        <Box args={[0.8, 0.15, 0.8]} position={[0, 0.075, 0]}>
+          <meshStandardMaterial
+            color={seatColor}
+            roughness={0.6}
+          />
+        </Box>
+
+        {/* Armrests */}
+        {[-0.5, 0.5].map((armSide, i) => (
+          <Box
+            key={i}
+            args={[0.12, 0.5, 0.6]}
+            position={[armSide, 0.3, 0]}
+          >
+            <meshStandardMaterial
+              color="#8B4513"
+              roughness={0.3}
+              metalness={0.2}
+            />
+          </Box>
+        ))}
+
+        {occupant && (
+          <group position={[0, 0.2, -0.05]}>
+            <Cylinder args={[0.16, 0.18, 0.95]} position={[0, 0.6, -0.08]}>
+              <meshStandardMaterial color={occupant.bodyColor} roughness={0.5} />
+            </Cylinder>
+            <Sphere args={[0.2]} position={[0, 1.1, -0.1]}>
+              <meshStandardMaterial color={occupant.bodyColor} roughness={0.4} />
+            </Sphere>
+            <Box args={[0.35, 0.18, 0.12]} position={[0, 0.82, -0.05]}>
+              <meshStandardMaterial color={occupant.bodyColor} roughness={0.4} />
+            </Box>
+            <Sphere args={[0.22]} position={[0, 1.24, -0.12]}>
+              <meshStandardMaterial color={occupant.accentColor} roughness={0.6} metalness={0.1} />
+            </Sphere>
+          </group>
+        )}
+      </group>
+    )
+  })
+
+  return <group>{[...platforms, ...seatGroups]}</group>
+}
+
+function LockedSeatController() {
+  const { camera, gl } = useThree()
+  const [isLocked, setIsLocked] = useState(false)
+  const fixedPosition = useRef(new THREE.Vector3(0, 7, 27)) // Balcony middle row center - higher angle view
+  const targetPosition = useRef(new THREE.Vector3(0, 4, -15))
+
+  useEffect(() => {
+    // Lock camera position immediately
+    camera.position.copy(fixedPosition.current)
+    camera.lookAt(targetPosition.current)
+    setIsLocked(true)
+
+    // Prevent any position changes via external controls
+    const originalSet = camera.position.set
+    camera.position.set = (x, y, z) => {
+      return originalSet.call(
+        camera.position,
+        fixedPosition.current.x,
+        fixedPosition.current.y,
+        fixedPosition.current.z
+      )
+    }
+
+    // Handle pointer-based rotation manually (mouse + touch)
+    let isDragging = false
+    let previousPointerPosition = { x: 0, y: 0 }
+    let rotation = { x: 0, y: 0 }
+    let hasDragged = false
+    let suppressClick = false
+    let activePointerId = null
+
+    const previousTouchAction = gl.domElement.style.touchAction
+    const previousUserSelect = gl.domElement.style.userSelect
+    gl.domElement.style.touchAction = 'none'
+    gl.domElement.style.userSelect = 'none'
+
+    const isWithinCanvas = (clientX, clientY) => {
+      const rect = gl.domElement.getBoundingClientRect()
+      return (
+        clientX >= rect.left &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom
+      )
+    }
+
+    const startDrag = (clientX, clientY, pointerId = null) => {
+      isDragging = true
+      hasDragged = false
+      activePointerId = pointerId
+      previousPointerPosition = { x: clientX, y: clientY }
+    }
+
+    const updateDrag = (clientX, clientY) => {
+      if (!isDragging) return
+
+      const deltaMove = {
+        x: clientX - previousPointerPosition.x,
+        y: clientY - previousPointerPosition.y
+      }
+
+      rotation.y += deltaMove.x * 0.002
+      rotation.x += deltaMove.y * 0.002
+
+      if (!hasDragged && (Math.abs(deltaMove.x) > 1 || Math.abs(deltaMove.y) > 1)) {
+        hasDragged = true
+      }
+
+      rotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, rotation.x))
+
+      camera.position.copy(fixedPosition.current)
+
+      const spherical = new THREE.Spherical()
+      spherical.setFromVector3(targetPosition.current.clone().sub(fixedPosition.current))
+      spherical.theta += rotation.y
+      spherical.phi += rotation.x
+
+      const newTarget = new THREE.Vector3()
+      newTarget.setFromSpherical(spherical).add(fixedPosition.current)
+      camera.lookAt(newTarget)
+
+      previousPointerPosition = { x: clientX, y: clientY }
+    }
+
+    const endDrag = () => {
+      if (!isDragging) return
+      isDragging = false
+      activePointerId = null
+
+      if (hasDragged) {
+        suppressClick = true
+        setTimeout(() => { suppressClick = false }, 0)
+      }
+    }
+
+    const handlePointerDown = (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return
+      if (!isWithinCanvas(event.clientX, event.clientY)) return
+
+      if (event.pointerType !== 'mouse') {
+        event.preventDefault()
+      }
+      startDrag(event.clientX, event.clientY, event.pointerId)
+    }
+
+    const handlePointerMove = (event) => {
+      if (!isDragging) return
+      if (activePointerId !== null && event.pointerId !== activePointerId) return
+      if (event.pointerType !== 'mouse') {
+        event.preventDefault()
+      }
+      updateDrag(event.clientX, event.clientY)
+    }
+
+    const handlePointerUp = (event) => {
+      if (activePointerId !== null && event.pointerId !== activePointerId) return
+      endDrag()
+    }
+
+    const handlePointerCancel = (event) => {
+      if (activePointerId !== null && event.pointerId !== activePointerId) return
+      isDragging = false
+      activePointerId = null
+    }
+
+    const handleMouseDown = (event) => {
+      if (event.button !== 0) return
+      if (!isWithinCanvas(event.clientX, event.clientY)) return
+      startDrag(event.clientX, event.clientY)
+    }
+
+    const handleMouseMove = (event) => {
+      updateDrag(event.clientX, event.clientY)
+    }
+
+    const handleMouseUp = () => {
+      endDrag()
+    }
+
+    const handleClickCapture = (event) => {
+      if (!suppressClick) return
+      suppressClick = false
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    const supportsPointerEvents = typeof window !== 'undefined' && 'onpointerdown' in window
+
+    if (supportsPointerEvents) {
+      document.addEventListener('pointerdown', handlePointerDown)
+      document.addEventListener('pointermove', handlePointerMove)
+      document.addEventListener('pointerup', handlePointerUp)
+      document.addEventListener('pointercancel', handlePointerCancel)
+    } else {
+      document.addEventListener('mousedown', handleMouseDown)
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+    document.addEventListener('click', handleClickCapture, true)
+
+    return () => {
+      if (supportsPointerEvents) {
+        document.removeEventListener('pointerdown', handlePointerDown)
+        document.removeEventListener('pointermove', handlePointerMove)
+        document.removeEventListener('pointerup', handlePointerUp)
+        document.removeEventListener('pointercancel', handlePointerCancel)
+      } else {
+        document.removeEventListener('mousedown', handleMouseDown)
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+      document.removeEventListener('click', handleClickCapture, true)
+      camera.position.set = originalSet
+      gl.domElement.style.touchAction = previousTouchAction
+      gl.domElement.style.userSelect = previousUserSelect
+    }
+  }, [camera, gl])
+
+  // Continuously enforce position lock
+  useFrame(() => {
+    if (isLocked && !camera.position.equals(fixedPosition.current)) {
+      camera.position.copy(fixedPosition.current)
+    }
+  })
+
+  return null // No OrbitControls - we handle everything manually
+}
+
+function LightBeam({ position, targetPosition, color = "#7209B7", opacity = 0.12 }) {
+  const beamRef = useRef()
+
+  useFrame(() => {
+    if (!beamRef.current || !targetPosition) return
+
+    // Calculate direction and distance
+    const start = new THREE.Vector3(...position)
+    const end = new THREE.Vector3(
+      targetPosition.x,
+      targetPosition.y,
+      targetPosition.z
+    )
+    const direction = new THREE.Vector3().subVectors(end, start)
+    const distance = direction.length()
+
+    // Position beam in the middle
+    const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5)
+    beamRef.current.position.copy(midpoint)
+
+    // Orient beam to point at target
+    beamRef.current.lookAt(end)
+    beamRef.current.rotateX(Math.PI / 2)
+
+    // Scale beam to reach target
+    beamRef.current.scale.set(1, distance, 1)
+  })
+
+  return (
+    <group ref={beamRef}>
+      {/* Spreading beam - starts wide at 1.5, narrows to 3.5 at bottom */}
+      <Cylinder args={[3.5, 1, 1, 16, 1, true]}>
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={opacity}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </Cylinder>
+    </group>
+  )
+}
+
+function MovingSpotlights() {
+  const groupRef = useRef()
+  const spotlightRefs = useRef([])
+  const targetRefs = useRef([])
+  const [targetPositions, setTargetPositions] = useState(Array(4).fill({ x: 0, y: 0, z: 0 }))
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime
+
+    // Each spotlight scans in a different pattern
+    const newTargetPositions = spotlightRefs.current.map((spotlight, i) => {
+      if (!spotlight) return { x: 0, y: 0, z: 0 }
+
+      const speed = 0.25 + i * 0.08
+      const radius = 18 + i * 4
+
+      // Circular scanning pattern with variation per spotlight
+      const angle = time * speed + (i * Math.PI * 2 / 4)
+      const targetX = Math.cos(angle) * radius
+      const targetZ = Math.sin(angle) * radius + 10
+      const targetY = -3 + Math.sin(time * 1.5 + i) * 1.5
+
+      // Update target position
+      if (targetRefs.current[i]) {
+        targetRefs.current[i].position.set(targetX, targetY, targetZ)
+        spotlight.target = targetRefs.current[i]
+        spotlight.target.updateMatrixWorld()
+      }
+
+      return { x: targetX, y: targetY, z: targetZ }
+    })
+
+    setTargetPositions(newTargetPositions)
+  })
+
+  const positions = [
+    [-28, 26, -8],
+    [28, 26, -8],
+    [-22, 27, 20],
+    [22, 27, 20]
+  ]
+
+  return (
+    <group ref={groupRef}>
+      {positions.map((pos, i) => {
+        // Create target object for each spotlight
+        if (!targetRefs.current[i]) {
+          targetRefs.current[i] = new THREE.Object3D()
+          targetRefs.current[i].position.set(0, 0, 0)
+        }
+
+        return (
+          <group key={i}>
+            <spotLight
+              ref={(el) => {
+                if (el) {
+                  spotlightRefs.current[i] = el
+                  el.target = targetRefs.current[i]
+                }
+              }}
+              position={pos}
+              angle={0.4}
+              penumbra={0.6}
+              intensity={6}
+              color="#7209B7"
+              distance={50}
+              decay={1.8}
+            />
+            <primitive object={targetRefs.current[i]} />
+
+            {/* Visible light beam - wider and more subtle */}
+            <LightBeam
+              position={pos}
+              targetPosition={targetPositions[i]}
+              color="#7209B7"
+              opacity={0.12}
+            />
+
+            {/* Spotlight housing */}
+            <group position={pos}>
+              <Cylinder args={[0.4, 0.3, 0.6, 8]}>
+                <meshStandardMaterial color="#1a1a1a" metalness={0.8} roughness={0.2} />
+              </Cylinder>
+            </group>
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+function DiscoLights() {
+  const [flashStates, setFlashStates] = useState(Array(12).fill(1))
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime
+
+    // Random flashing effect - each light has a chance to flash
+    setFlashStates(prev => prev.map((_, i) => {
+      const base = Math.sin(time * 2 + i) * 0.5 + 0.5
+      const random = Math.random() > 0.85 ? Math.random() * 2 : 1
+      return base * random
+    }))
+  })
+
+  const positions = [
+    [-20, 15, -10], [20, 15, -10],
+    [-15, 18, 0], [15, 18, 0],
+    [-25, 16, 10], [25, 16, 10],
+    [-18, 17, 20], [18, 17, 20],
+    [-22, 15, 30], [22, 15, 30],
+    [0, 20, -5], [0, 20, 15]
+  ]
+
+  return (
+    <>
+      {positions.map((pos, i) => (
+        <spotLight
+          key={i}
+          position={pos}
+          angle={0.4}
+          penumbra={0.5}
+          intensity={flashStates[i] * 3}
+          color="#7209B7"
+          distance={30}
+          decay={2}
+        />
+      ))}
+    </>
+  )
+}
+
+function TheatreLighting() {
+  const lightRef = useRef()
+
+  return (
+    <>
+      {/* Club ambient lighting */}
+      <ambientLight intensity={0.1} color="#4D067B" />
+
+      {/* Main stage neon purple spotlight */}
+      <spotLight
+        position={[0, 20, -8]}
+        angle={0.6}
+        penumbra={0.4}
+        intensity={3}
+        color="#7209B7"
+        target-position={[0, 2, -15]}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+      />
+
+      {/* Side stage neon lights */}
+      <spotLight
+        position={[-8, 15, -10]}
+        angle={0.5}
+        penumbra={0.6}
+        intensity={2.5}
+        color="#B984DB"
+        target-position={[0, 4, -15]}
+      />
+      <spotLight
+        position={[8, 15, -10]}
+        angle={0.5}
+        penumbra={0.6}
+        intensity={2.5}
+        color="#B984DB"
+        target-position={[0, 4, -15]}
+      />
+
+      {/* Auctioneer purple spotlight */}
+      <spotLight
+        ref={lightRef}
+        position={[0, 12, -12]}
+        angle={0.3}
+        penumbra={0.3}
+        intensity={2}
+        color="#7209B7"
+        target-position={[0, 2, -15]}
+      />
+
+      {/* Disco ball illumination */}
+      <pointLight
+        position={[0, 12, -2]}
+        intensity={2}
+        color="#7209B7"
+        distance={20}
+        decay={1.5}
+      />
+
+      {/* Audience purple uplighting */}
+      {Array.from({ length: 6 }).map((_, i) => {
+        const angle = (i / 6) * Math.PI * 2
+        return (
+          <pointLight
+            key={i}
+            position={[Math.cos(angle) * 20, 8, Math.sin(angle) * 20]}
+            intensity={0.8}
+            color="#7209B7"
+            distance={25}
+          />
+        )
+      })}
+
+      {/* Screen neon glow effect */}
+      <pointLight
+        position={[0, 4, -14]}
+        intensity={1.2}
+        color="#7209B7"
+        distance={15}
+      />
+
+      {/* Neon wall sconces */}
+      {Array.from({ length: 12 }).map((_, i) => {
+        const side = i % 2 === 0 ? -1 : 1
+        const z = -20 + (Math.floor(i / 2) * 10)
+        return (
+          <pointLight
+            key={i}
+            position={[25 * side, 6, z]}
+            intensity={1}
+            color="#7209B7"
+            distance={10}
+          />
+        )
+      })}
+
+      {/* Balcony neon accent lighting */}
+      {[-1, 1].map((side) => (
+        Array.from({ length: 3 }).map((_, level) => (
+          <pointLight
+            key={`${side}-${level}`}
+            position={[25 * side, 2 + level * 5, 0]}
+            intensity={0.7}
+            color="#7209B7"
+            distance={18}
+          />
+        ))
+      )).flat()}
+
+      {/* Add disco lights */}
+      <DiscoLights />
+
+      {/* Add moving/scanning spotlights */}
+      <MovingSpotlights />
+    </>
+  )
+}
+
 export default function AuctionHouse3D({
   aid,
   initialLiveData,
@@ -199,6 +1498,7 @@ export default function AuctionHouse3D({
   const {
     messages: chatMessages,
     isFetching: isChatFetching,
+    setMessages: setChatMessages,
     refresh: refreshChat
   } = useAuctionChat(aid, initialChatMessages, { enabled: true })
   const [chatInput, setChatInput] = useState('')
@@ -244,42 +1544,39 @@ export default function AuctionHouse3D({
     participantCountRef.current = participantCount
   }, [participantCount])
 
-  // Consolidated timer: auction end time + item timer + nowTs - all in ONE interval
   useEffect(() => {
-    const endTime = snapshot?.auction?.end_time ? new Date(snapshot.auction.end_time) : null
+    if (!snapshot?.auction?.end_time) return undefined
+    const endTime = new Date(snapshot.auction.end_time)
+    const updateTicker = () => {
+      setCurrentLot((prev) => ({
+        ...prev,
+        timeRemaining: formatTimeRemaining(endTime)
+      }))
+    }
+    updateTicker()
+    const id = window.setInterval(updateTicker, 1000)
+    return () => window.clearInterval(id)
+  }, [snapshot?.auction?.end_time])
 
-    const updateAllTimers = () => {
-      const now = Date.now()
-      setNowTs(now)
-
-      // Update auction end time
-      if (endTime) {
-        const timeRemaining = formatTimeRemaining(endTime)
-        setCurrentLot((prev) => {
-          if (prev.timeRemaining === timeRemaining) return prev
-          return { ...prev, timeRemaining }
-        })
-      }
-
-      // Update item timer
-      if (currentLot.itemTimerStartedAt && currentLot.itemTimerSeconds) {
-        const startedAt = currentLot.itemTimerStartedAt
-        const duration = currentLot.itemTimerSeconds
-        const elapsed = Math.floor((now - startedAt.getTime()) / 1000)
-        const remaining = Math.max(0, duration - elapsed)
-        setItemTimerSeconds(remaining)
-      } else {
-        setItemTimerSeconds(null)
-      }
+  // Item timer countdown calculation
+  useEffect(() => {
+    if (!currentLot.itemTimerStartedAt || !currentLot.itemTimerSeconds) {
+      setItemTimerSeconds(null)
+      return
     }
 
-    // Initial update
-    updateAllTimers()
+    const updateItemTimer = () => {
+      const startedAt = currentLot.itemTimerStartedAt
+      const duration = currentLot.itemTimerSeconds
+      const elapsed = Math.floor((Date.now() - startedAt.getTime()) / 1000)
+      const remaining = Math.max(0, duration - elapsed)
+      setItemTimerSeconds(remaining)
+    }
 
-    // Single consolidated interval
-    const intervalId = setInterval(updateAllTimers, 1000)
+    updateItemTimer()
+    const intervalId = setInterval(updateItemTimer, 1000)
     return () => clearInterval(intervalId)
-  }, [snapshot?.auction?.end_time, currentLot.itemTimerStartedAt, currentLot.itemTimerSeconds])
+  }, [currentLot.itemTimerStartedAt, currentLot.itemTimerSeconds])
 
   useEffect(() => {
     if (!aid) return undefined
@@ -368,7 +1665,10 @@ useEffect(() => {
   return () => window.clearTimeout(id)
 }, [bidFeedback])
 
-// Removed standalone nowTs timer - now consolidated with other timers above
+useEffect(() => {
+  const id = window.setInterval(() => setNowTs(Date.now()), 1000)
+  return () => window.clearInterval(id)
+}, [])
 
 useEffect(() => {
   if (isChatPanelOpen) {
@@ -618,7 +1918,7 @@ useEffect(() => {
     return (
       <div className="w-full h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[var(--theme-secondary)] border-t-transparent mx-auto mb-4 shadow-[0_0_30px_rgba(176,38,255,0.6)]"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#7209B7] border-t-transparent mx-auto mb-4 shadow-[0_0_30px_rgba(176,38,255,0.6)]"></div>
           <p className="text-white text-lg">Loading Auction House...</p>
         </div>
       </div>
@@ -629,7 +1929,7 @@ useEffect(() => {
     return (
       <div className="w-full h-screen bg-black flex flex-col items-center justify-center px-6 text-center gap-6">
         <div className="space-y-4 max-w-xl">
-          <p className="text-xs uppercase tracking-[0.32em] text-[var(--theme-secondary)] animate-pulse">Auction Preview</p>
+          <p className="text-xs uppercase tracking-[0.32em] text-[#7209B7] animate-pulse">Auction Preview</p>
           <h1 className="text-3xl md:text-4xl font-bold text-white">Auction starting soon</h1>
           <p className="text-purple-200">
             The house opens at{' '}
@@ -639,7 +1939,7 @@ useEffect(() => {
         </div>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-xl border border-[var(--theme-secondary)]/50 px-5 py-3 text-sm font-semibold text-white hover:bg-[var(--theme-secondary)]/20 transition shadow-[0_0_20px_rgba(176,38,255,0.3)]"
+          className="inline-flex items-center gap-2 rounded-xl border border-[#7209B7]/50 px-5 py-3 text-sm font-semibold text-white hover:bg-[#7209B7]/20 transition shadow-[0_0_20px_rgba(176,38,255,0.3)]"
         >
           Return Home
         </Link>
@@ -651,7 +1951,7 @@ useEffect(() => {
     return (
       <div className="w-full h-screen bg-black flex flex-col items-center justify-center px-6 text-center gap-6">
         <div className="space-y-4 max-w-xl">
-          <p className="text-xs uppercase tracking-[0.32em] text-[var(--theme-secondary)]">Auction Closed</p>
+          <p className="text-xs uppercase tracking-[0.32em] text-[#7209B7]">Auction Closed</p>
           <h1 className="text-3xl md:text-4xl font-bold text-white">This auction has ended</h1>
           <p className="text-purple-200">
             This auction has ended, feel free to explore other auctions.
@@ -659,7 +1959,7 @@ useEffect(() => {
         </div>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-xl border border-[var(--theme-secondary)]/50 px-5 py-3 text-sm font-semibold text-white hover:bg-[var(--theme-secondary)]/20 transition shadow-[0_0_20px_rgba(176,38,255,0.3)]"
+          className="inline-flex items-center gap-2 rounded-xl border border-[#7209B7]/50 px-5 py-3 text-sm font-semibold text-white hover:bg-[#7209B7]/20 transition shadow-[0_0_20px_rgba(176,38,255,0.3)]"
         >
           Return Home
         </Link>
@@ -693,7 +1993,7 @@ useEffect(() => {
               <TheatreLighting />
               <GrandTheatre />
               <GrandStage confettiTrigger={confettiTrigger} bidAnnouncement={bidAnnouncement} />
-              <GrandSeating />
+              <TheatreTieredSeating />
               <LockedSeatController />
 
               {/* Environment for reflections */}
@@ -707,7 +2007,7 @@ useEffect(() => {
         <>
           <div className="absolute top-6 left-6 z-10 pointer-events-auto">
             <Link href="/">
-              <button className="bg-black/70 hover:bg-[var(--theme-secondary)]/30 text-white px-6 py-3 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm font-semibold transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+              <button className="bg-black/70 hover:bg-[#7209B7]/30 text-white px-6 py-3 rounded-xl border border-[#7209B7]/40 backdrop-blur-sm font-semibold transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(176,38,255,0.3)]">
                 <span>←</span> Home
               </button>
             </Link>
@@ -715,10 +2015,10 @@ useEffect(() => {
 
           {/* Status Bar - Top Right */}
           <div className="absolute top-6 right-6 text-white z-10 flex flex-col gap-3">
-            <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+            <div className="bg-black/70 p-4 rounded-xl border border-[#7209B7]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 ${isFetching ? 'bg-[var(--theme-secondary)] animate-ping' : 'bg-[var(--theme-secondary)] animate-pulse'} rounded-full`}></div>
-                <span className="text-sm font-medium uppercase tracking-wide text-[var(--theme-secondary)]">Live Auction</span>
+                <div className={`w-3 h-3 ${isFetching ? 'bg-[#7209B7] animate-ping' : 'bg-[#7209B7] animate-pulse'} rounded-full`}></div>
+                <span className="text-sm font-medium uppercase tracking-wide text-[#7209B7]">Live Auction</span>
               </div>
               <div className="space-y-1">
                 <p className="text-purple-200 text-xs">
@@ -736,7 +2036,7 @@ useEffect(() => {
             </div>
 
             {/* Music Controls */}
-            <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+            <div className="bg-black/70 p-4 rounded-xl border border-[#7209B7]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
               <div className="flex items-center gap-3 mb-2">
                 <button
                   onClick={() => setIsMusicMuted(!isMusicMuted)}
@@ -757,9 +2057,9 @@ useEffect(() => {
                   value={musicVolume}
                   onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
                   disabled={isMusicMuted}
-                  className="w-24 h-1 bg-[var(--theme-primary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-secondary)]"
+                  className="w-24 h-1 bg-[#4D067B] rounded-lg appearance-none cursor-pointer accent-[#7209B7]"
                   style={{
-                    background: `linear-gradient(to right, var(--theme-secondary) 0%, var(--theme-secondary) ${musicVolume * 100}%, var(--theme-primary) ${musicVolume * 100}%, var(--theme-primary) 100%)`,
+                    background: `linear-gradient(to right, #7209B7 0%, #7209B7 ${musicVolume * 100}%, #4D067B ${musicVolume * 100}%, #4D067B 100%)`,
                     opacity: isMusicMuted ? 0.5 : 1
                   }}
                 />
@@ -772,7 +2072,7 @@ useEffect(() => {
           <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 z-[100]">
             <button
               onClick={() => setIsBidPanelOpen(!isBidPanelOpen)}
-              className="w-12 h-12 md:w-14 md:h-14 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center text-xl md:text-2xl transition-all"
+              className="w-12 h-12 md:w-14 md:h-14 bg-[#7209B7] hover:bg-[#4D067B] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center text-xl md:text-2xl transition-all"
               title="Place Bid"
             >
               🔨
@@ -783,47 +2083,192 @@ useEffect(() => {
           <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 z-[100]">
             <button
               onClick={() => setIsChatPanelOpen(!isChatPanelOpen)}
-              className="w-12 h-12 md:w-14 md:h-14 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center transition-all p-2.5 md:p-3"
+              className="w-12 h-12 md:w-14 md:h-14 bg-[#7209B7] hover:bg-[#4D067B] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center text-xl md:text-2xl transition-all"
               title="Live Chat"
             >
-              <ChatBubbleLeftIcon className="w-5 h-5 md:w-6 md:h-6" />
+              <ChatBubbleLeftIcon />
             </button>
           </div>
 
           {/* Bidding Panel Popup - Bottom Left */}
-          <BiddingModal
-            isOpen={isBidPanelOpen}
-            onClose={() => setIsBidPanelOpen(false)}
-            lotBidValue={lotBidValue}
-            bidIncrementValue={bidIncrementValue}
-            bidAmount={bidAmount}
-            setBidAmount={setBidAmount}
-            bidValidationError={bidValidationError}
-            setBidValidationError={setBidValidationError}
-            nextBidMinimum={nextBidMinimum}
-            handleBidSubmit={handleBidSubmit}
-            isBidding={isBidding}
-            bidFeedback={bidFeedback}
-          />
+          {isBidPanelOpen && (
+            <div className="absolute bottom-20 left-4 md:bottom-24 md:left-6 w-[calc(100vw-2rem)] max-w-sm md:w-96 text-white z-[200]">
+              <div className="bg-black/90 p-4 md:p-6 rounded-xl border border-[#7209B7]/50 backdrop-blur-sm shadow-[0_0_40px_rgba(176,38,255,0.5)]">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg md:text-xl font-bold text-[#7209B7]">
+                    🔨 Place Your Bid
+                  </h3>
+                  <button
+                    onClick={() => setIsBidPanelOpen(false)}
+                    className="text-purple-300 hover:text-white text-xl"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Current Bid Info */}
+                  <div className="bg-[#4D067B]/80 p-3 md:p-4 rounded-lg space-y-2 border border-[#7209B7]/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-purple-300 text-xs md:text-sm uppercase tracking-wide">Current Bid</p>
+                        <p className="text-xl md:text-2xl font-bold text-[#E2BD6B]">${lotBidValue.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-purple-300 text-xs md:text-sm uppercase tracking-wide">Min Increment</p>
+                        <p className="text-lg font-semibold text-purple-200">${bidIncrementValue.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bid Input */}
+                  <div>
+                    <label className="text-xs md:text-sm text-purple-200 mb-2 block">
+                      Your Bid Amount
+                    </label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step={bidIncrementValue}
+                      value={bidAmount}
+                      onChange={(event) => {
+                        setBidAmount(event.target.value)
+                        // Clear validation error when user types
+                        if (bidValidationError) {
+                          setBidValidationError(null)
+                        }
+                      }}
+                      placeholder={`Min: $${nextBidMinimum.toFixed(2)}`}
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-black/60 border border-[#7209B7]/40 rounded-lg text-white text-sm md:text-base focus:outline-none focus:border-[#7209B7] focus:shadow-[0_0_10px_rgba(176,38,255,0.3)]"
+                    />
+                    {bidValidationError && (
+                      <p className="mt-2 text-[11px] md:text-xs text-red-400">
+                        {bidValidationError}
+                      </p>
+                    )}
+                    {!bidValidationError && (
+                      <p className="mt-2 text-[11px] md:text-xs text-purple-300">
+                        Enter in increments of ${bidIncrementValue.toFixed(2)}.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Place Bid Button */}
+                  <button
+                    onClick={handleBidSubmit}
+                    disabled={isBidding}
+                    className="w-full py-3 md:py-4 bg-[#7209B7] hover:bg-[#4D067B] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all text-sm md:text-base shadow-[0_0_20px_rgba(176,38,255,0.4)]"
+                  >
+                    {isBidding ? 'Submitting...' : 'Place Bid'}
+                  </button>
+                  {bidFeedback && (
+                    <p className="text-xs md:text-sm text-[#7209B7]">{bidFeedback}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Chat Panel Popup - Bottom Right */}
-          <ChatModal
-            isOpen={isChatPanelOpen}
-            onClose={() => setIsChatPanelOpen(false)}
-            chatMessages={chatMessages}
-            chatParticipantCount={chatParticipantCount}
-            isChatFetching={isChatFetching}
-            currentUserId={currentUserId}
-            ownerId={ownerId}
-            chatInput={chatInput}
-            setChatInput={setChatInput}
-            handleChatSubmit={handleChatSubmit}
-            isSendingChat={isSendingChat}
-            chatFeedback={chatFeedback}
-            formatChatTimestamp={formatChatTimestamp}
-            resolveAvatarUrl={resolveAvatarUrl}
-            chatMessagesEndRef={chatMessagesEndRef}
-        />
+          {isChatPanelOpen && (
+            <div className="absolute bottom-20 right-4 md:bottom-24 md:right-6 w-[calc(100vw-2rem)] max-w-sm md:w-96 h-80 md:h-96 text-white z-[200]">
+              <div className="bg-black/90 rounded-xl border border-[#7209B7]/50 backdrop-blur-sm shadow-[0_0_40px_rgba(176,38,255,0.5)] h-full flex flex-col">
+                {/* Chat Header */}
+                <div className="p-3 md:p-4 border-b border-[#7209B7]/30 flex justify-between items-center">
+                  <div>
+                    <h3 className="text-base md:text-lg font-bold text-[#7209B7]">
+                      <ChatBubbleLeftIcon/> Live Chat
+                    </h3>
+                    <p className="text-xs text-purple-300">
+                      {chatParticipantCount} messages • {isChatFetching ? 'Updating…' : 'Live'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsChatPanelOpen(false)}
+                    className="text-purple-300 hover:text-white text-xl"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Chat Messages */}
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2">
+                  {chatMessages.length === 0 && (
+                    <p className="text-xs text-purple-300 italic text-center">No messages yet. Start the conversation!</p>
+                  )}
+                  {chatMessages.map((chat) => {
+                    const isOwn = currentUserId && chat.uid === currentUserId
+                    const isOwnerMessage = ownerId ? chat.uid === ownerId : false
+                    const avatarUrl = resolveAvatarUrl(chat.sender)
+                    return (
+                      <div
+                        key={chat.chat_id ?? `${chat.sent_at}-${chat.uid}`}
+                        className={`flex items-end gap-1.5 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+                      >
+                        <div className="flex-shrink-0">
+                          <Image
+                            src={avatarUrl}
+                            alt={chat.sender?.username ?? 'Guest avatar'}
+                            className="h-7 w-7 rounded-full object-cover border border-[#7209B7]/40"
+                            width={28}
+                            height={28}
+                          />
+                        </div>
+                        <div className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
+                          <div
+                            className={`rounded-2xl px-3 py-2 shadow-sm ${
+                              isOwn
+                                ? 'bg-[#7209B7] text-white rounded-br-md'
+                                : 'bg-[#4D067B] text-white border border-[#7209B7]/30 rounded-bl-md'
+                            }`}
+                          >
+                            <p className="text-[10px] font-semibold mb-0.5 opacity-90 flex items-center gap-1.5">
+                              <span>{chat.sender?.username ?? 'Guest'}</span>
+                              {isOwnerMessage && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] uppercase tracking-wider" style={{ backgroundColor: '#F8E2D4', color: '#4D067B' }}>
+                                  Owner
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-sm break-words leading-relaxed">
+                              {chat.message}
+                            </p>
+                          </div>
+                          <span className={`text-[9px] text-purple-300 mt-0.5 px-2 ${isOwn ? 'text-right' : 'text-left'}`}>
+                            {formatChatTimestamp(chat.sent_at)}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <div ref={chatMessagesEndRef} />
+                </div>
+
+                {/* Chat Input */}
+                <div className="p-3 md:p-4 border-t border-[#7209B7]/30">
+                  <form className="flex gap-2" onSubmit={handleChatSubmit}>
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(event) => setChatInput(event.target.value)}
+                      placeholder="Type a message..."
+                      className="flex-1 px-2 md:px-3 py-2 bg-black/60 border border-[#7209B7]/40 rounded-lg text-xs md:text-sm text-white focus:outline-none focus:border-[#7209B7] focus:shadow-[0_0_10px_rgba(176,38,255,0.3)]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSendingChat || !chatInput.trim()}
+                      className="px-3 md:px-4 py-2 bg-[#7209B7] hover:bg-[#4D067B] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-all text-xs md:text-sm shadow-[0_0_15px_rgba(176,38,255,0.4)]"
+                    >
+                      {isSendingChat ? 'Sending…' : 'Send'}
+                    </button>
+                  </form>
+                  {chatFeedback && (
+                    <p className="mt-2 text-[11px] md:text-xs text-[#7209B7]">{chatFeedback}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -843,7 +2288,67 @@ useEffect(() => {
       )}
 
       {/* Bid Confirmation Modal */}
-      <BidConfirmationModal bidConfirmModal={bidConfirmModal} />
+      {bidConfirmModal && (
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.85)' }}>
+          <div
+            className="rounded-2xl border-2 p-6 md:p-8 max-w-md w-full"
+            style={{
+              borderColor: '#7209B7',
+              backgroundColor: '#130a1f',
+              boxShadow: '0 0 60px rgba(114, 9, 183, 0.6)'
+            }}
+          >
+            <h3 className="text-xl md:text-2xl font-bold mb-4" style={{ color: '#F8E2D4' }}>
+              🔨 Confirm Your Bid
+            </h3>
+
+            <p className="text-sm md:text-base mb-6" style={{ color: '#B984DB' }}>
+              You are about to place a bid. Please review the details below:
+            </p>
+
+            <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: '1px solid rgba(114, 9, 183, 0.4)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs uppercase font-semibold" style={{ color: '#B984DB' }}>Item</span>
+              </div>
+              <p className="font-bold text-base md:text-lg mb-3" style={{ color: '#F8E2D4' }}>{bidConfirmModal.itemName}</p>
+
+              <div className="pt-3 border-t" style={{ borderColor: 'rgba(114, 9, 183, 0.3)' }}>
+                <span className="text-xs uppercase font-semibold block mb-1" style={{ color: '#B984DB' }}>Your Bid Amount</span>
+                <p className="text-2xl md:text-3xl font-bold" style={{ color: '#E2BD6B' }}>
+                  ${bidConfirmModal.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs md:text-sm mb-6" style={{ color: '#B984DB' }}>
+              Do you want to place this bid?
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={bidConfirmModal.onCancel}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-80"
+                style={{
+                  backgroundColor: '#444',
+                  color: '#F8E2D4'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={bidConfirmModal.onConfirm}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-90"
+                style={{
+                  backgroundColor: '#E2BD6B',
+                  color: '#4D067B'
+                }}
+              >
+                Confirm Bid
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </ModalContext.Provider>
   )

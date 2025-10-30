@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 
 export default function ProtectedLink({ href, ModalComponent, children, ...props }) {
     const { isAuthed } = useSupabaseAuth();
+    const router = useRouter();
     const { openModal } = useModal();
     const sb = supabaseBrowser();
 

@@ -11,8 +11,6 @@ const badgeVariants = cva(
       variant: {
         default:
           "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] [a&]:hover:bg-[color:var(--theme-surface)]/90",
-        brand_darker:
-          "border-[var(--theme-primary)] bg-[var(--theme-primary-darker)] text-white [a&]:hover:bg-[var(--theme-secondary)]",
         brand:
           "border-transparent bg-[var(--theme-primary)] text-white [a&]:hover:bg-[var(--theme-secondary)]",
         secondary:

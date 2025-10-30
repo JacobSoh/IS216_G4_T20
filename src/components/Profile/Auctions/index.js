@@ -96,7 +96,7 @@ export default function Auctions({ userId }) {
                 : state.allAuctions.map((auction) => (
                     <Link
                         key={auction.aid}
-                        href={`/auction/view/${auction.aid}`}
+                        href={`/auction/${auction.aid}`}
                         className="block transform transition-transform hover:scale-105 focus:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-300 rounded-md"
                     >
                         <AuctionCard {...auction} />

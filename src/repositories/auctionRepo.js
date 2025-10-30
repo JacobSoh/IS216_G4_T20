@@ -32,18 +32,6 @@ export async function retrieveAllAuctions() {
   return data ?? []
 }
 
-export async function retrieveAuctionsByOwner(oid) {
-  const sb = supabaseServer()
-  const { data, error } = await (
-    await sb
-  ).from('auction')
-    .select(baseAuctionSelect)
-    .eq('oid', oid)
-    .order('start_time', { ascending: true });
-  if (error) throw error
-  return data ?? []
-}
-
 export async function insertAuction(auction) {
   const sb = supabaseServer()
   const payload = auction.getJson()

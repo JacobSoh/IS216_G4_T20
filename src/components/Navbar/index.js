@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { useRouter, redirect } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Navbar02 } from '@/components/ui/shadcn-io/navbar-02';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useModal } from '@/context/ModalContext';
@@ -15,6 +15,8 @@ import { validateRegistration } from '@/lib/validators';
 
 export default function Navbar({ isAuthed: initialAuthed } = {}) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const autoOpenedRef = useRef(false);
   const { isAuthed, logout } = useSupabaseAuth(initialAuthed);
   const { setModalHeader, setModalState, setModalForm } = useModal();
@@ -91,9 +93,8 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
 
   const onSignInClick = async () => {
     if (isAuthed) {
-      // Instant logout + redirect handled inside hook
-      logout({ redirectTo: '/' });
-      // Optional: no toast due to immediate navigation; keep UX clean
+      await logout();
+      toast.success('Sucessfully logged out');
     } else {
       openLogin();
     }
@@ -101,13 +102,29 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
 
   const onCtaClick = () => {
     if (isAuthed) {
-      redirect('/profile');
+      router.push('/profile');
     } else {
       openRegister();
     }
   };
 
-  // Note: removed route-based effects to avoid any path-dependent rendering
+  // Auto-open login modal when redirected with ?login=1
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    const shouldOpen = searchParams?.get('login') === '1';
+    if (!shouldOpen) return;
+    autoOpenedRef.current = true;
+    if (!isAuthed) {
+      openLogin();
+    }
+    // Clean the login flag but preserve other params (e.g., next)
+    try {
+      const sp = new URLSearchParams(Array.from(searchParams?.entries?.() || []));
+      sp.delete('login');
+      const qs = sp.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname);
+    } catch {}
+  }, [searchParams, pathname, isAuthed]);
 
   // Build nav links with contextual Auction menu
   const auctionMenu = {
@@ -116,7 +133,7 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
     type: 'simple',
     items: [
       { href: '/', label: 'Browse Auctions' },
-      ...(isAuthed ? [{ href: '/auction/seller', label: 'Manage Auctions' }] : []),
+      ...(isAuthed ? [{ href: '/auction/create', label: 'Manage Auctions' }] : []),
     ],
   };
 
@@ -144,7 +161,6 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
       signInText={signInText}
       onSignInClick={onSignInClick}
       ctaText={ctaText}
-      ctaHref={isAuthed ? '/profile' : undefined}
       onCtaClick={onCtaClick}
     />
   );

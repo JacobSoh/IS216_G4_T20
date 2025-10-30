@@ -13,8 +13,6 @@ const buttonVariants = cva(
         default: "bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] border border-[var(--theme-border)] hover:bg-[color:var(--theme-surface)]/90",
         brand:
           "bg-[var(--theme-primary)] text-white hover:bg-[var(--theme-secondary)] focus-visible:ring-[color:var(--theme-secondary)]/40",
-        gold:
-          "bg-[var(--theme-gold)] text-white hover:bg-[var(--theme-gold)] text-[var(--theme-primary)] hover:bg-[#F0E68C]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         info:
@@ -26,7 +24,7 @@ const buttonVariants = cva(
         outline:
           "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
-          "bg-gray-500 text-white hover:bg-gray-700 focus-visible:ring-gray-300/40 dark:focus-visible:ring-gray-500/50 disabled:bg-gray-800",
+          "bg-gray-500 text-white hover:bg-gray-700 focus-visible:ring-gray-300/40 dark:focus-visible:ring-gray-500/50",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-[var(--theme-secondary)] underline-offset-4 hover:underline",

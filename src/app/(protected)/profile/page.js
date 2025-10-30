@@ -163,7 +163,7 @@ export default function ProfilePage() {
 					</div>
 				)}
 				<div className={loading ? 'hidden' : ''}>
-					<div id="header" className="bg-[var(--theme-primary)] rounded-md p-6 mb-6 shadow-xl border border-slate-700">
+					<div id="header" className="bg-slate-800 rounded-md p-6 mb-6 shadow-xl border border-slate-700">
 						<div className="flex flex-col lg:flex-row items-center justify-between gap-4">
 							<div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full lg:w-auto">
 								{/* Avatar */}
@@ -201,7 +201,7 @@ export default function ProfilePage() {
 					</div>
 
 
-					<div className="bg-[var(--theme-primary)] rounded-md overflow-hidden shadow-xl border border-slate-700">
+					<div className="bg-slate-800 rounded-md overflow-hidden shadow-xl border border-slate-700">
 						<div>
 							<Tabs defaultValue="auctions" className="m-4">
 								<TabsList>
