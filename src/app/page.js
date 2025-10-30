@@ -202,88 +202,86 @@ export default function FuturisticAuction() {
       />
 
       {/* Landing Section*/}
-      <section ref={heroRef} className="section relative h-screen flex items-center justify-between px-12 pt-24 scroll-mt-24">
-        <div className="absolute top-10 left-12 w-1/2 space-y-8 z-50">
-          {/* Large text */}
-          <div className="large-text text-[8vw] font-bold leading-[0.85] tracking-tight">
-            {letters.large.map((line, li) => (
-              <div key={li}>
-                {line.map((ch, i) => (
-                  <span
-                    key={i}
-                    className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-all duration-200"
-                    style={{ WebkitTextStroke: "1px rgba(168,85,247,0.3)" }}
-                    onMouseEnter={(e) => {
-                      const el = e.target;
-                      el.classList.add("lit");
-                      el.classList.remove("flicker");
-                      el.style.color = "#8b5cf6";
-                      el.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
-                      setTimeout(() => {
-                        el.classList.remove("lit");
-                        el.style.color = "transparent";
-                        el.style.textShadow = "none";
-                      }, 2000);
-                    }}
-                  >
-                    {ch === " " ? "\u00A0" : ch}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* Small text */}
-          <div className="text-[1.5vw] font-sans tracking-wide leading-tight">
-            {letters.small.map((line, li) => (
-              <div key={li}>
-                {line.map((ch, i) => (
-                  <span
-                    key={i}
-                    className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-colors duration-500"
-                    style={{ WebkitTextStroke: "0.5px rgba(168,85,247,0.25)" }}
-                    onMouseEnter={(e) => {
-                      const el = e.target;
-                      const parent = el.parentElement;
-                      const letters = Array.from(parent.querySelectorAll(".letter"));
-                      const index = letters.indexOf(el);
-                      const nearby = [index - 2, index - 1, index, index + 1, index + 2];
-                      nearby.forEach((i) => {
-                        if (letters[i]) {
-                          const l = letters[i];
-                          l.classList.add("lit");
-                          l.classList.remove("flicker");
-                          l.style.color = "#a78bfa";
-                          l.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
-                          setTimeout(() => {
-                            l.classList.remove("lit");
-                            l.style.color = "transparent";
-                            l.style.textShadow = "none";
-                          }, 1500);
-                        }
-                      });
-                    }}
-                  >
-                    {ch === " " ? "\u00A0" : ch}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
+<section
+  ref={heroRef}
+  className="section relative h-screen flex items-center justify-center px-12 scroll-mt-24"
+>
+  <div className="flex flex-col items-center justify-center text-center space-y-8 z-50">
+    {/* Large Text */}
+    <div className="large-text text-[8vw] font-bold leading-[0.85] tracking-tight">
+      {letters.large.map((line, li) => (
+        <div key={li}>
+          {line.map((ch, i) => (
+            <span
+              key={i}
+              className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-all duration-200"
+              style={{ WebkitTextStroke: "1px rgba(168,85,247,0.3)" }}
+              onMouseEnter={(e) => {
+                const el = e.target;
+                el.classList.add("lit");
+                el.style.color = "#8b5cf6";
+                el.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
+                setTimeout(() => {
+                  el.classList.remove("lit");
+                  el.style.color = "transparent";
+                  el.style.textShadow = "none";
+                }, 2000);
+              }}
+            >
+              {ch === " " ? "\u00A0" : ch}
+            </span>
+          ))}
         </div>
+      ))}
+    </div>
 
-        <div className="absolute right-[12%] top-1/2 -translate-y-1/2 w-[350px] h-[450px] border-2 border-dashed border-purple-400/40 flex items-center justify-center text-purple-400/60 text-lg">
-          Items Placeholder
+    {/* Small Text */}
+    <div className="text-[1.5vw] font-sans tracking-wide leading-tight">
+      {letters.small.map((line, li) => (
+        <div key={li}>
+          {line.map((ch, i) => (
+            <span
+              key={i}
+              className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-colors duration-500"
+              style={{ WebkitTextStroke: "0.5px rgba(168,85,247,0.25)" }}
+              onMouseEnter={(e) => {
+                const el = e.target;
+                const parent = el.parentElement;
+                const letters = Array.from(parent.querySelectorAll(".letter"));
+                const index = letters.indexOf(el);
+                const nearby = [index - 2, index - 1, index, index + 1, index + 2];
+                nearby.forEach((i) => {
+                  if (letters[i]) {
+                    const l = letters[i];
+                    l.classList.add("lit");
+                    l.style.color = "#a78bfa";
+                    l.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
+                    setTimeout(() => {
+                      l.classList.remove("lit");
+                      l.style.color = "transparent";
+                      l.style.textShadow = "none";
+                    }, 1500);
+                  }
+                });
+              }}
+            >
+              {ch === " " ? "\u00A0" : ch}
+            </span>
+          ))}
         </div>
+      ))}
+    </div>
+  </div>
 
+  {/* Scroll Button */}
+  <button
+    onClick={() => scrollToSection(1)}
+    className="absolute bottom-20 left-1/2 -translate-x-1/2 border-2 border-purple-500 text-white px-12 py-4 rounded-md shadow-[0_0_30px_rgba(168,85,247,0.5),inset_0_0_15px_rgba(168,85,247,0.2)] hover:bg-purple-500/20 hover:shadow-[0_0_100px_rgba(168,85,247,0.9),inset_0_0_100px_rgba(168,85,247,0.4)] transition-all duration-500"
+  >
+    DISCOVER →
+  </button>
+</section>
 
-        <button
-          onClick={() => scrollToSection(1)}
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 border-2 border-purple-500 text-white px-12 py-4 rounded-md shadow-[0_0_30px_rgba(168,85,247,0.5),inset_0_0_15px_rgba(168,85,247,0.2)] hover:bg-purple-500/20 hover:shadow-[0_0_100px_rgba(168,85,247,0.9),inset_0_0_100px_rgba(168,85,247,0.4)] transition-all duration-500"
-        >
-          DISCOVER →
-        </button>
-      </section>
 
       {/* Info */}
       <section
