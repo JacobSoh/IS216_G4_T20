@@ -1,7 +1,9 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { supabaseBrowser } from '@/utils/supabase/client'
 
 export default function BiddingModal({
   isOpen,
@@ -17,6 +19,70 @@ export default function BiddingModal({
   isBidding,
   bidFeedback
 }) {
+  const [walletBalance, setWalletBalance] = useState(null)
+  const [loadingWallet, setLoadingWallet] = useState(true)
+  const [userId, setUserId] = useState(null)
+
+  // Fetch initial wallet balance and user ID
+  useEffect(() => {
+    if (isOpen) {
+      fetchWalletBalance()
+    }
+  }, [isOpen])
+
+  // Set up real-time subscription for wallet balance
+  useEffect(() => {
+    if (!userId || !isOpen) return
+
+    const sb = supabaseBrowser()
+
+    // Subscribe to profile changes for real-time wallet updates
+    const channel = sb
+      .channel(`profile-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profile',
+          filter: `id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('💰 Wallet balance updated via real-time:', payload)
+          if (payload.new?.wallet_balance !== undefined) {
+            setWalletBalance(Number(payload.new.wallet_balance))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      sb.removeChannel(channel)
+    }
+  }, [userId, isOpen])
+
+  const fetchWalletBalance = async () => {
+    try {
+      setLoadingWallet(true)
+      const response = await fetch('/api/profile')
+      if (response.ok) {
+        const data = await response.json()
+        setWalletBalance(Number(data.record?.wallet_balance ?? 0))
+        setUserId(data.record?.id)
+      }
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error)
+    } finally {
+      setLoadingWallet(false)
+    }
+  }
+
+  const hasInsufficientBalance = () => {
+    if (walletBalance === null || !bidAmount) return false
+    const amount = Number(bidAmount)
+    return !isNaN(amount) && walletBalance < amount
+  }
+
   if (!isOpen) return null
 
   return (
@@ -35,23 +101,35 @@ export default function BiddingModal({
         </div>
 
         <div className="space-y-4">
+          {/* Wallet Balance Info */}
+          <div className="bg-[var(--theme-primary)]/90 p-4 md:p-5 rounded-lg border-2 border-[var(--theme-accent)]/40">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-[var(--theme-accent)] text-xs md:text-sm uppercase tracking-wider mb-2 font-semibold">💰 Wallet Balance</p>
+                <p className="text-2xl md:text-3xl font-bold text-[var(--theme-gold)]">
+                  {walletBalance !== null ? `$${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '--'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Current Bid Info */}
-          <div className="bg-[var(--theme-primary)]/80 p-3 md:p-4 rounded-lg space-y-2 border border-[var(--theme-secondary)]/30">
+          <div className="bg-[var(--theme-primary)]/70 p-3 md:p-4 rounded-lg border border-[var(--theme-accent)]/30">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-300 text-xs md:text-sm uppercase tracking-wide">Current Bid</p>
+                <p className="text-[var(--theme-accent)] text-xs md:text-sm uppercase tracking-wide">Current Bid</p>
                 <p className="text-xl md:text-2xl font-bold text-[var(--theme-gold)]">${lotBidValue.toLocaleString()}</p>
               </div>
-              <div>
-                <p className="text-purple-300 text-xs md:text-sm uppercase tracking-wide">Min Increment</p>
-                <p className="text-lg font-semibold text-purple-200">${bidIncrementValue.toFixed(2)}</p>
+              <div className="text-right">
+                <p className="text-[var(--theme-accent)] text-xs md:text-sm uppercase tracking-wide">Min Increment</p>
+                <p className="text-lg font-semibold text-[var(--theme-cream)]">${bidIncrementValue.toFixed(2)}</p>
               </div>
             </div>
           </div>
 
           {/* Bid Input */}
           <Field>
-            <FieldLabel className="text-xs md:text-sm text-purple-200 mb-2">
+            <FieldLabel className="text-xs md:text-sm text-[var(--theme-cream)] mb-2 font-medium">
               Your Bid Amount
             </FieldLabel>
             <Input
@@ -67,15 +145,21 @@ export default function BiddingModal({
                 }
               }}
               placeholder={`Min: $${nextBidMinimum.toFixed(2)}`}
+              className="bg-[var(--theme-primary)]/50 border-[var(--theme-accent)]/50 text-white placeholder:text-[var(--theme-accent)]/60 focus:border-[var(--theme-secondary)] focus:ring-[var(--theme-secondary)]"
             />
             {bidValidationError && (
-              <p className="mt-2 text-[11px] md:text-xs text-red-400">
-                {bidValidationError}
+              <p className="mt-2 text-[11px] md:text-xs text-red-400 font-medium">
+                ⚠️ {bidValidationError}
               </p>
             )}
-            {!bidValidationError && (
-              <p className="mt-2 text-[11px] md:text-xs text-purple-300">
-                Enter in increments of ${bidIncrementValue.toFixed(2)}.
+            {hasInsufficientBalance() && !bidValidationError && (
+              <p className="mt-2 text-[11px] md:text-xs text-red-400 font-medium">
+                ⚠️ Insufficient wallet balance. Please top up your wallet to place this bid.
+              </p>
+            )}
+            {!bidValidationError && !hasInsufficientBalance() && (
+              <p className="mt-2 text-[11px] md:text-xs text-[var(--theme-accent)]">
+                💡 Enter in increments of ${bidIncrementValue.toFixed(2)}.
               </p>
             )}
           </Field>
@@ -83,13 +167,15 @@ export default function BiddingModal({
           {/* Place Bid Button */}
           <button
             onClick={handleBidSubmit}
-            disabled={isBidding}
-            className="w-full py-3 md:py-4 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all text-sm md:text-base shadow-[0_0_20px_rgba(176,38,255,0.4)]"
+            disabled={isBidding || hasInsufficientBalance()}
+            className="w-full py-3 md:py-4 bg-[var(--theme-secondary)] hover:bg-[var(--theme-gold)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all duration-200 text-sm md:text-base shadow-[0_0_30px_rgba(176,38,255,0.5)] hover:shadow-[0_0_40px_rgba(226,189,107,0.6)] active:scale-95"
           >
-            {isBidding ? 'Submitting...' : 'Place Bid'}
+            {isBidding ? '⏳ Submitting...' : hasInsufficientBalance() ? '🚫 Insufficient Balance' : '🔨 Place Bid'}
           </button>
           {bidFeedback && (
-            <p className="text-xs md:text-sm text-[var(--theme-secondary)]">{bidFeedback}</p>
+            <p className="text-xs md:text-sm text-[var(--theme-gold)] font-medium text-center bg-[var(--theme-primary)]/50 py-2 px-3 rounded-lg border border-[var(--theme-gold)]/30">
+              ✅ {bidFeedback}
+            </p>
           )}
         </div>
       </div>
