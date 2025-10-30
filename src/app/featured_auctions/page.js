@@ -89,6 +89,9 @@ export default function AuctionsPage() {
   return (
     <div className="space-y-12 px-6 lg:px-8 py-12 bg-gray-900 min-h-screen text-white">
 
+      {/* Popular Right Now Header */}
+      <h2 className="text-4xl font-extrabold text-white mb-8 -mt-5">Popular Right Now</h2>
+
       {/* Top Big Auction Carousel */}
       {!isLoading && auctions.length > 0 ? (
         <Link href={`/auction/${auctions[currentIndex].aid}`}>
@@ -108,6 +111,8 @@ export default function AuctionsPage() {
         </div>
       )}
 
+      {/* Categories Header */}
+      <h2 className="text-4xl font-extrabold text-white my-7">Categories</h2>
 
       {/* Category Carousel */}
       <div className="overflow-x-auto flex space-x-4 my-5 px-4 py-4 scrollbar-hide">
@@ -115,13 +120,12 @@ export default function AuctionsPage() {
           <p className="text-purple-300 px-4">No categories found.</p>
         ) : (
           categories.map((cat) => {
-            // if you don’t have a slug column, generate one safely
             const slug = cat.slug || cat.category_name.toLowerCase().replace(/\s+/g, "-");
 
             return (
               <Link
-                key={cat.id} // unique key from Supabase
-                href={`/categories/${slug}`} // link to the category page
+                key={cat.id}
+                href={`/categories/${slug}`}
               >
                 <button
                   className="flex-none w-[30vh] px-6 py-3 rounded-full text-white font-semibold 
@@ -136,6 +140,8 @@ export default function AuctionsPage() {
         )}
       </div>
 
+      {/* Live Auctions Header */}
+      <h2 className="text-4xl font-extrabold text-white my-7">Live Auctions</h2>
 
       {/* Auctions Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

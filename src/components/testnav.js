@@ -69,7 +69,7 @@ export default function BubbleNav() {
               </motion.div>
 
               {/* LEFT SIDE — Floating Image Grid */}
-              <div className="grid grid-cols-2 gap-x-0 gap-y-8 ml-5 md:w-1/2 justify-items-center items-center">
+              <div className="grid grid-cols-2 -gap-x-1 gap-y-8 ml-5 md:w-1/2 justify-items-center items-center">
                 {/* Left Column */}
                 <motion.div
                   onMouseEnter={() => setHoveredCol(0)}

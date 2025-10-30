@@ -1,7 +1,7 @@
 // HowItWorks.jsx
 export default function HowItWorks() {
   const text = `
-    This is the how it works page
+    This is the how it works  (prob gonna remove page, integrating with about page)
   `;
 
   return (
