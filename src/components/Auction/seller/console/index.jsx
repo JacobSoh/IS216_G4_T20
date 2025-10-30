@@ -7,30 +7,42 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.j
 import SellerDatatable from "@/components/auction/seller/datatable";
 import SellerDashboard from "@/components/auction/seller/dashboard";
 
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 export default function SellerConsole({ auctions = [] }) {
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="space-y-12">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-brand">Seller Console</h2>
+        <h1 className={`text-4xl font-bold text-[var(--theme-gold)]`}>
+          Seller Console
+        </h1>
         <Button variant="brand" onClick={() => redirect('/auction/seller/create')}>Create Auction</Button>
       </div>
-
-      <div className="bg-slate-800 rounded-md overflow-hidden shadow-xl border border-slate-700">
-        <div className="m-4">
-          <Tabs defaultValue="manage">
-            <TabsList>
-              <TabsTrigger value="manage">Manage</TabsTrigger>
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            </TabsList>
-            <TabsContent value="manage">
+      <Tabs defaultValue="manage" className='space-y-6'>
+        <TabsList className='w-full'>
+          <TabsTrigger value="manage">Manage</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+        </TabsList>
+        <TabsContent value="manage">
+          <Card>
+            <CardContent>
               <SellerDatatable auctions={auctions} />
-            </TabsContent>
-            <TabsContent value="dashboard">
-              <SellerDashboard auctions={auctions} />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
+            </CardContent>
+          </Card>
+          
+        </TabsContent>
+        <TabsContent value="dashboard">
+          <SellerDashboard auctions={auctions} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -192,7 +192,7 @@ export default function SellerDatatable({ auctions = [] }) {
                   <TableCell className="text-right">{a.bids ?? 0}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => redirect(`/auction/view/${a.aid}`)}>
+                      <Button variant="outline" size="sm" onClick={() => redirect(`/auction/view/${a.aid}/manage`)}>
                         <Eye /> View
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => redirect(`/auction/seller/edit/${a.aid}`)}>

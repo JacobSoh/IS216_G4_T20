@@ -13,8 +13,10 @@ const buttonVariants = cva(
         default: "bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] border border-[var(--theme-border)] hover:bg-[color:var(--theme-surface)]/90",
         brand:
           "bg-[var(--theme-primary)] text-white hover:bg-[var(--theme-secondary)] focus-visible:ring-[color:var(--theme-secondary)]/40",
+        gold_white:
+          "bg-[var(--theme-gold)] text-foreground hover:bg-[var(--theme-gold)] hover:bg-[#F0E68C]",
         gold:
-          "bg-[var(--theme-gold)] text-white hover:bg-[var(--theme-gold)] text-[var(--theme-primary)] hover:bg-[#F0E68C]",
+          "bg-[var(--theme-gold)]  text-[var(--theme-primary)] hover:bg-[var(--theme-gold)] hover:bg-[#F0E68C]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         info:

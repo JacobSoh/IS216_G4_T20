@@ -1,16 +1,17 @@
-import { useId, useState } from "react";
+import { useId, useState, useEffect } from "react";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 
 const CONTROL_PRESETS = {
   auctionDescription: { label: "Auction Description", placeholder: "Briefly describe your auction..." },
+  manageChatbox: { label: "Send Message", placeholder: "Share updates or engage with bidders..." },
 };
 
 function resolveControl(type) {
-  return CONTROL_PRESETS[type] ?? { 
-    label: "", 
-    inputType: "text", 
-    placeholder: "Enter your ..." 
+  return CONTROL_PRESETS[type] ?? {
+    label: "",
+    inputType: "text",
+    placeholder: "Enter your ..."
   };
 }
 
@@ -24,6 +25,19 @@ export function CustomTextarea({
   row: rowProp,
   rows: rowsAlt,
   id: idProp,
+  name: nameProp,
+  value: valueProp,
+  onChange: onChangeProp,
+  defaultValue,
+  // Styling hooks
+  containerClassName,
+  className,
+  // Auto-resize behavior
+  autoGrow = false,
+  growMaxHeight,
+  // Inline regex validation
+  regex,
+  regexMessage = "Invalid value",
   ...rest
 }) {
   const autoId = useId();
@@ -31,11 +45,57 @@ export function CustomTextarea({
 
   const preset = resolveControl(type);
   const finalLabel = label ?? preset.label;
-  const finalType = inputType ?? preset.inputType;
   const finalPlaceholder = placeholder ?? preset.placeholder;
-  const finalRows = rowProp ?? 5;
+  const finalRows = (rowsAlt ?? rowProp ?? 5);
+  const finalName = nameProp ?? type;
 
-  const [value, setValue] = useState("");
+  // Support controlled/uncontrolled
+  const isControlled = valueProp !== undefined;
+  const [innerValue, setInnerValue] = useState(defaultValue ?? "");
+  const [el, setEl] = useState(null);
+
+  const handleChange = (e) => {
+    if (typeof onChangeProp === "function") {
+      try {
+        const maybeHandler = onChangeProp(type);
+        if (typeof maybeHandler === "function") {
+          maybeHandler(e);
+        } else {
+          onChangeProp(e);
+        }
+      } catch {
+        try { onChangeProp(e); } catch { }
+      }
+    }
+    if (!isControlled) setInnerValue(e.target.value);
+  };
+
+  // Build validator from regex
+  let validator = null;
+  if (regex instanceof RegExp) {
+    const flags = regex.flags?.replace('g', '') ?? '';
+    validator = new RegExp(regex.source, flags);
+  } else if (typeof regex === 'string' && regex) {
+    try { validator = new RegExp(regex); } catch { }
+  }
+
+  const currentValue = isControlled ? valueProp : innerValue;
+  const localError = validator && currentValue
+    ? (validator.test(currentValue) ? "" : regexMessage)
+    : "";
+  const finalError = err || localError;
+
+  // Auto-grow height to content
+  useEffect(() => {
+    if (!autoGrow || !el) return;
+    try {
+      el.style.height = 'auto';
+      if (growMaxHeight) {
+        el.style.maxHeight = typeof growMaxHeight === 'number' ? `${growMaxHeight}px` : `${growMaxHeight}`;
+      }
+      el.style.height = `${el.scrollHeight}px`;
+    } catch { }
+  }, [autoGrow, currentValue, el, growMaxHeight]);
 
   return (
     <Field className={containerClassName}>
@@ -46,13 +106,16 @@ export function CustomTextarea({
       )}
       <Textarea
         id={id}
-        type={finalType}
-        name={type}
+        name={finalName}
         placeholder={finalPlaceholder}
         required={required}
-        onChange={(e) => setValue(e.target.value)}
-        value={value}
-        rows={finalRows}
+        onChange={handleChange}
+        value={currentValue}
+        rows={autoGrow ? undefined : finalRows}
+        aria-invalid={!!finalError || undefined}
+        ref={setEl}
+        className={className}
+        {...rest}
       />
       <FieldError>{finalError}</FieldError>
     </Field>

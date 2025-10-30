@@ -19,10 +19,6 @@ export default async function SellerPage() {
   } catch {}
 
   return (
-    <div className="py-6">
-      <div className="max-w-6xl mx-auto px-4">
-        <SellerConsole auctions={auctions} />
-      </div>
-    </div>
+    <SellerConsole auctions={auctions} />
   );
 }

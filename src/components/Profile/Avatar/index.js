@@ -6,7 +6,7 @@ export default function Avatar({
   username
 }) {
   const [e, setE] = useState(false);
-  let className = `block w-20 h-20 rounded-full border-4 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.4)]
+  let className = `block w-20 h-20 rounded-full ring-3 ring-[var(--theme-secondary)] shadow-[0_0_20px_rgba(59,130,246,0.4)]
   ${e? 'flex items-center justify-center bg-gradient-to-br from-blue-500 to-violet-600 text-white text-3xl font-bold':'object-cover'}`;
 
   const handleError = (e) => setE(true);
