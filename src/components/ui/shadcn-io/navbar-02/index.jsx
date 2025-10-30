@@ -65,7 +65,7 @@ export const Navbar02 = React.forwardRef((
     signInText = 'Sign In',
     signInHref = '#signin',
     ctaText = 'Get Started',
-    ctaHref = '#get-started',
+    ctaHref = null,
     onSignInClick,
     onCtaClick,
     onLogoClick,
@@ -253,6 +253,7 @@ export const Navbar02 = React.forwardRef((
         </div>
         {/* Right side */}
         <div className="flex items-center gap-3">
+
           <Button
             variant="ghost"
             size="sm"
@@ -264,16 +265,24 @@ export const Navbar02 = React.forwardRef((
             }}>
             {signInText}
           </Button>
-          <Button
-            size="sm"
-            variant="brand"
-            loadingOnClick
-            onClick={(e) => {
-              e.preventDefault();
-              if (onCtaClick) onCtaClick();
-            }}>
-            {ctaText}
-          </Button>
+          {ctaHref ? (
+            <a
+              href={ctaHref}
+              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-100 disabled:brightness-95 disabled:saturate-75 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-[var(--theme-primary)] text-white hover:bg-[var(--theme-secondary)] focus-visible:ring-[color:var(--theme-secondary)]/40 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5">
+              <span className="text-white">{ctaText}</span>
+            </a>
+          ) : (
+            <Button
+              size="sm"
+              variant="brand"
+              loadingOnClick
+              onClick={(e) => {
+                e.preventDefault();
+                if (onCtaClick) onCtaClick();
+              }}>
+              {ctaText}
+            </Button>
+          )}
         </div>
       </div>
     </nav>
