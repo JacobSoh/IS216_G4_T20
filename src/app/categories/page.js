@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
+import { CategoryCard } from "@/components/AuctionCard";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 // Utility: Convert category name → slug
@@ -80,7 +80,7 @@ export default function FeaturedCategories() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
             {Array.from({ length: 10 }).map((_, i) => (
-              <AuctionHoverPictureSkeleton key={`cat-skeleton-${i}`} />
+              <CategoryCard key={`cat-skeleton-${i}`} />
             ))}
           </div>
         ) : categories.length === 0 ? (
@@ -99,7 +99,7 @@ export default function FeaturedCategories() {
           href={`/categories/${cat.slug}`}
           className="transform transition-transform hover:scale-105 focus:scale-105"
         >
-          <AuctionHoverPicture
+          <CategoryCard
             name={cat.name}
             picUrl={cat.picUrl}
           />

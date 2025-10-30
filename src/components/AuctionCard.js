@@ -127,7 +127,7 @@ export const AuctionCardSkeleton = () => {
 // 3️⃣ Category Card
 export const CategoryCard = ({ name, picUrl }) => {
   return (
-    <div className="flex flex-col w-[29vw] max-w-[300px] group cursor-pointer mb-16 mx-auto">
+    <div className="flex flex-col w-[15vw] group cursor-pointer mb-16 mx-auto">
       <div className="relative w-full h-[300px] rounded-sm overflow-hidden">
         {picUrl ? (
           <img

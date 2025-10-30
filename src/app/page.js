@@ -100,7 +100,7 @@ export default function FuturisticAuction() {
         .select('aid, name, description, start_time, end_time, thumbnail_bucket, object_path')
         .limit(5);
 
-      if (error) console.error(error);
+      if (error) console.error("error retriving auction data", error);
       else setAuctions(data);
       setLoading(false);
     };

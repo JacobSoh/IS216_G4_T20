@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/utils/supabase/client";
-import { BigAuctionCard } from "@/components/BigAuctionCard";
-import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
+import { BigAuctionCard, AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
 
 export default function AuctionsPage() {
   const [auctions, setAuctions] = useState([]);
@@ -88,7 +87,7 @@ export default function AuctionsPage() {
   }, [auctions]);
 
   return (
-    <div className="space-y-12 px-6 lg:px-12 py-12 bg-gray-900 min-h-screen text-white">
+    <div className="space-y-12 px-6 lg:px-8 py-12 bg-gray-900 min-h-screen text-white">
 
       {/* Top Big Auction Carousel */}
       {!isLoading && auctions.length > 0 ? (
@@ -111,7 +110,7 @@ export default function AuctionsPage() {
 
 
       {/* Category Carousel */}
-      <div className="overflow-x-auto flex space-x-4 py-4 scrollbar-hide">
+      <div className="overflow-x-auto flex space-x-4 px-4 py-4 scrollbar-hide">
         {categories.length === 0 ? (
           <p className="text-purple-300 px-4">No categories found.</p>
         ) : (
@@ -125,7 +124,7 @@ export default function AuctionsPage() {
                 href={`/categories/${slug}`} // link to the category page
               >
                 <button
-                  className="flex-none px-6 py-3 rounded-full text-white font-semibold 
+                  className="flex-none w-[30vh] px-6 py-3 rounded-full text-white font-semibold 
                        hover:bg-purple-600/50 bg-purple-600/30
                        shadow-[0_0_15px_rgba(168,85,247,0.5)] transition"
                 >
