@@ -38,7 +38,9 @@
 	/* cream */
 	--theme-gold: #E2BD6B;
 	/* gold */
-
+	--theme-primary-darker: #130a1f;
+	/* main darker */
+	
 	/* Navbar tokens using theme palette */
 	--nav-bg: var(--theme-primary);
 	--nav-text: var(--theme-cream);

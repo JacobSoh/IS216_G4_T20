@@ -6,6 +6,22 @@ import { useRouter } from 'next/navigation'
 import { useAuctionLive } from '@/hooks/useAuctionLive'
 import { useAuctionChat } from '@/hooks/useAuctionChat'
 
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { FieldGroup, FieldLabel } from '@/components/ui/field'
+import { CustomInput, CustomTextarea } from '@/components/Form'
+import { Badge } from '@/components/ui/badge'
+import { ExclamationTriangleIcon } from '@heroicons/react/24/solid'
+import { useModal } from '@/context/ModalContext'
+
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
@@ -24,6 +40,7 @@ const COLORS = {
 
 export default function AuctionManagePanel({ aid, initialLiveData, initialChatMessages = [] }) {
   const router = useRouter()
+  const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal();
   const { snapshot, isFetching, refresh, setSnapshot: setLiveSnapshot } = useAuctionLive(aid, initialLiveData)
   const [busyItem, setBusyItem] = useState(null)
   const [isResetting, setIsResetting] = useState(false)
@@ -48,8 +65,52 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
   const timerIntervalRef = useRef(null)
   const chatMessagesEndRef = useRef(null)
 
-  // Confirmation modal state
-  const [confirmModal, setConfirmModal] = useState(null) // { title, message, status, onConfirm, onCancel }
+  // Helper: open standardized confirmation modal via ModalContext
+  const openConfirmModal = useCallback((opts) => {
+    const {
+      title = 'Confirm',
+      description,
+      currentItem,
+      status,
+      action,
+      contextLabel,
+      confirmLabel = 'Confirm',
+      cancelLabel = 'Cancel',
+      onConfirm,
+    } = opts || {};
+
+    const Body = (
+      <div>
+        {description ? (
+          <p className="text-sm text-[var(--theme-secondary)]">{description}</p>
+        ) : (
+          <p className="text-sm text-[var(--theme-secondary)]">
+            Activating the next item will automatically <span className="font-bold text-[var(--theme-gold)]">{action}</span> the previous item.
+          </p>
+        )}
+        {currentItem && (
+          <div className="rounded-lg p-4 mt-4" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: '1px solid var(--theme-secondary)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs uppercase font-semibold text-[var(--theme-secondary)]">{contextLabel ?? 'Current Item'}</span>
+            </div>
+            <p className="font-bold text-lg mb-2">“{currentItem}”</p>
+            {status && (
+              <p className="text-sm" style={{ color: action === 'SOLD' ? '#E2BD6B' : '#999' }}>{status}</p>
+            )}
+          </div>
+        )}
+        <p className="text-sm mt-4 text-[var(--theme-secondary)]">Do you want to continue?</p>
+      </div>
+    );
+
+    setModalHeader({ title });
+    setModalFooter({ showCancel: true, cancelText: cancelLabel, showSubmit: true, submitText: confirmLabel, submitVariant: 'brand' });
+    setModalForm({ isForm: true, onSubmit: async (e) => {
+      e?.preventDefault?.();
+      try { await onConfirm?.(); } finally { setModalState({ open: false }); }
+    }});
+    setModalState({ open: true, content: Body });
+  }, [setModalHeader, setModalFooter, setModalForm, setModalState]);
 
   const items = useMemo(() => snapshot?.items ?? [], [snapshot?.items])
   const activeItemId = snapshot?.activeItem?.iid ?? null
@@ -67,7 +128,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
       return
     }
     if (Date.now() >= endTime.getTime()) {
-      router.replace(`/auction/${aid}/ended`)
+      router.replace(`/auction/view/${aid}/ended`)
     }
   }, [snapshot?.auction?.end_time, router, aid])
 
@@ -368,38 +429,28 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
       const activeItemTitle = activeItem?.title || 'current item'
       const itemHasBids = getItemBidCount(activeItemId) > 0
       const action = itemHasBids ? 'SOLD' : 'CLOSED'
-
-      return new Promise((resolve) => {
-        setConfirmModal({
-          title: '⚠️ Confirm Item Activation',
-          currentItem: activeItemTitle,
-          status: itemHasBids ? 'Has bids - will be SOLD' : 'No bids - will be CLOSED',
-          action,
-          description: 'Activating the next lot will automatically finalize the current lot.',
-          onConfirm: async () => {
-            setConfirmModal(null)
-
-            // Close the previous item first (don't auto-activate since we're manually activating)
-            try {
-              setBusyItem(activeItemId)
-              await closeItemSale({ iid: activeItemId, shouldActivateNext: false }) // close current lot before switching
-            } catch (err) {
-              setError(`Failed to close previous item: ${err.message}`)
-              setBusyItem(null)
-              resolve()
-              return
-            }
-
-            // Activate new item
-            await activateItemInternal(iid, price)
-            resolve()
-          },
-          onCancel: () => {
-            setConfirmModal(null)
-            resolve()
+      openConfirmModal({
+        title: '⚠️ Confirm Item Activation',
+        currentItem: activeItemTitle,
+        status: itemHasBids ? 'Has bids - will be SOLD' : 'No bids - will be CLOSED',
+        action,
+        description: 'Activating the next lot will automatically finalize the current lot.',
+        confirmLabel: 'Confirm',
+        onConfirm: async () => {
+          // Close the previous item first (don't auto-activate since we're manually activating)
+          try {
+            setBusyItem(activeItemId)
+            await closeItemSale({ iid: activeItemId, shouldActivateNext: false })
+          } catch (err) {
+            setError(`Failed to close previous item: ${err.message}`)
+            setBusyItem(null)
+            return
           }
-        })
+          // Activate new item
+          await activateItemInternal(iid, price)
+        }
       })
+      return
     }
 
     // No active item, just activate directly
@@ -414,7 +465,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
     const itemHasBids = getItemBidCount(activeItemId) > 0
     const action = itemHasBids ? 'SOLD' : 'CLOSED'
 
-    setConfirmModal({
+    openConfirmModal({
       title: itemHasBids ? 'Finalize Current Lot' : 'Close Current Lot',
       currentItem: activeItem.title || 'Current lot',
       status: itemHasBids ? 'Has bids - will be SOLD' : 'No bids - will be CLOSED',
@@ -423,20 +474,13 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
         ? 'Closing this lot will finalize the winning bid and immediately move to the next item.'
         : 'Closing this lot will mark it as closed and continue to the next available item.',
       confirmLabel: itemHasBids ? 'Finalize Sale' : 'Close Lot',
-      onConfirm: async () => {
-        setConfirmModal(null)
-        await closeItemSale({ iid: activeItemId })
-      },
-      onCancel: () => {
-        setConfirmModal(null)
-      }
+      onConfirm: async () => { await closeItemSale({ iid: activeItemId }) },
     })
   }, [activeItemId, activeItem, closeItemSale, getItemBidCount])
 
   const requestResetAuction = useCallback(() => {
     const auctionName = snapshot?.auction?.name ?? 'this auction'
-
-    setConfirmModal({
+    openConfirmModal({
       title: 'Reset Auction',
       currentItem: auctionName,
       status: 'This action cannot be undone.',
@@ -446,23 +490,18 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
       cancelLabel: 'Keep Data',
       contextLabel: 'Auction',
       onConfirm: async () => {
-        setConfirmModal(null)
         setIsResetting(true)
         setError(null)
         try {
-          const res = await fetch(`/api/auctions/${aid}/reset`, {
-            method: 'POST'
-          })
-
+          const res = await fetch(`/api/auctions/${aid}/reset`, { method: 'POST' })
           if (!res.ok) {
             const payload = await res.json().catch(() => ({}))
             throw new Error(payload.error ?? 'Unable to reset auction')
           }
-
           setActiveTimer(null)
           await refresh()
           setLiveSnapshot(prev => (prev ? { ...prev, bidHistory: [] } : prev))
-          setChatMessages([]) // Clear chat messages after reset
+          setChatMessages([])
           setSuccess('Auction reset successfully')
           setTimeout(() => setSuccess(null), 4000)
         } catch (err) {
@@ -471,16 +510,12 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
           setIsResetting(false)
         }
       },
-      onCancel: () => {
-        setConfirmModal(null)
-      }
     })
   }, [aid, refresh, router, snapshot?.auction?.name])
 
   const requestCloseAuction = useCallback(() => {
     const auctionName = snapshot?.auction?.name ?? 'this auction'
-
-    setConfirmModal({
+    openConfirmModal({
       title: 'Close Auction',
       currentItem: auctionName,
       status: 'This will end bidding immediately.',
@@ -490,75 +525,78 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
       cancelLabel: 'Keep Open',
       contextLabel: 'Auction',
       onConfirm: async () => {
-        setConfirmModal(null)
         setIsClosingAuction(true)
         setError(null)
         try {
-          const res = await fetch(`/api/auctions/${aid}/close`, {
-            method: 'POST'
-          })
-
+          const res = await fetch(`/api/auctions/${aid}/close`, { method: 'POST' })
           if (!res.ok) {
             const payload = await res.json().catch(() => ({}))
             throw new Error(payload.error ?? 'Unable to close auction')
           }
-
           setActiveTimer(null)
-          router.replace(`/auction/${aid}/ended`)
-          refresh().catch(() => {})
+          router.replace(`/auction/view/${aid}/ended`)
+          refresh().catch(() => { })
         } catch (err) {
           setError(err.message)
         } finally {
           setIsClosingAuction(false)
         }
       },
-      onCancel: () => {
-        setConfirmModal(null)
-      }
     })
   }, [aid, refresh, router, snapshot?.auction?.name])
 
   const updateTimerAdjustMinutes = (value) => {
-    setTimerAdjust(prev => ({ ...prev, minutes: value }))
+    if (0 <= Number(value) <= 99) setTimerAdjust(prev => ({ ...prev, minutes: value }));
   }
 
   const updateTimerAdjustSeconds = (value) => {
-    setTimerAdjust(prev => ({ ...prev, seconds: value }))
+    if (0 <= Number(value) <= 99) setTimerAdjust(prev => ({ ...prev, seconds: value }));
   }
 
   return (
-    <div className="min-h-screen py-8 px-6" style={{ backgroundColor: '#0a0514' }}>
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
-          <div>
-            <h1
-              className="text-4xl font-bold mb-2"
-              style={{ color: COLORS.warmCream }}
-            >
-              Seller Dashboard
-            </h1>
-            <p
-              className="text-base"
-              style={{ color: COLORS.lightPurple }}
-            >
-              {snapshot?.auction?.name ?? 'Untitled Auction'}
-            </p>
+    <div className='space-y-12'>
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1
+            className="text-4xl font-bold mb-2 text-[var(--theme-gold)]"
+          >
+            Seller Dashboard
+          </h1>
+          <p
+            className="text-base text-[var(--theme-secondary)]"
+          >
+            {snapshot?.auction?.name ?? 'Untitled Auction'}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap justify-end">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full animate-pulse bg-[var(--theme-secondary)]" />
+            <span className="text-sm font-semibold text-white">
+              LIVE
+            </span>
           </div>
-          <div className="flex items-center gap-3 flex-wrap justify-end">
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: COLORS.richPurple }} />
-              <span className="text-sm font-semibold" style={{ color: COLORS.goldenTan }}>
-                LIVE
-              </span>
-            </div>
-            <button
+          <Button
+            onClick={requestCloseAuction}
+            variant="destructive"
+            disabled={isClosingAuction || isFetching}
+          >
+            {isClosingAuction ? 'Closing...' : 'Close Auction'}
+          </Button>
+          <Button
+            onClick={requestResetAuction}
+            variant="brand"
+            disabled={isResetting || isFetching}
+          >
+            {isClosingAuction ? 'Resetting...' : 'Reset Auction'}
+          </Button>
+          {/* <button
               onClick={requestCloseAuction}
               disabled={isClosingAuction || isFetching}
               className="px-4 py-2 rounded-lg text-sm font-semibold uppercase tracking-wide transition-all hover:opacity-90 disabled:opacity-50"
               style={{
                 backgroundColor: '#5f1a1a',
-                border: '1px solid rgba(239,68,68,0.6)',
+                border: '1px solid #ef444499',
                 color: '#fca5a5',
                 boxShadow: '0 0 18px rgba(239, 68, 68, 0.25)'
               }}
@@ -577,51 +615,45 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
               }}
             >
               {isResetting ? 'Resetting...' : 'Reset Auction'}
-            </button>
-          </div>
+            </button> */}
         </div>
+      </div>
 
-        {error && (
-          <div
-            className="rounded-lg border-l-4 px-6 py-4 text-sm"
-            style={{
-              borderColor: '#ef4444',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              color: '#fca5a5'
-            }}
-          >
-            <strong className="font-semibold">Error:</strong> {error}
-          </div>
-        )}
-
-        {success && (
-          <div
-            className="rounded-lg border-l-4 px-6 py-4 text-sm"
-            style={{
-              borderColor: COLORS.goldenTan,
-              backgroundColor: `${COLORS.goldenTan}20`,
-              color: COLORS.goldenTan
-            }}
-          >
-            <strong className="font-semibold">Success:</strong> {success}
-          </div>
-        )}
-
-        {/* Section 1: All Lots */}
+      {error && (
         <div
-          className="rounded-2xl border p-8"
+          className="rounded-lg border-l-4 px-6 py-4 text-sm"
           style={{
-            borderColor: `${COLORS.richPurple}40`,
-            backgroundColor: '#130a1f'
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            color: '#fca5a5'
           }}
         >
-          <h2
-            className="text-2xl font-bold mb-6"
-            style={{ color: COLORS.warmCream }}
-          >
+          <strong className="font-semibold">Error:</strong> {error}
+        </div>
+      )}
+
+      {success && (
+        <div
+          className="rounded-lg border-l-4 px-6 py-4 text-sm"
+          style={{
+            borderColor: COLORS.goldenTan,
+            backgroundColor: `${COLORS.goldenTan}20`,
+            color: COLORS.goldenTan
+          }}
+        >
+          <strong className="font-semibold">Success:</strong> {success}
+        </div>
+      )}
+
+      {/* Section 1: All Lots */}
+      <Card variant="default">
+        <CardHeader>
+          <CardTitle className="font-bold">
             All Auction Lots ({items.length})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {items.map((item) => {
               const currentPrice = item.current_bid?.current_price ?? item.min_bid ?? 0
               const isActive = activeItemId === item.iid
@@ -631,15 +663,107 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
               const canActivate = !isActive && !isSold && isNextInSequence
 
               return (
+                <Card key={item.title + item.description}>
+                  <CardHeader>
+                    {isSold && (
+                      <Badge
+                        variant={itemHasBids ? "secondary" : "brand"}
+                      >
+                        {itemHasBids ? 'SOLD' : 'CLOSED'}
+                      </Badge>
+                    )}
+                    {isActive && !isSold && (
+                      <Badge
+                        variant="brand_darker"
+                      >
+                        <span
+                          className="inline-block w-2.5 h-2.5 rounded-full animate-pulse bg-[var(--theme-secondary)]"
+                        />
+                        Currently Active
+                      </Badge>
+                    )}
+                    <CardTitle>{item.title}</CardTitle>
+                    <CardDescription className="text-[var(--theme-secondary)]">
+                      <p className='line-clamp-3'>
+                        {item.description}
+                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs uppercase font-semibold">
+                          Current Price
+                        </span>
+                        <span className='text-xl text-[var(--theme-gold)] font-bold'>
+                          {currencyFormatter.format(currentPrice)}
+                        </span>
+                      </div>
+                    </CardDescription>
+                  </CardHeader>
+                  {isActive && activeTimer && activeTimer.iid === item.iid ? (
+                    <>
+                      <CardContent className="text-center">
+                        <div className="text-xs uppercase mb-1 font-semibold text-white">
+                          Time Left
+                        </div>
+                        <div className={`text-3xl font-bold ${activeTimer.secondsLeft <= 10 ? 'animate-pulse text-destructive' : 'text-[var(--theme-gold)]'}`}>
+                          {formatTime(activeTimer.secondsLeft)}
+                        </div>
+                        <label className="text-xs uppercase font-semibold block mb-2">
+                          Adjust Timer
+                        </label>
+                        <FieldGroup>
+                          <div className='flex justify-center items-center gap-3'>
+                            <CustomInput
+                              type="minutes"
+                              min="0"
+                              max="99"
+                              value={timerAdjust.minutes}
+                              onChange={(e) => updateTimerAdjustMinutes(e.target.value)}
+                            />
+                            <span className="text-sm font-bold" >:</span>
+                            <CustomInput
+                              type="seconds"
+                              min="0"
+                              max="59"
+                              value={timerAdjust.seconds}
+                              onChange={(e) => updateTimerAdjustSeconds(e.target.value)}
+                            />
+                          </div>
+                        </FieldGroup>
+                      </CardContent>
+                      <CardFooter>
+                        <Button
+                          onClick={adjustTimer}
+                          variant="brand"
+                          className="w-full"
+                        >
+                          Update
+                        </Button>
+                      </CardFooter>
+                    </>
+                  ) : (
+                    <CardFooter>
+                      <Button
+                        onClick={() => activateItem(item.iid, currentPrice)}
+                        variant={isActive ? "secondary" : "brand"}
+                        disabled={busyItem === item.iid || isActive || isSold || !canActivate}
+                        className="w-full"
+                      >
+                        {
+                          busyItem === item.iid ? 'Activating...'
+                            : isSold ? (itemHasBids ? 'Sold' : 'Closed')
+                              : isActive ? 'Active Now'
+                                : canActivate ? 'Make Active' : 'Locked'
+                        }
+                      </Button>
+                    </CardFooter>
+                  )}
+                </Card>
+              );
+
+              return (
                 <div
                   key={item.iid}
-                  className="rounded-xl border p-5 transition-all"
-                  style={{
-                    borderColor: isSold ? '#666' : isActive ? COLORS.richPurple : `${COLORS.richPurple}30`,
-                    backgroundColor: isSold ? '#1a1a1a' : isActive ? `${COLORS.deepPurple}60` : 'rgba(0,0,0,0.4)',
-                    boxShadow: isActive ? `0 0 20px ${COLORS.richPurple}40` : 'none',
-                    opacity: isSold ? 0.6 : 1
-                  }}
+                  className="rounded-xl p-5 transition-all bg-background ring-1 ring-[var(--theme-primary)]"
+
                 >
                   {isSold && (
                     <div className="flex items-center gap-2 mb-3">
@@ -663,22 +787,17 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                       />
                       <span
                         className="text-xs uppercase font-bold tracking-wider"
-                        style={{ color: COLORS.richPurple }}
                       >
                         Currently Active
                       </span>
                     </div>
                   )}
 
-                  <h3
-                    className="font-bold text-lg mb-2 line-clamp-1"
-                    style={{ color: COLORS.warmCream }}
-                  >
+                  <h3 className="font-bold text-lg mb-2 line-clamp-1">
                     {item.title}
                   </h3>
                   <p
-                    className="text-sm mb-4 line-clamp-2"
-                    style={{ color: COLORS.lightPurple }}
+                    className="text-sm mb-4 line-clamp-2 text-[var(--theme-secondary)]"
                   >
                     {item.description}
                   </p>
@@ -686,14 +805,12 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span
-                        className="text-xs uppercase font-semibold"
-                        style={{ color: COLORS.lightPurple }}
+                        className="text-xs uppercase font-semibold text-[var(--theme-secondary)]"
                       >
                         Current Price
                       </span>
                       <span
-                        className="text-xl font-bold"
-                        style={{ color: COLORS.goldenTan }}
+                        className="text-xl font-bold text-white"
                       >
                         {currencyFormatter.format(currentPrice)}
                       </span>
@@ -702,27 +819,21 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                     {/* Timer display and controls for active item */}
                     {isActive && activeTimer && activeTimer.iid === item.iid && (
                       <div
-                        className="rounded-lg p-3 text-center"
-                        style={{
-                          backgroundColor: activeTimer.secondsLeft <= 10 ? 'rgba(239, 68, 68, 0.2)' : `${COLORS.deepPurple}60`,
-                          border: `1px solid ${activeTimer.secondsLeft <= 10 ? '#ef4444' : COLORS.richPurple}`
-                        }}
+                        className="rounded-lg p-3 text-center bg-background ring-2 ring-[var(--theme-primary)]"
                       >
                         <div
-                          className="text-xs uppercase mb-1 font-semibold"
-                          style={{ color: COLORS.lightPurple }}
+                          className="text-xs uppercase mb-1 font-semibold text-white"
                         >
                           Time Left
                         </div>
                         <div
-                          className={`text-3xl font-bold ${activeTimer.secondsLeft <= 10 ? 'animate-pulse' : ''}`}
-                          style={{ color: activeTimer.secondsLeft <= 10 ? '#ef4444' : COLORS.goldenTan }}
+                          className={`text-3xl font-bold ${activeTimer.secondsLeft <= 10 ? 'animate-pulse text-destructive' : 'text-[var(--theme-gold)]'}`}
                         >
                           {formatTime(activeTimer.secondsLeft)}
                         </div>
 
                         {/* Timer adjustment inputs */}
-                        <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.richPurple}40` }}>
+                        <div className="mt-3 pt-3">
                           <label
                             className="text-xs uppercase font-semibold block mb-2"
                             style={{ color: COLORS.lightPurple }}
@@ -745,7 +856,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                                 border: '1px solid'
                               }}
                             />
-                            <span className="text-sm font-bold" style={{ color: COLORS.warmCream }}>:</span>
+                            <span className="text-sm font-bold" >:</span>
                             <input
                               type="number"
                               min="0"
@@ -762,42 +873,152 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                               }}
                             />
                           </div>
-                          <button
+                          <Button
                             onClick={adjustTimer}
-                            className="w-full px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-wide"
-                            style={{
-                              backgroundColor: COLORS.richPurple,
-                              color: COLORS.warmCream
-                            }}
+                            variant="brand"
+                            className="w-full"
                           >
                             Update
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     )}
 
-                    <button
-                      type="button"
+                    <Button
                       onClick={() => activateItem(item.iid, currentPrice)}
+                      variant={isActive ? "secondary" : "brand"}
                       disabled={busyItem === item.iid || isActive || isSold || !canActivate}
-                      className="w-full px-4 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        backgroundColor: isSold ? '#666' : isActive ? `${COLORS.richPurple}80` : canActivate ? COLORS.goldenTan : '#444',
-                        color: isSold ? '#ccc' : isActive ? COLORS.warmCream : canActivate ? COLORS.deepPurple : '#999'
-                      }}
-                      title={!canActivate && !isActive && !isSold ? 'Complete previous items first' : ''}
+                      className="w-full"
                     >
                       {busyItem === item.iid ? 'Activating...' : isSold ? (itemHasBids ? 'Sold' : 'Closed') : isActive ? 'Active Now' : canActivate ? 'Make Active' : 'Locked'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )
             })}
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Section 2: Current Active Lot Details with Timer */}
-        {activeItem && !activeItem.sold && (
+      {/* Section 2: Current Active Lot Details with Timer */}
+      {activeItem && !activeItem.sold && (
+        <Card variant="default">
+          <CardHeader>
+            <CardTitle>
+              <div className='flex items-center gap-3'>
+                <span
+                  className="inline-block w-4 h-4 rounded-full animate-pulse bg-[var(--theme-secondary)]"
+                />
+                Currently Active: {activeItem.title}
+              </div>
+            </CardTitle>
+            <CardDescription className="text-[var(--theme-secondary)]">
+              {activeItem.description}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-12">
+            {activeTimer && activeTimer.iid === activeItem.iid && (
+              <div>
+                <div className="text-sm uppercase mb-1 font-semibold text-white">
+                  Time Left
+                </div>
+                <div className={`text-6xl font-bold ${activeTimer.secondsLeft <= 10 ? 'animate-pulse text-destructive' : 'text-[var(--theme-gold)]'}`}>
+                  {formatTime(activeTimer.secondsLeft)}
+                </div>
+                <label className="text-sm uppercase font-semibold block mb-2">
+                  Adjust Timer
+                </label>
+                {activeTimer.secondsLeft <= 10 && (
+                  <div>
+                    <ExclamationTriangleIcon className='inline-block w-4 h-4 text-orange-400 mr-2' />
+                    <span className="text-sm text-destructive">
+                      Timer about to expire!
+                    </span>
+                  </div>
+                )}
+                <FieldGroup>
+                  <div className='flex justify-center items-center gap-3 max-w-md mx-auto'>
+                    <CustomInput
+                      type="minutes"
+                      min="0"
+                      max="99"
+                      value={timerAdjust.minutes}
+                      onChange={(e) => updateTimerAdjustMinutes(e.target.value)}
+                    />
+                    <span className="text-sm font-bold" >:</span>
+                    <CustomInput
+                      type="seconds"
+                      min="0"
+                      max="59"
+                      value={timerAdjust.seconds}
+                      onChange={(e) => updateTimerAdjustSeconds(e.target.value)}
+                    />
+                    <Button
+                      onClick={adjustTimer}
+                      variant="brand"
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </FieldGroup>
+              </div>
+            )}
+            <div className="grid grid-cols-4 items-center justify-center gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-[var(--theme-secondary)] text-lg">
+                    Current Bid
+                  </CardTitle>
+                  <CardDescription className='text-[var(--theme-gold)] text-lg'>
+                    {currencyFormatter.format(activeItem.current_bid?.current_price ?? activeItem.min_bid ?? 0)}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-[var(--theme-secondary)] text-lg">
+                    Minimum Bid
+                  </CardTitle>
+                  <CardDescription className='text-white text-lg'>
+                    {currencyFormatter.format(activeItem.min_bid ?? 0)}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-[var(--theme-secondary)] text-lg">
+                    Bid Increment
+                  </CardTitle>
+                  <CardDescription className='text-white text-lg'>
+                    {currencyFormatter.format(activeItem.bid_increment ?? 0)}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-[var(--theme-secondary)] text-lg">
+                    Total Bids
+                  </CardTitle>
+                  <CardDescription className='text-white text-lg'>
+                    {bidHistory.filter(log => log.iid === activeItem.iid).length}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button
+              onClick={handleCloseActiveItem}
+              disabled={busyItem === activeItem.iid}
+              variant="gold"
+              className="w-full"
+            >
+              {busyItem === activeItem.iid ? 'Closing...' : 'Accept Current Bid & Close Lot'}
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+      {/* {activeItem && !activeItem.sold && (
           <div
             className="rounded-2xl border-2 p-8"
             style={{
@@ -813,7 +1034,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
               />
               <h2
                 className="text-3xl font-bold"
-                style={{ color: COLORS.warmCream }}
+
               >
                 Currently Active: {activeItem.title}
               </h2>
@@ -826,7 +1047,6 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
               {activeItem.description}
             </p>
 
-            {/* Countdown Timer Display */}
             {activeTimer && activeTimer.iid === activeItem.iid && (
               <div
                 className="rounded-xl p-6 mb-8 text-center"
@@ -853,7 +1073,6 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                   </div>
                 )}
 
-                {/* Timer Adjustment Controls */}
                 <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${COLORS.richPurple}40` }}>
                   <label
                     className="text-xs uppercase font-semibold block mb-3"
@@ -877,7 +1096,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                         border: '1px solid'
                       }}
                     />
-                    <span className="text-lg font-bold" style={{ color: COLORS.warmCream }}>:</span>
+                    <span className="text-lg font-bold" >:</span>
                     <input
                       type="number"
                       min="0"
@@ -938,7 +1157,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                 </div>
                 <div
                   className="text-xl font-bold"
-                  style={{ color: COLORS.warmCream }}
+
                 >
                   {currencyFormatter.format(activeItem.min_bid ?? 0)}
                 </div>
@@ -955,7 +1174,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                 </div>
                 <div
                   className="text-xl font-bold"
-                  style={{ color: COLORS.warmCream }}
+
                 >
                   {currencyFormatter.format(activeItem.bid_increment ?? 0)}
                 </div>
@@ -972,7 +1191,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                 </div>
                 <div
                   className="text-xl font-bold"
-                  style={{ color: COLORS.warmCream }}
+
                 >
                   {bidHistory.filter(log => log.iid === activeItem.iid).length}
                 </div>
@@ -991,74 +1210,36 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
               {busyItem === activeItem.iid ? 'Closing...' : 'Accept Current Bid & Close Lot'}
             </button>
           </div>
-        )}
+        )} */}
 
-        {/* Section: Live Chat */}
-        <div
-          className="rounded-2xl border p-8"
-          style={{
-            borderColor: `${COLORS.richPurple}40`,
-            backgroundColor: '#130a1f'
-          }}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <div>
-              <h2 className="text-2xl font-bold" style={{ color: COLORS.warmCream }}>
-                Live Auction Chat
-              </h2>
-              <p className="text-sm" style={{ color: COLORS.lightPurple }}>
-                Monitor conversations and engage directly with bidders.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span style={{ color: COLORS.lightPurple }}>
-                {isChatFetching ? 'Syncing messages...' : `${chatMessages.length} message${chatMessages.length === 1 ? '' : 's'}`}
-              </span>
-              <button
-                type="button"
-                onClick={() => refreshChat()}
-                disabled={isChatFetching}
-                className="px-3 py-1.5 rounded-md border text-xs font-semibold uppercase tracking-wide transition-all"
-                style={{
-                  borderColor: `${COLORS.richPurple}60`,
-                  color: COLORS.lightPurple,
-                  backgroundColor: 'rgba(0,0,0,0.4)'
-                }}
-              >
-                Refresh
-              </button>
-            </div>
-          </div>
-
-          {chatError && (
-            <div
-              className="mb-4 rounded-lg border-l-4 px-5 py-3 text-xs"
-              style={{
-                borderColor: '#ef4444',
-                backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                color: '#fca5a5'
-              }}
+      {/* Section 3: Live Chat */}
+      <Card variant="default">
+        <CardHeader>
+          <CardTitle>Live Auction Chat</CardTitle>
+          <CardDescription>
+            Monitor conversations and engage directly with bidders.
+          </CardDescription>
+          <CardAction className="space-x-2">
+            <span className="text-[var(--theme-secondary)] text-xs">
+              {isChatFetching ? 'Syncing messages...' : `${chatMessages.length} message${chatMessages.length === 1 ? '' : 's'}`}
+            </span>
+            <Button
+              variant='brand'
+              onClick={() => refreshChat()}
+              disabled={isChatFetching}
             >
-              <strong className="font-semibold">Chat Error:</strong> {chatError.message}
-            </div>
-          )}
-
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div>
-              <div
-                className="rounded-xl border p-4 h-80 overflow-y-auto space-y-3"
-                style={{
-                  borderColor: `${COLORS.richPurple}30`,
-                  backgroundColor: 'rgba(0,0,0,0.35)'
-                }}
-              >
+              Refresh
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <div className='grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]'>
+            <Card className='min-h-80'>
+              <CardContent>
                 {chatMessages.length === 0 && (
-                  <div
-                    className="h-full flex items-center justify-center text-sm italic"
-                    style={{ color: COLORS.lightPurple }}
-                  >
+                  <span className="h-full flex items-center justify-center text-sm italic text-[var(--theme-secondary)]" >
                     No chat activity yet.
-                  </div>
+                  </span>
                 )}
                 {chatMessages.map((chat) => {
                   const username = chat.sender?.username ?? 'Guest'
@@ -1078,20 +1259,15 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                       </div>
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold" style={{ color: COLORS.warmCream }}>
+                          <span className="text-sm font-semibold" >
                             {username}
                           </span>
                           {isOwnerMessage && (
-                            <span
-                              className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full"
-                              style={{
-                                backgroundColor: `${COLORS.goldenTan}20`,
-                                border: `1px solid ${COLORS.goldenTan}60`,
-                                color: COLORS.goldenTan
-                              }}
+                            <Badge
+                              variant='brand'
                             >
                               Owner
-                            </span>
+                            </Badge>
                           )}
                           <span className="text-[10px]" style={{ color: `${COLORS.lightPurple}B3` }}>
                             {formatChatTimestamp(chat.sent_at)}
@@ -1104,207 +1280,260 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                     </div>
                   )
                 })}
-                <div ref={chatMessagesEndRef} />
-              </div>
-            </div>
+              </CardContent>
+            </Card>
+            <form className="flex flex-col gap-3" onSubmit={handleChatSubmit}>
+              <CustomTextarea
+                type="manageChatbox"
+                value={chatInput}
+                onChange={(event) => setChatInput(event.target.value)}
+                required={true}
+              />
+              <Button
+                variant='brand'
+                type="submit"
+                disabled={isSendingChat || !chatInput.trim()}
+              >
+                {isSendingChat ? 'Sending...' : 'Send Message'}
+              </Button>
+            </form>
+          </div>
+        </CardContent>
+      </Card>
+      {/* <div
+        className="rounded-2xl border p-8"
+        style={{
+          borderColor: `${COLORS.richPurple}40`,
+          backgroundColor: '#130a1f'
+        }}
+      >
+        {chatError && (
+          <div
+            className="mb-4 rounded-lg border-l-4 px-5 py-3 text-xs"
+            style={{
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              color: '#fca5a5'
+            }}
+          >
+            <strong className="font-semibold">Chat Error:</strong> {chatError.message}
+          </div>
+        )}
 
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div>
             <div
-              className="rounded-xl border p-4 flex flex-col gap-4"
+              className="rounded-xl border p-4 h-80 overflow-y-auto space-y-3"
               style={{
                 borderColor: `${COLORS.richPurple}30`,
                 backgroundColor: 'rgba(0,0,0,0.35)'
               }}
             >
-              <form className="flex flex-col gap-3" onSubmit={handleChatSubmit}>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs uppercase font-semibold" style={{ color: COLORS.lightPurple }}>
-                    Send Message
-                  </label>
-                  <textarea
-                    value={chatInput}
-                    onChange={(event) => setChatInput(event.target.value)}
-                    rows={4}
-                    placeholder="Share updates or engage with bidders..."
-                    className="w-full resize-none rounded-lg px-3 py-2 text-sm"
-                    style={{
-                      backgroundColor: 'rgba(0,0,0,0.45)',
-                      border: `1px solid ${COLORS.richPurple}40`,
-                      color: COLORS.warmCream
-                    }}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSendingChat || !chatInput.trim()}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold uppercase tracking-wide transition-all hover:opacity-90 disabled:opacity-50"
-                  style={{
-                    backgroundColor: COLORS.richPurple,
-                    color: COLORS.warmCream
-                  }}
-                >
-                  {isSendingChat ? 'Sending...' : 'Send Message'}
-                </button>
-              </form>
-              {chatFeedback && (
-                <p className="text-xs" style={{ color: COLORS.lightPurple }}>
-                  {chatFeedback}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Section 3: Bid Activity Logs */}
-        <div
-          className="rounded-2xl border p-8"
-          style={{
-            borderColor: `${COLORS.richPurple}40`,
-            backgroundColor: '#130a1f'
-          }}
-        >
-          <h2
-            className="text-2xl font-bold mb-6"
-            style={{ color: COLORS.warmCream }}
-          >
-            Live Bid Activity
-          </h2>
-          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-            {bidHistory.length > 0 ? (
-              bidHistory.map((log, idx) => (
+              {chatMessages.length === 0 && (
                 <div
-                  key={log.id}
-                  className="flex items-center justify-between p-4 rounded-xl transition-all"
-                  style={{
-                    backgroundColor: idx === 0 ? `${COLORS.richPurple}20` : 'rgba(0,0,0,0.3)',
-                    borderLeft: idx === 0 ? `4px solid ${COLORS.goldenTan}` : '4px solid transparent'
-                  }}
-                >
-                  <div className="flex items-center gap-4 flex-1">
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0"
-                      style={{
-                        backgroundColor: COLORS.lightPurple,
-                        color: COLORS.deepPurple
-                      }}
-                    >
-                      {log.username[0]?.toUpperCase() ?? 'B'}
-                    </div>
-                    <div className="flex-1">
-                      <div
-                        className="font-bold text-base mb-1"
-                        style={{ color: COLORS.warmCream }}
-                      >
-                        <span className="font-semibold">{log.username}</span> has bid{' '}
-                        <span style={{ color: COLORS.goldenTan }}>{currencyFormatter.format(log.amount)}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="text-xs"
-                          style={{ color: COLORS.lightPurple }}
-                        >
-                          {log.itemTitle}
-                        </span>
-                        <span className="text-xs" style={{ color: `${COLORS.lightPurple}80` }}>•</span>
-                        <span
-                          className="text-xs"
-                          style={{ color: COLORS.lightPurple }}
-                        >
-                          {log.timestamp.toLocaleTimeString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div
-                className="text-center py-12 rounded-xl"
-                style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
-              >
-                <p
-                  className="text-lg"
+                  className="h-full flex items-center justify-center text-sm italic"
                   style={{ color: COLORS.lightPurple }}
                 >
-                  No bids yet. Waiting for bidders...
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+                  No chat activity yet.
+                </div>
+              )}
 
-      {/* Confirmation Modal */}
-      {confirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}>
+              <div ref={chatMessagesEndRef} />
+            </div>
+          </div>
+
           <div
-            className="rounded-2xl border-2 p-8 max-w-md w-full"
+            className="rounded-xl border p-4 flex flex-col gap-4"
             style={{
-              borderColor: COLORS.richPurple,
-              backgroundColor: '#130a1f',
-              boxShadow: `0 0 60px ${COLORS.richPurple}60`
+              borderColor: `${COLORS.richPurple}30`,
+              backgroundColor: 'rgba(0,0,0,0.35)'
             }}
           >
-            <h3 className="text-2xl font-bold mb-4" style={{ color: COLORS.warmCream }}>
-              {confirmModal.title}
-            </h3>
-
-            <p className="text-base mb-6" style={{ color: COLORS.lightPurple }}>
-              {confirmModal.description ? (
-                confirmModal.description
-              ) : (
-                <>
-                  Activating the next item will automatically{' '}
-                  <span className="font-bold" style={{ color: COLORS.goldenTan }}>{confirmModal.action}</span>{' '}
-                  the previous item.
-                </>
-              )}
-            </p>
-
-            {confirmModal.currentItem && (
-              <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: `1px solid ${COLORS.richPurple}40` }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs uppercase font-semibold" style={{ color: COLORS.lightPurple }}>
-                    {confirmModal.contextLabel ?? 'Current Item'}
-                  </span>
-                </div>
-                <p className="font-bold text-lg mb-2" style={{ color: COLORS.warmCream }}>&ldquo;{confirmModal.currentItem}&rdquo;</p>
-                {confirmModal.status && (
-                  <p className="text-sm" style={{ color: confirmModal.action === 'SOLD' ? COLORS.goldenTan : '#999' }}>
-                    {confirmModal.status}
-                  </p>
-                )}
+            <form className="flex flex-col gap-3" onSubmit={handleChatSubmit}>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs uppercase font-semibold" style={{ color: COLORS.lightPurple }}>
+                  Send Message
+                </label>
+                <textarea
+                  value={chatInput}
+                  onChange={(event) => setChatInput(event.target.value)}
+                  rows={4}
+                  placeholder="Share updates or engage with bidders..."
+                  className="w-full resize-none rounded-lg px-3 py-2 text-sm"
+                  style={{
+                    backgroundColor: 'rgba(0,0,0,0.45)',
+                    border: `1px solid ${COLORS.richPurple}40`,
+                    color: COLORS.warmCream
+                  }}
+                />
               </div>
-            )}
-
-            <p className="text-sm mb-6" style={{ color: COLORS.lightPurple }}>
-              Do you want to continue?
-            </p>
-
-            <div className="flex gap-3">
               <button
-                onClick={confirmModal.onCancel}
-                className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-80"
+                type="submit"
+                disabled={isSendingChat || !chatInput.trim()}
+                className="px-4 py-2 rounded-lg text-sm font-semibold uppercase tracking-wide transition-all hover:opacity-90 disabled:opacity-50"
                 style={{
-                  backgroundColor: '#444',
+                  backgroundColor: COLORS.richPurple,
                   color: COLORS.warmCream
                 }}
               >
-                {confirmModal.cancelLabel ?? 'Cancel'}
+                {isSendingChat ? 'Sending...' : 'Send Message'}
               </button>
-              <button
-                onClick={confirmModal.onConfirm}
-                className="flex-1 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all hover:opacity-90"
-                style={{
-                  backgroundColor: COLORS.goldenTan,
-                  color: COLORS.deepPurple
-                }}
-              >
-                {confirmModal.confirmLabel ?? 'Confirm'}
-              </button>
-            </div>
+            </form>
+            {chatFeedback && (
+              <p className="text-xs" style={{ color: COLORS.lightPurple }}>
+                {chatFeedback}
+              </p>
+            )}
           </div>
         </div>
-      )}
+      </div> */}
+
+      {/* Section 3: Bid Activity Logs */}
+      <Card variant='default'>
+        <CardHeader>
+          <CardTitle>Live Bid Activity</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-3 max-h-[500px] overflow-y-auto pr-2'>
+          {bidHistory.length > 0 ? (
+            bidHistory.map((log, idx) => (
+              <div
+                key={log.id}
+                className="flex items-center justify-between p-4 rounded-xl transition-all"
+                style={{
+                  backgroundColor: idx === 0 ? `${COLORS.richPurple}20` : 'rgba(0,0,0,0.3)',
+                  borderLeft: idx === 0 ? `4px solid ${COLORS.goldenTan}` : '4px solid transparent'
+                }}
+              >
+                <div className="flex items-center gap-4 flex-1">
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0"
+                    style={{
+                      backgroundColor: COLORS.lightPurple,
+                      color: COLORS.deepPurple
+                    }}
+                  >
+                    {log.username[0]?.toUpperCase() ?? 'B'}
+                  </div>
+                  <div className="flex-1">
+                    <div
+                      className="font-bold text-base mb-1"
+
+                    >
+                      <span className="font-semibold">{log.username}</span> has bid{' '}
+                      <span style={{ color: COLORS.goldenTan }}>{currencyFormatter.format(log.amount)}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="text-xs"
+                        style={{ color: COLORS.lightPurple }}
+                      >
+                        {log.itemTitle}
+                      </span>
+                      <span className="text-xs" style={{ color: `${COLORS.lightPurple}80` }}>•</span>
+                      <span
+                        className="text-xs"
+                        style={{ color: COLORS.lightPurple }}
+                      >
+                        {log.timestamp.toLocaleTimeString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div
+              className="text-center py-12 rounded-xl"
+              style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+            >
+              <p
+                className="text-lg"
+                style={{ color: COLORS.lightPurple }}
+              >
+                No bids yet. Waiting for bidders...
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      {/* <div
+        className="rounded-2xl border p-8"
+        style={{
+          borderColor: `${COLORS.richPurple}40`,
+          backgroundColor: '#130a1f'
+        }}
+      >
+        <h2
+          className="text-2xl font-bold mb-6"
+
+        >
+          Live Bid Activity
+        </h2>
+        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+          {bidHistory.length > 0 ? (
+            bidHistory.map((log, idx) => (
+              <div
+                key={log.id}
+                className="flex items-center justify-between p-4 rounded-xl transition-all"
+                style={{
+                  backgroundColor: idx === 0 ? `${COLORS.richPurple}20` : 'rgba(0,0,0,0.3)',
+                  borderLeft: idx === 0 ? `4px solid ${COLORS.goldenTan}` : '4px solid transparent'
+                }}
+              >
+                <div className="flex items-center gap-4 flex-1">
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0"
+                    style={{
+                      backgroundColor: COLORS.lightPurple,
+                      color: COLORS.deepPurple
+                    }}
+                  >
+                    {log.username[0]?.toUpperCase() ?? 'B'}
+                  </div>
+                  <div className="flex-1">
+                    <div
+                      className="font-bold text-base mb-1"
+
+                    >
+                      <span className="font-semibold">{log.username}</span> has bid{' '}
+                      <span style={{ color: COLORS.goldenTan }}>{currencyFormatter.format(log.amount)}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="text-xs"
+                        style={{ color: COLORS.lightPurple }}
+                      >
+                        {log.itemTitle}
+                      </span>
+                      <span className="text-xs" style={{ color: `${COLORS.lightPurple}80` }}>•</span>
+                      <span
+                        className="text-xs"
+                        style={{ color: COLORS.lightPurple }}
+                      >
+                        {log.timestamp.toLocaleTimeString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div
+              className="text-center py-12 rounded-xl"
+              style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+            >
+              <p
+                className="text-lg"
+                style={{ color: COLORS.lightPurple }}
+              >
+                No bids yet. Waiting for bidders...
+              </p>
+            </div>
+          )}
+        </div>
+      </div> */}
+
+      {/* Confirmation Modal moved to ModalContext standard modal */}
     </div>
   )
 }

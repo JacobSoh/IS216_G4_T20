@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 
-import AuctionManagePanel from '@/components/auction/AuctionManagePanel'
+import AuctionManagePanel from '@/components/Auction/AuctionManagePanel'
 import { getAuctionLiveState, getAuctionChatMessages } from '@/services/auctionService'
 import { getServerUser } from '@/utils/auth'
 
@@ -49,9 +49,5 @@ export default async function AuctionManagePage({ params }) {
     redirect(`/auction/view/${aid}`)
   }
 
-  return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 py-10 px-6">
-      <AuctionManagePanel aid={aid} initialLiveData={snapshot} initialChatMessages={chatMessages} />
-    </div>
-  )
+  return <AuctionManagePanel aid={aid} initialLiveData={snapshot} initialChatMessages={chatMessages} />
 }
