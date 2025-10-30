@@ -146,17 +146,20 @@ export function CustomerDatePicker({
           />
         </div>
 
-        {/* The always-up-to-date datetime-local input */}
-        <Input
-          type="datetime-local"
-          step="1"
-          id={`${id}-datetime`}
-          name={type ?? "datetime"}   // ensure it submits with the form
-          defaultValue={combined}            // stays in sync with calendar/time
-          hidden={true}
-          aria-hidden="true"
-          tabIndex={-1}
-        />
+        {/* REPLACE THIS ENTIRE SECTION at the end of your component */}
+{/* The datetime value for form submission */}
+<input
+  key={`${type}-${combined}`} // Force re-render when value changes
+  type="text"
+  id={`${id}-datetime`}
+  name={type ?? "datetime"}
+  defaultValue={combined}
+  style={{ display: 'none' }}
+  readOnly
+  tabIndex={-1}
+  aria-hidden="true"
+/>
+
       </div>
 
       <FieldError>{err}</FieldError>

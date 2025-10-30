@@ -1,13 +1,24 @@
-import { useId, useState } from "react";
+import { useId } from "react";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 
 const CONTROL_PRESETS = {
-  auctionDescription: { label: "Auction Description", placeholder: "Briefly describe your auction..." },
+  auctionDescription: { 
+    label: "Auction Description", 
+    placeholder: "Briefly describe your auction..." 
+  },
+  itemDescription: { 
+    label: "Item Description", 
+    placeholder: "Briefly describe the item..." 
+  },
 };
 
 function resolveControl(type) {
-  return CONTROL_PRESETS[type] ?? { label: "", inputType: "text", placeholder: "Enter your ..." };
+  return CONTROL_PRESETS[type] ?? { 
+    label: "", 
+    inputType: "text", 
+    placeholder: "Enter your ..." 
+  };
 }
 
 export function CustomTextarea({
@@ -19,6 +30,8 @@ export function CustomTextarea({
   inputType,
   row: rowProp,
   id: idProp,
+  value,
+  onChange,
   ...rest
 }) {
   const autoId = useId();
@@ -29,8 +42,6 @@ export function CustomTextarea({
   const finalType = inputType ?? preset.inputType;
   const finalPlaceholder = placeholder ?? preset.placeholder;
   const finalRows = rowProp ?? 5;
-
-  const [value, setValue] = useState("");
 
   return (
     <Field>
@@ -43,9 +54,10 @@ export function CustomTextarea({
         name={type}
         placeholder={finalPlaceholder}
         required={required}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={onChange}
         value={value}
         rows={finalRows}
+        {...rest}
       />
       <FieldError>{err}</FieldError>
     </Field>

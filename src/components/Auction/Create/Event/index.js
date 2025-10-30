@@ -27,38 +27,30 @@ function reducer(s, a) {
   };
 };
 
-export default function AuctionCreateForm({
-  onSubmit
-}) {
-  const { setModalHeader, setModalState, setModalForm } = useModal();
-  const [showLoading, setShowLoading] = useState(false);
-
-  const handleField = (f) => (e) => {
-    return setForm({ type: "FIELD", f, value: e.target.value });
-  };
-
-  const filterRule = /^image\//i;
-
+export default function AuctionCreateForm({ onSubmit }) {
   return (
-    <form id="auctionCreate" onSubmit={onSubmit}>
       <FieldGroup>
-        {/* Grid layout with proper alignment */}
         <div className='grid lg:grid-cols-2 gap-6 items-start'>
-          {/* Left Column - Form Fields */}
           <FieldGroup className="flex flex-col gap-4">
+            {/* Make sure name="auctionName" */}
             <CustomInput
-              type='auctionName'
+              type='auctionName'  
               required={true}
             />
+            
+            {/* Make sure name="auctionDescription" */}
             <CustomTextarea
               type="auctionDescription"
               required={true}
             />
+            
             <div className='grid grid-cols-2 gap-4'>
+              {/* Make sure name="startDateTime" */}
               <CustomerDatePicker
                 type="startDateTime"
                 required={true}
               />
+              {/* Make sure name="endDateTime" */}
               <CustomerDatePicker
                 type="endDateTime"
                 required={true}
@@ -66,18 +58,18 @@ export default function AuctionCreateForm({
             </div>
           </FieldGroup>
 
-          {/* Right Column - File Upload */}
           <FieldGroup>
+            {/* Make sure name="auctionFile" */}
             <CustomFileInput
               type="auctionFile"
               label="Upload Auction Image"
-              filterRule={filterRule}
+              filterRule={/^image\//i}
               maxLength={1}
               required={true}
             />
           </FieldGroup>
         </div>
       </FieldGroup>
-    </form>
   );
 }
+
