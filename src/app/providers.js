@@ -82,7 +82,9 @@ import { toast } from 'sonner';
 import { createContext, useContext, useEffect } from 'react';
 import { ModalProvider } from '@/context/index';
 import { Navbar, Footer, GlobalAlert } from '@/components';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import { useModal } from '@/context/ModalContext';
+import Login from '@/components/LR/Login';
 
 const InitialAuthContext = createContext(false);
 export const useInitialAuthed = () => useContext(InitialAuthContext);
@@ -111,6 +113,7 @@ export default function Providers({ initialAuthed, children }) {
   return (
     <InitialAuthContext.Provider value={initialAuthed}>
       <ModalProvider>
+        <AutoOpenLogin />
         {
           isMinimalLayout
             ? (children)
@@ -119,7 +122,7 @@ export default function Providers({ initialAuthed, children }) {
                 <Navbar />
                 <div className="min-h-screen flex flex-col">
                   <main className={`flex-1 container max-w-7xl px-2 md:px-6 lg:px-8 mx-auto pt-16`}>
-                    <div className="my-4 space-y-4">
+                    <div className="my-6 space-y-4">
                       {children}
                     </div>
                   </main>
@@ -133,4 +136,43 @@ export default function Providers({ initialAuthed, children }) {
       <Toaster position="top-center" richColors offset="16px" closeButton />
     </InitialAuthContext.Provider>
   );
+}
+
+function AutoOpenLogin() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { setModalHeader, setModalState, setModalForm } = useModal();
+  useEffect(() => {
+    try {
+      const loginFlag = searchParams?.get('login');
+      const nextPath = searchParams?.get('next');
+      if (loginFlag === '1') {
+        setModalHeader({ title: 'Login', description: 'Welcome back!' });
+        setModalForm({
+          isForm: true,
+          onSubmit: async (e) => {
+            e.preventDefault();
+            const form = new FormData(e.currentTarget);
+            const email = form.get('email')?.toString().trim();
+            const password = form.get('password')?.toString().trim();
+            const { error } = await (await import('@/utils/supabase/client')).supabaseBrowser().auth.signInWithPassword({ email, password });
+            const { toast } = await import('sonner');
+            if (error) return toast.error(error.message);
+            setModalState({ open: false });
+            toast.success('Successfully logged in!');
+            if (nextPath) router.replace(nextPath);
+          },
+        });
+        setModalState({ open: true, content: <Login /> });
+        // Clean login param but keep next
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('login');
+          if (nextPath) url.searchParams.set('next', nextPath); else url.searchParams.delete('next');
+          router.replace(url.pathname + (url.search ? url.search : ''));
+        }
+      }
+    } catch {}
+  }, [searchParams]);
+  return null;
 }

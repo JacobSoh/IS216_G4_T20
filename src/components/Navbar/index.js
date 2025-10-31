@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { useRouter, redirect } from 'next/navigation';
+import { useRouter, redirect, useSearchParams } from 'next/navigation';
 import { Navbar02 } from '@/components/ui/shadcn-io/navbar-02';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useModal } from '@/context/ModalContext';
@@ -15,6 +15,7 @@ import { validateRegistration } from '@/lib/validators';
 
 export default function Navbar({ isAuthed: initialAuthed } = {}) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const autoOpenedRef = useRef(false);
   const { isAuthed, logout } = useSupabaseAuth(initialAuthed);
   const { setModalHeader, setModalState, setModalForm } = useModal();
@@ -108,6 +109,26 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
   };
 
   // Note: removed route-based effects to avoid any path-dependent rendering
+
+  // Auto-open login modal via query string: ?login=1&next=/path
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    try {
+      const loginFlag = searchParams?.get('login');
+      const nextPath = searchParams?.get('next');
+      if (!isAuthed && loginFlag === '1') {
+        autoOpenedRef.current = true;
+        openLogin();
+        // Clean the URL to avoid reopening on re-render
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('login');
+          if (nextPath) url.searchParams.set('next', nextPath); else url.searchParams.delete('next');
+          router.replace(url.pathname + (url.search ? url.search : ''));
+        }
+      }
+    } catch {}
+  }, [searchParams, isAuthed]);
 
   // Build nav links with contextual Auction menu
   const auctionMenu = {

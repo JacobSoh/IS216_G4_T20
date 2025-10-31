@@ -7,6 +7,7 @@ import { CustomSelect } from '@/components/Form/CustomSelect';
 import { CustomFileInput } from '@/components/Form/CustomFileInput';
 import { FieldGroup } from '@/components/ui/field';
 import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
 
 const reducer = (s, a) => {
   switch (a.type) {
@@ -216,70 +217,43 @@ export default function AddItemModal({
       />
 
       {/* Item Condition Dropdown with Info Icon */}
-      <div style={{ marginBottom: '15px', position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <label style={{ fontSize: '14px', fontWeight: '500', color: '#f3f4f6' }}>
-            Item Condition <span style={{ color: '#ef4444' }}>*</span>
+      <div className="mb-4 relative">
+        <div className="flex items-center gap-2 mb-2">
+          <label className="text-sm font-medium text-gray-100">
+            Item Condition <span className="text-red-500">*</span>
           </label>
-          <div 
-            style={{ position: 'relative', display: 'inline-block' }}
+          <div
+            className="relative inline-block"
             onMouseEnter={() => setActiveTooltip('condition')}
             onMouseLeave={() => setActiveTooltip(null)}
           >
             <div
-              style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                backgroundColor: '#374151',
-                border: '1px solid #4b5563',
-                color: '#9ca3af',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                cursor: 'help',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="w-5 h-5 rounded-full bg-background ring-1 ring-[var(--theme-secondary)] text-gray-400 text-[12px] font-bold cursor-help flex items-center justify-center"
             >
               ?
             </div>
-            
-            {/* Tooltip - POSITIONED BELOW */}
+
             {activeTooltip === 'condition' && (
-              <div style={{
-                position: 'absolute',
-                top: '32px',
-                left: '-80px',
-                backgroundColor: '#1f2937',
-                border: '1px solid #4b5563',
-                borderRadius: '8px',
-                padding: '14px 16px',
-                width: '340px',
-                zIndex: 10000,
-                fontSize: '12px',
-                lineHeight: '1.7',
-                color: '#d1d5db',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-                pointerEvents: 'none'
-              }}>
-                <div style={{ fontWeight: '700', marginBottom: '10px', color: '#f3f4f6', fontSize: '13px' }}>
+              <div
+                className="absolute top-8 left-[-80px] bg-[var(--theme-primary-darker)] ring-2 ring-[var(--theme-secondary)] shadow-[0_0_20px_var(--theme-primary)] rounded-md p-4 w-[340px] z-[10000] text-xs leading-7 text-gray-300 shadow-[0_8px_24px_rgba(0,0,0,0.4)] pointer-events-none"
+              >
+                <div className="font-bold mb-2 text-gray-100 text-[13px]">
                   📋 Condition Guide
                 </div>
-                <div style={{ marginBottom: '8px' }}>
-                  <strong style={{ color: '#10b981' }}>Mint:</strong> Brand new, unopened
+                <div className="mb-2">
+                  <strong className="text-emerald-500">Mint:</strong> Brand new, unopened
                 </div>
-                <div style={{ marginBottom: '8px' }}>
-                  <strong style={{ color: '#06b6d4' }}>Excellent:</strong> Like new, barely used
+                <div className="mb-2">
+                  <strong className="text-cyan-500">Excellent:</strong> Like new, barely used
                 </div>
-                <div style={{ marginBottom: '8px' }}>
-                  <strong style={{ color: '#eab308' }}>Good:</strong> Gently used, minimal wear
+                <div className="mb-2">
+                  <strong className="text-yellow-500">Good:</strong> Gently used, minimal wear
                 </div>
-                <div style={{ marginBottom: '8px' }}>
-                  <strong style={{ color: '#f97316' }}>Fair:</strong> Moderate wear visible
+                <div className="mb-2">
+                  <strong className="text-orange-500">Fair:</strong> Moderate wear visible
                 </div>
                 <div>
-                  <strong style={{ color: '#ef4444' }}>Poor:</strong> Significant damage
+                  <strong className="text-red-500">Poor:</strong> Significant damage
                 </div>
               </div>
             )}
@@ -288,7 +262,6 @@ export default function AddItemModal({
 
         <CustomSelect
           type="itemCondition"
-          label=""
           required={true}
           options={conditionOptions}
           value={form.itemCondition}
@@ -297,26 +270,14 @@ export default function AddItemModal({
       </div>
 
       {/* SerpAPI Price Suggestion Button */}
-      <button 
+      <Button 
         type="button"
         onClick={handleGetPriceSuggestion}
+        brand='brand'
         disabled={loadingPrice || !form.itemName || form.itemName.length < 3}
-        style={{
-          padding: '12px 24px',
-          backgroundColor: (loadingPrice || !form.itemName || form.itemName.length < 3) ? '#9ca3af' : '#6366f1',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: (loadingPrice || !form.itemName || form.itemName.length < 3) ? 'not-allowed' : 'pointer',
-          fontSize: '16px',
-          fontWeight: '600',
-          marginBottom: '15px',
-          width: '100%',
-          transition: 'background-color 0.2s'
-        }}
       >
         {loadingPrice ? '🔍 Searching market...' : '💡 Get Market Price Suggestion'}
-      </button>
+      </Button>
 
       {/* Price Error Display */}
       {priceError && (

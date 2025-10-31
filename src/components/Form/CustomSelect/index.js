@@ -1,5 +1,15 @@
 import { useId, useState } from "react";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { useMotionTemplate, useMotionValue, motion } from "motion/react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function CustomSelect({
   type,
@@ -11,11 +21,35 @@ export function CustomSelect({
   value,
   onChange,
   disabled = false,
+  className,
   ...rest
 }) {
   const autoId = useId();
   const id = `select-${type}-${autoId}`;
   const [isFocused, setIsFocused] = useState(false);
+
+  // Hover observer effect like CustomInput
+  const radius = 100;
+  const [hoverVisible, setHoverVisible] = useState(false);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const handleMouseMove = ({ currentTarget, clientX, clientY }) => {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  };
+
+  const handleValueChange = (val) => {
+    if (typeof onChange === 'function') {
+      try {
+        const maybe = onChange(type);
+        if (typeof maybe === 'function') {
+          return maybe({ target: { name: type, value: val } });
+        }
+      } catch {}
+      onChange({ target: { name: type, value: val } });
+    }
+  };
 
   return (
     <Field>
@@ -24,7 +58,52 @@ export function CustomSelect({
           {label}
         </FieldLabel>
       )}
-      <select
+      <motion.div
+        style={{
+          background: useMotionTemplate`
+            radial-gradient(
+              ${hoverVisible ? radius + 'px' : '0px'} circle at ${mouseX}px ${mouseY}px,
+              var(--theme-secondary),
+              transparent 80%
+            )
+          `,
+        }}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setHoverVisible(true)}
+        onMouseLeave={() => setHoverVisible(false)}
+        className="rounded-md p-[2px] transition duration-300 w-full"
+      >
+        <Select
+          value={value ?? ''}
+          onValueChange={handleValueChange}
+          disabled={disabled}
+          {...rest}
+        >
+          <SelectTrigger className={`w-full ${className ?? ''}`} aria-invalid={!!err || undefined}>
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.isArray(options) && options.length > 0 ? (
+              <SelectGroup>
+                {options
+                  .filter((opt) => opt && opt.label != null && opt.value !== undefined && String(opt.value) !== "")
+                  .map((opt) => {
+                    const val = String(opt.value);
+                    return (
+                      <SelectItem key={val} value={val}>
+                        {opt.label}
+                      </SelectItem>
+                    );
+                  })}
+              </SelectGroup>
+            ) : (
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">{placeholder}</div>
+            )}
+          </SelectContent>
+        </Select>
+      </motion.div>
+      <input type="hidden" name={type} value={value ?? ''} readOnly />
+      {/* <select
         id={id}
         name={type}
         required={required}
@@ -54,8 +133,8 @@ export function CustomSelect({
             {option.label}
           </option>
         ))}
-      </select>
-      {err && <FieldError>{err}</FieldError>}
+      </select> */}
+     <FieldError>{err}</FieldError>
     </Field>
   );
 }

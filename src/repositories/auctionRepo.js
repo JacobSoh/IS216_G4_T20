@@ -7,7 +7,6 @@ const baseAuctionSelect = `
   name,
   description,
   start_time,
-  end_time,
   thumbnail_bucket,
   object_path,
   time_interval,

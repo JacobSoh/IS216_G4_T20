@@ -5,8 +5,6 @@ import { Tab } from '@headlessui/react';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import Link from 'next/link';
 import Spinner from '@/components/SpinnerComponent';
-import AuctionCard from "@/components/AuctionCard"
-import AuctionCardSkeleton from "@/components/HomeAuctionSkele"
 
 function classNames(...classes) {
     return classes.filter(Boolean).join(' ');

@@ -100,7 +100,7 @@ export function CustomTextarea({
   return (
     <Field className={containerClassName}>
       {finalLabel !== '' && (
-        <FieldLabel htmlFor={id} className='text-[var(--theme-secondary)]'>
+        <FieldLabel htmlFor={id}>
           {finalLabel}:
         </FieldLabel>
       )}

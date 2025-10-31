@@ -5,7 +5,7 @@ import { ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
-export default function VerifyButton({id}) {
+export default function VerifyButton({id, className}) {
   const [ready, setReady] = useState(false);
 
   // when the CDN script has loaded, window.Persona will exist
@@ -48,6 +48,7 @@ export default function VerifyButton({id}) {
       onClick={launch}
       disabled={!ready}
       variant="link"
+      className={className}
     >
       <ShieldCheck /> {ready || !!id ? "Verify my ID" : "Loading verifier…"}
     </Button>

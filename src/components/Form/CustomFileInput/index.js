@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState, useRef, useEffect } from "react";
+import { useMotionTemplate, useMotionValue, motion } from "motion/react";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 
 export function CustomFileInput({
@@ -21,6 +22,17 @@ export function CustomFileInput({
   const [isDragging, setIsDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  // Hover "observer" effect like CustomInput
+  const radius = 100;
+  const [hoverVisible, setHoverVisible] = useState(false);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const handleMouseMove = ({ currentTarget, clientX, clientY }) => {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -125,18 +137,35 @@ export function CustomFileInput({
       <FieldLabel htmlFor={id}>
         {label}
       </FieldLabel>
-      <div 
-        className={`w-full max-w-4xl relative mx-auto border-2 border-dashed rounded-md bg-[var(--theme-surface)] transition-all duration-200 cursor-pointer min-h-[200px] flex items-center justify-center ${
-          isDragging 
-            ? 'border-brand bg-brand/10 scale-[1.02]' 
-            : 'border-[var(--theme-border)] hover:border-brand/50 hover:bg-[var(--theme-surface)]/80'
-        }`}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onClick={previews.length === 0 ? handleClick : undefined}
+      {/* Outer gradient border wrapper, mirrors ui/input.jsx */}
+      <motion.div 
+        style={{
+          background: useMotionTemplate`
+            radial-gradient(
+              ${hoverVisible ? radius + 'px' : '0px'} circle at ${mouseX}px ${mouseY}px,
+              var(--theme-secondary),
+              transparent 80%
+            )
+          `,
+        }}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setHoverVisible(true)}
+        onMouseLeave={() => setHoverVisible(false)}
+        className="group/file w-full max-w-4xl relative mx-auto rounded-md p-[2px] transition duration-300"
       >
+        {/* Inner interactive dropzone styled like the text input field */}
+        <div
+          className={`shadow-input rounded-md ring-1 bg-background ring-[var(--theme-primary)] transition duration-300 min-h-[200px] flex items-center justify-center cursor-pointer ${
+            isDragging 
+              ? 'ring-white bg-brand/10 scale-[1.01]' 
+              : 'hover:shadow-none'
+          }`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onClick={previews.length === 0 ? handleClick : undefined}
+        >
         <input
           ref={inputRef}
           type="file"
@@ -181,12 +210,12 @@ export function CustomFileInput({
               {previews.map((preview, index) => (
                 <div 
                   key={index} 
-                  className="relative rounded-lg overflow-hidden border border-[var(--theme-border)] bg-muted/10 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  className="relative rounded-lg overflow-hidden ring-1 ring-[var(--theme-border)] bg-[var(--theme-primary-darker)]/70 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
                   onClick={handleClick}
                 >
-                  <div className="relative w-full bg-muted/20" style={{ minHeight: '250px' }}>
+                  <div className="relative w-full bg-[var(--theme-primary-darker)]" style={{ minHeight: '250px' }}>
                     <div className="flex items-center justify-center p-4 min-h-[250px]">
                       <img
                         src={preview.url}
@@ -241,7 +270,8 @@ export function CustomFileInput({
             )}
           </div>
         )}
-      </div>
+        </div>
+      </motion.div>
       
       {err && <FieldError>{err}</FieldError>}
     </Field>

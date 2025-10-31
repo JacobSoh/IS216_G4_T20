@@ -139,11 +139,11 @@ export function CustomAddressInput({
           <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">Searching…</div>
         )}
         {preds.length > 0 && (
-          <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-background shadow">
+          <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md ring-1 ring-[var(--theme-secondary)] bg-background">
             {preds.map((p) => (
               <li
                 key={p.place_id}
-                className="cursor-pointer px-3 py-2 text-sm hover:bg-accent"
+                className="cursor-pointer px-3 py-2 text-sm hover:text-[var(--background)] hover:bg-white"
                 onClick={() => pickPrediction(p)}
               >
                 {p.description}
