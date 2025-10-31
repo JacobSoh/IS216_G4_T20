@@ -21,6 +21,7 @@ export function CustomFileInput({
   const [isDragging, setIsDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  const dragCounter = useRef(0); // ✅ Track drag depth
 
   useEffect(() => {
     setMounted(true);
@@ -70,6 +71,7 @@ export function CustomFileInput({
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    dragCounter.current = 0; // ✅ Reset counter
     setIsDragging(false);
     handleFiles(e.dataTransfer.files);
   };
@@ -77,19 +79,22 @@ export function CustomFileInput({
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
   };
 
   const handleDragEnter = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    dragCounter.current++; // ✅ Increment on enter
     setIsDragging(true);
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    dragCounter.current--; // ✅ Decrement on leave
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
   };
 
   const handleRemove = (index) => {

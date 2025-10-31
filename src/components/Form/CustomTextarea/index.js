@@ -1,18 +1,14 @@
-import { useId, useState, useEffect } from "react";
+import { useId, useState } from "react";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 
 const CONTROL_PRESETS = {
   auctionDescription: { label: "Auction Description", placeholder: "Briefly describe your auction..." },
-  manageChatbox: { label: "Send Message", placeholder: "Share updates or engage with bidders..." },
+  itemDescription: { label: "Item Description", placeholder: "Describe your item..." },
 };
 
 function resolveControl(type) {
-  return CONTROL_PRESETS[type] ?? {
-    label: "",
-    inputType: "text",
-    placeholder: "Enter your ..."
-  };
+  return CONTROL_PRESETS[type] ?? { label: "", placeholder: "Enter your ..." };
 }
 
 export function CustomTextarea({
@@ -21,40 +17,26 @@ export function CustomTextarea({
   required,
   label,
   placeholder,
-  inputType,
-  row: rowProp,
-  rows: rowsAlt,
   id: idProp,
-  name: nameProp,
   value: valueProp,
   onChange: onChangeProp,
   defaultValue,
-  // Styling hooks
-  containerClassName,
-  className,
-  // Auto-resize behavior
-  autoGrow = false,
-  growMaxHeight,
-  // Inline regex validation
-  regex,
-  regexMessage = "Invalid value",
+  rows = 4,
   ...rest
 }) {
   const autoId = useId();
-  const id = idProp ?? `fi-${type}-${autoId}`;
-
+  const id = idProp ?? `textarea-${type}-${autoId}`;
+  
   const preset = resolveControl(type);
   const finalLabel = label ?? preset.label;
   const finalPlaceholder = placeholder ?? preset.placeholder;
-  const finalRows = (rowsAlt ?? rowProp ?? 5);
-  const finalName = nameProp ?? type;
-
-  // Support controlled/uncontrolled
+  
+  // Support both controlled and uncontrolled usage
   const isControlled = valueProp !== undefined;
   const [innerValue, setInnerValue] = useState(defaultValue ?? "");
-  const [el, setEl] = useState(null);
 
   const handleChange = (e) => {
+    // Call parent handler in either curried or direct form
     if (typeof onChangeProp === "function") {
       try {
         const maybeHandler = onChangeProp(type);
@@ -64,60 +46,33 @@ export function CustomTextarea({
           onChangeProp(e);
         }
       } catch {
-        try { onChangeProp(e); } catch { }
+        try { onChangeProp(e); } catch {}
       }
     }
     if (!isControlled) setInnerValue(e.target.value);
   };
 
-  // Build validator from regex
-  let validator = null;
-  if (regex instanceof RegExp) {
-    const flags = regex.flags?.replace('g', '') ?? '';
-    validator = new RegExp(regex.source, flags);
-  } else if (typeof regex === 'string' && regex) {
-    try { validator = new RegExp(regex); } catch { }
-  }
-
   const currentValue = isControlled ? valueProp : innerValue;
-  const localError = validator && currentValue
-    ? (validator.test(currentValue) ? "" : regexMessage)
-    : "";
-  const finalError = err || localError;
-
-  // Auto-grow height to content
-  useEffect(() => {
-    if (!autoGrow || !el) return;
-    try {
-      el.style.height = 'auto';
-      if (growMaxHeight) {
-        el.style.maxHeight = typeof growMaxHeight === 'number' ? `${growMaxHeight}px` : `${growMaxHeight}`;
-      }
-      el.style.height = `${el.scrollHeight}px`;
-    } catch { }
-  }, [autoGrow, currentValue, el, growMaxHeight]);
 
   return (
-    <Field className={containerClassName}>
+    <Field>
       {finalLabel !== '' && (
-        <FieldLabel htmlFor={id} className='text-[var(--theme-secondary)]'>
+        <FieldLabel htmlFor={id} className="!text-white">
           {finalLabel}:
         </FieldLabel>
       )}
       <Textarea
         id={id}
-        name={finalName}
+        name={type}
         placeholder={finalPlaceholder}
         required={required}
         onChange={handleChange}
         value={currentValue}
-        rows={autoGrow ? undefined : finalRows}
-        aria-invalid={!!finalError || undefined}
-        ref={setEl}
-        className={className}
+        rows={rows}
+        aria-invalid={!!err || undefined}
         {...rest}
       />
-      <FieldError>{finalError}</FieldError>
+      <FieldError>{err}</FieldError>
     </Field>
   );
 }

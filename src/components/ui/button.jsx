@@ -10,7 +10,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] border border-[var(--theme-border)] hover:bg-[color:var(--theme-surface)]/90",
+        default: 
+          "bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] border border-[var(--theme-border)] hover:bg-[color:var(--theme-surface)]/90",
         brand:
           "bg-[var(--theme-primary)] text-white hover:bg-[var(--theme-secondary)] focus-visible:ring-[color:var(--theme-secondary)]/40",
         gold_white:

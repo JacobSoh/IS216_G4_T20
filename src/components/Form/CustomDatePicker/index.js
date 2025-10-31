@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 const CONTROL_PRESETS = {
   startDateTime: { label: "Start Datetime", inputType: "text", placeholder: "Pick a date" },
-  endDateTime: { label: "End Datetime", inputType: "text", placeholder: "Pick a date" },
+  // endDateTime: { label: "End Datetime", inputType: "text", placeholder: "Pick a date" },
 };
 
 function resolveControl(type) {

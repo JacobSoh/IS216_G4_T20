@@ -13,7 +13,6 @@ const intial = {
   auctionName: "",
   auctionDescription: "",
   startDateTime: new Date(Date.now()),
-  endDateTime: new Date(Date.now()),
 };
 
 function reducer(s, a) {
@@ -42,17 +41,13 @@ export default function AuctionCreateForm({ onSubmit }) {
             <CustomTextarea
               type="auctionDescription"
               required={true}
+              labelClassName="text-white"
             />
             
             <div className='grid grid-cols-2 gap-4'>
               {/* Make sure name="startDateTime" */}
               <CustomerDatePicker
                 type="startDateTime"
-                required={true}
-              />
-              {/* Make sure name="endDateTime" */}
-              <CustomerDatePicker
-                type="endDateTime"
                 required={true}
               />
             </div>
@@ -72,4 +67,3 @@ export default function AuctionCreateForm({ onSubmit }) {
       </FieldGroup>
   );
 }
-

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { useMotionTemplate, useMotionValue, motion } from "motion/react";
 
 const Textarea = React.forwardRef(({ className, type, ...props }, ref) => {
-  const radius = 100; // change this to increase the rdaius of the hover effect
+  const radius = 100;
   const [visible, setVisible] = React.useState(false);
 
   let mouseX = useMotionValue(0);
@@ -20,6 +20,7 @@ const Textarea = React.forwardRef(({ className, type, ...props }, ref) => {
     mouseX.set(clientX - left);
     mouseY.set(clientY - top);
   }
+
   return (
     <motion.div
       style={{
@@ -38,7 +39,7 @@ const Textarea = React.forwardRef(({ className, type, ...props }, ref) => {
       <textarea
         type={type}
         className={cn(
-          `shadow-input flex min-h-10 w-full rounded-md ring bg-background ring-[var(--theme-primary)] px-3 py-2 text-sm text-[var(--theme-surface-contrast)] transition duration-400 group-hover/input:shadow-none file:border-0 file:bg-[var(--theme-primary-darker)] file:text-sm file:font-medium placeholder:text-[var(--theme-placeholder)] focus-visible:ring-[2px] focus-visible:ring-[color:var(--theme-secondary)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50`,
+          `shadow-input flex min-h-10 w-full rounded-md ring bg-background ring-[var(--theme-secondary)] px-3 py-2 text-sm text-[var(--theme-surface-contrast)] transition duration-400 group-hover/input:shadow-none file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[var(--theme-placeholder)] focus-visible:ring-[2px] focus-visible:ring-[color:var(--theme-secondary)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none`,
           className
         )}
         ref={ref}
