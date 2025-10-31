@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import AuctionCard from "@/components/AuctionCard";
-import AuctionCardSkeleton from "@/components/HomeAuctionSkele";
+import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 // Utility to generate slug from a string
@@ -37,7 +36,6 @@ export default function CategoryPage() {
         if (catErr) throw catErr;
         if (!categories || categories.length === 0) throw new Error("No categories found");
 
-        // Find the matching category by generated slug
         const matched = categories.find(c => slugify(c.category_name) === slug);
         if (!matched) {
           console.warn("No matching category for slug:", slug);
@@ -48,7 +46,7 @@ export default function CategoryPage() {
 
         setCategoryName(matched.category_name);
 
-        // 2️⃣ Get all item IDs in this category (items can have multiple categories)
+        // 2️⃣ Get all item IDs in this category
         const { data: itemCategories, error: icErr } = await supabase
           .from("item_category")
           .select("itemid")
@@ -63,7 +61,6 @@ export default function CategoryPage() {
         const itemIds = itemCategories.map(ic => ic.itemid);
 
         // 3️⃣ Get auctions for these items
-        // Join item -> auction
         const { data: itemsData, error: itemErr } = await supabase
           .from("item")
           .select("iid, aid")
@@ -75,7 +72,7 @@ export default function CategoryPage() {
           return;
         }
 
-        const auctionIds = [...new Set(itemsData.map(i => i.aid))]; // unique auction IDs
+        const auctionIds = [...new Set(itemsData.map(i => i.aid))];
 
         const { data: auctionData, error: auctionErr } = await supabase
           .from("auction")
@@ -89,25 +86,19 @@ export default function CategoryPage() {
         }
 
         // Map auctions to include public image URLs
-        const mapped = await Promise.all(
-          auctionData.map(async (a) => {
-            let picUrl = null;
-            if (a.thumbnail_bucket && a.object_path) {
-              const { data: publicData } = supabase
-                .storage
-                .from(a.thumbnail_bucket)
-                .getPublicUrl(a.object_path);
-              picUrl = publicData?.publicUrl || null;
-            }
-            return {
-              aid: a.aid,
-              name: a.name,
-              description: a.description,
-              endTime: new Date(a.end_time).toLocaleString(),
-              picUrl
-            };
-          })
-        );
+        const mapped = auctionData.map((a) => {
+          const { data: publicData } = supabase
+            .storage
+            .from(a.thumbnail_bucket)
+            .getPublicUrl(a.object_path);
+          return {
+            aid: a.aid,
+            name: a.name,
+            description: a.description,
+            endTime: new Date(a.end_time).toLocaleString(),
+            picUrl: publicData?.publicUrl || null,
+          };
+        });
 
         setAuctions(mapped);
       } catch (err) {
@@ -125,6 +116,7 @@ export default function CategoryPage() {
   return (
     <section className="min-h-screen relative pt-10 bg-gradient-to-b from-[#fff5e1] to-[#ffefea]">
       <div className="max-w-7xl mx-auto pb-15 px-6">
+        {/* Page Header */}
         <div className="text-center mb-16">
           <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gray-800">
             {categoryName.charAt(0).toUpperCase() + categoryName.slice(1)}
@@ -134,28 +126,26 @@ export default function CategoryPage() {
           </p>
         </div>
 
+        {/* Auctions Section */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {Array.from({ length: 15 }).map((_, i) => <AuctionCardSkeleton key={i} />)}
+          <div className="flex flex-wrap justify-center gap-10">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <AuctionHoverPictureSkeleton key={i} />
+            ))}
           </div>
         ) : auctions.length === 0 ? (
           <div className="text-center py-32 text-xl font-medium text-gray-500">
             No auctions found in this category.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {auctions.map(a => (
+          <div className="flex flex-wrap justify-center gap-10">
+            {auctions.map((a) => (
               <Link
                 key={a.aid}
                 href={`/auction/${a.aid}`}
-                className="block transform transition-transform hover:scale-105 focus:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-300 rounded-md"
+                className="transform transition-transform hover:scale-105"
               >
-                <AuctionCard
-                  name={a.name}
-                  description={a.description}
-                  picUrl={a.picUrl}
-                  endTime={a.endTime}
-                />
+                <AuctionHoverPicture name={a.name} picUrl={a.picUrl} />
               </Link>
             ))}
           </div>

@@ -6,10 +6,11 @@ import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { createTimeline, stagger, splitText } from 'animejs';
 import { supabaseBrowser } from "@/utils/supabase/client";
-import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/landingauctionhover";
+import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
+import BubbleNav from "@/components/testnav";
 
 
 // ---------- Main Component ----------
@@ -24,8 +25,42 @@ export default function FuturisticAuction() {
     offset: ["start start", "end end"],
   });
 
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [currentBid, setCurrentBid] = useState(100);
+  const [userBid, setUserBid] = useState("");
+  const [result, setResult] = useState("");
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      if (currentBid > 100) {
+        setResult("🎉 You won!");
+      } else {
+        setResult("❌ You lost!");
+      }
+    }
+  }, [timeLeft]);
+
+  const handleBid = () => {
+    if (Number(userBid) > currentBid) {
+      setCurrentBid(Number(userBid));
+      setResult("✅ New highest bid!");
+    } else {
+      setResult("⚠️ Bid must be higher!");
+    }
+  };
+
   // Scale video smoothly from 0.8x to 1.2x as user scrolls
-  const videoScale = useTransform(scrollYProgress, [0, 0.5], [0.8, 1.2]);
+  const videoScale = useTransform(scrollYProgress, [0, 0.5], [0.5, 1.2]);
   const videoOpacity = useTransform(scrollYProgress, [0, 0.3], [0.7, 1]);
 
   var settings = {
@@ -65,7 +100,7 @@ export default function FuturisticAuction() {
         .select('aid, name, description, start_time, end_time, thumbnail_bucket, object_path')
         .limit(5);
 
-      if (error) console.error(error);
+      if (error) console.error("error retriving auction data", error);
       else setAuctions(data);
       setLoading(false);
     };
@@ -153,6 +188,7 @@ export default function FuturisticAuction() {
   return (
     <div ref={scrollRef} className="scroll-smooth h-screen overflow-y-scroll snap-y snap-mandatory bg-black text-white relative">
       {/* Border frame */}
+      <BubbleNav />
       <motion.div
         animate={{ opacity: showFrame ? 1 : 0 }}
         transition={{ duration: 0.4 }}
@@ -166,114 +202,116 @@ export default function FuturisticAuction() {
       />
 
       {/* Landing Section*/}
-      <section ref={heroRef} className="section relative h-screen flex items-center justify-between px-12 pt-24 scroll-mt-24">
-        <div className="absolute top-10 left-12 w-1/2 space-y-8 z-50">
-          {/* Large text */}
-          <div className="large-text text-[8vw] font-bold leading-[0.85] tracking-tight">
-            {letters.large.map((line, li) => (
-              <div key={li}>
-                {line.map((ch, i) => (
-                  <span
-                    key={i}
-                    className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-all duration-200"
-                    style={{ WebkitTextStroke: "1px rgba(168,85,247,0.3)" }}
-                    onMouseEnter={(e) => {
-                      const el = e.target;
-                      el.classList.add("lit");
-                      el.classList.remove("flicker");
-                      el.style.color = "#8b5cf6";
-                      el.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
-                      setTimeout(() => {
-                        el.classList.remove("lit");
-                        el.style.color = "transparent";
-                        el.style.textShadow = "none";
-                      }, 2000);
-                    }}
-                  >
-                    {ch === " " ? "\u00A0" : ch}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* Small text */}
-          <div className="text-[1.5vw] font-sans tracking-wide leading-tight">
-            {letters.small.map((line, li) => (
-              <div key={li}>
-                {line.map((ch, i) => (
-                  <span
-                    key={i}
-                    className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-colors duration-500"
-                    style={{ WebkitTextStroke: "0.5px rgba(168,85,247,0.25)" }}
-                    onMouseEnter={(e) => {
-                      const el = e.target;
-                      const parent = el.parentElement;
-                      const letters = Array.from(parent.querySelectorAll(".letter"));
-                      const index = letters.indexOf(el);
-                      const nearby = [index - 2, index - 1, index, index + 1, index + 2];
-                      nearby.forEach((i) => {
-                        if (letters[i]) {
-                          const l = letters[i];
-                          l.classList.add("lit");
-                          l.classList.remove("flicker");
-                          l.style.color = "#a78bfa";
-                          l.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
-                          setTimeout(() => {
-                            l.classList.remove("lit");
-                            l.style.color = "transparent";
-                            l.style.textShadow = "none";
-                          }, 1500);
-                        }
-                      });
-                    }}
-                  >
-                    {ch === " " ? "\u00A0" : ch}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
+<section
+  ref={heroRef}
+  className="section relative h-screen flex items-center justify-center px-12 scroll-mt-24"
+>
+  <div className="flex flex-col items-center justify-center text-center space-y-8 z-50">
+    {/* Large Text */}
+    <div className="large-text text-[8vw] font-bold leading-[0.85] tracking-tight">
+      {letters.large.map((line, li) => (
+        <div key={li}>
+          {line.map((ch, i) => (
+            <span
+              key={i}
+              className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-all duration-200"
+              style={{ WebkitTextStroke: "1px rgba(168,85,247,0.3)" }}
+              onMouseEnter={(e) => {
+                const el = e.target;
+                el.classList.add("lit");
+                el.style.color = "#8b5cf6";
+                el.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
+                setTimeout(() => {
+                  el.classList.remove("lit");
+                  el.style.color = "transparent";
+                  el.style.textShadow = "none";
+                }, 2000);
+              }}
+            >
+              {ch === " " ? "\u00A0" : ch}
+            </span>
+          ))}
         </div>
+      ))}
+    </div>
 
-        <div className="absolute right-[12%] top-1/2 -translate-y-1/2 w-[350px] h-[450px] border-2 border-dashed border-purple-400/40 flex items-center justify-center text-purple-400/60 text-lg">
-          Items Placeholder
+    {/* Small Text */}
+    <div className="text-[1.5vw] font-sans tracking-wide leading-tight">
+      {letters.small.map((line, li) => (
+        <div key={li}>
+          {line.map((ch, i) => (
+            <span
+              key={i}
+              className="letter inline-block text-transparent cursor-pointer px-1 -mx-1 transition-colors duration-500"
+              style={{ WebkitTextStroke: "0.5px rgba(168,85,247,0.25)" }}
+              onMouseEnter={(e) => {
+                const el = e.target;
+                const parent = el.parentElement;
+                const letters = Array.from(parent.querySelectorAll(".letter"));
+                const index = letters.indexOf(el);
+                const nearby = [index - 2, index - 1, index, index + 1, index + 2];
+                nearby.forEach((i) => {
+                  if (letters[i]) {
+                    const l = letters[i];
+                    l.classList.add("lit");
+                    l.style.color = "#a78bfa";
+                    l.style.textShadow = "0 0 30px rgba(168,85,247,0.8)";
+                    setTimeout(() => {
+                      l.classList.remove("lit");
+                      l.style.color = "transparent";
+                      l.style.textShadow = "none";
+                    }, 1500);
+                  }
+                });
+              }}
+            >
+              {ch === " " ? "\u00A0" : ch}
+            </span>
+          ))}
         </div>
+      ))}
+    </div>
+  </div>
 
-        <button
-          onClick={() => scrollToSection(1)}
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 border-2 border-purple-500 text-white px-12 py-4 rounded-md shadow-[0_0_30px_rgba(168,85,247,0.5),inset_0_0_15px_rgba(168,85,247,0.2)] hover:bg-purple-500/20 hover:shadow-[0_0_100px_rgba(168,85,247,0.9),inset_0_0_100px_rgba(168,85,247,0.4)] transition-all duration-500"
-        >
-          DISCOVER →
-        </button>
-      </section>
+  {/* Scroll Button */}
+  <button
+    onClick={() => scrollToSection(1)}
+    className="absolute bottom-20 left-1/2 -translate-x-1/2 border-2 border-purple-500 text-white px-12 py-4 rounded-md shadow-[0_0_30px_rgba(168,85,247,0.5),inset_0_0_15px_rgba(168,85,247,0.2)] hover:bg-purple-500/20 hover:shadow-[0_0_100px_rgba(168,85,247,0.9),inset_0_0_100px_rgba(168,85,247,0.4)] transition-all duration-500"
+  >
+    DISCOVER →
+  </button>
+</section>
 
-      {/* SECTION 2: Info */}
+
+      {/* Info */}
       <section
         ref={sectionRef}
         className="section min-h-screen bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 flex flex-col lg:flex-row justify-between px-24 relative"
       >
         <div className="flex-1 flex flex-col justify-center py-24">
-          <div className="max-w-3xl -translate-y-30 -ml-10">
+          <div className="max-w-3xl -translate-y-16 -ml-10">
             <h2 className="info-heading text-[7vw] font-bold leading-[0.9] text-purple-700">
               EXPLORE<br />CURATED<br />COLLECTIONS
             </h2>
 
             <p className="info-para text-xl text-purple-800 max-w-2xl mt-12">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-              Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              Explore a world of pre-loved treasures — from timeless antiques to everyday essentials and trending gadgets.
+              <br></br>
+              <br></br>
+              Whether you’re a collector, a bargain hunter, or just browsing for fun, there’s something here for you.
+              Start bidding, connect with others, and make each find your own.
             </p>
           </div>
         </div>
 
         <div className="flex flex-col h-[80vh] my-auto -mr-10">
-          <div className="sticky top-20 w-[400px] h-[300px] mr-8 border-2 border-dashed border-purple-700/40 flex items-center justify-center text-purple-700/60 rounded-2xl shadow-lg">
-            Image Placeholder
+          <div className="sticky top-20 w-[400px] h-[300px] mr-8 flex items-center justify-center text-purple-700/60 rounded-2xl">
+            <img className="shadow-lg" src="assets/thrift.jpg" alt="thrift store"></img>
           </div>
         </div>
       </section>
 
-      {/* SECTION 3: Featured Auctions */}
+      {/* Featured Auctions */}
       <section className="section min-h-screen bg-gradient-to-br from-purple-700 to-purple-800 px-12 pt-4 pb-20">
         {/* Header */}
         <div className="text-center mb-20 mt-2">
@@ -289,8 +327,9 @@ export default function FuturisticAuction() {
             Browse through our carefully curated vintage collections. Gonna add some picture effect soon.
           </p>
         </div>
+
         <Slider {...settings}>
-            {loading
+          {loading
             ? Array.from({ length: 6 }).map((_, i) => (
               <AuctionHoverPictureSkeleton key={i} />
             ))
@@ -301,72 +340,152 @@ export default function FuturisticAuction() {
                   : null;
 
               return (
-                <AuctionHoverPicture
-                  key={auction.aid}
-                  name={auction.name}
-                  picUrl={picUrl}
-                  hoverTextColor="white" // pass hover color prop if your component supports it
-                />
+                <Link key={auction.aid} href={`/auction/${auction.aid}`} passHref>
+                  <div className="cursor-pointer">
+                    <AuctionHoverPicture
+                      name={auction.name}
+                      picUrl={picUrl}
+                      hoverTextColor="white"
+                    />
+                  </div>
+                </Link>
               );
             })}
         </Slider>
-        {/* Grid layout: 3 per row on larger screens */}
       </section>
 
-      {/* SECTION 4: Live Auction */}
+      {/* Live Auction */}
       <section
         id="auction"
         ref={ref}
-        className="relative w-full h-[200vh] flex flex-col items-center justify-start overflow-hidden"
+        className="relative w-full h-[170vh] flex flex-col items-center justify-start overflow-hidden"
       >
         {/* Background Gradient */}
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-200 via-purple-300 to-purple-200"></div>
 
-        {/* Larger Expanding Video Placeholder with Glow */}
-        <motion.div
-          style={{ scale: videoScale, opacity: videoOpacity }}
-          className="sticky top-16 w-[85vw] h-[55vh] md:w-[75vw] md:h-[65vh] 
-               bg-purple-300/40 border-4 border-purple-500 rounded-3xl 
-               flex items-center justify-center text-purple-100 text-3xl font-semibold 
-               shadow-[0_0_40px_rgba(168,85,247,0.6),0_0_80px_rgba(168,85,247,0.4)] 
-               transition-all duration-500"
-        >
-          Video Placeholder
-        </motion.div>
+        {/* Top Section: Video + Text */}
+        <div className="relative mt-[20vh] w-[85%] flex flex-col md:flex-row items-start justify-between z-10 space-y-16 md:space-y-0">
+          {/* Left Side: Video */}
+          <video
+            src="/assets/vidu-video-3006995670702686.mp4"
+            className="w-[60vw] md:w-[40vw] h-[30vh] md:h-[60vh] object-cover rounded-2xl z-20 transform transition-transform duration-500 ease-out hover:scale-110 shadow-[0_0_40px_rgba(168,85,247,0.6)]"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
 
-        {/* Content Below Video */}
-        <div className="relative mt-[60vh] w-full flex flex-col items-center justify-center z-10 text-center space-y-8">
-          {/* Glowing Placeholder Box */}
-          <div
-            className="w-96 h-64 bg-purple-300/30 border-4 border-purple-500 rounded-2xl 
-                 flex items-center justify-center text-purple-100 text-xl font-semibold
-                 shadow-[0_0_30px_rgba(168,85,247,0.6),0_0_60px_rgba(147,51,234,0.4)]
-                 hover:shadow-[0_0_60px_rgba(168,85,247,0.8),0_0_100px_rgba(147,51,234,0.6)]
-                 transition-all duration-500"
-          >
-            Placeholder Item
+          {/* Right Side: Text */}
+          <div className="flex flex-col justify-center md:w-[45%] text-left space-y-6">
+            <h2 className="text-6xl font-bold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+              How do I bid?
+            </h2>
+
+            <p className="text-lg text-purple-600/90 leading-relaxed">
+              Getting started is simple. Begin by browsing through our wide range of live auctions — each filled with unique, second-hand treasures waiting for a new owner. Take your time to explore and find something that truly catches your eye.
+              <br /><br />
+              Once you’ve found an item you love, place your first bid and join the excitement as others compete for it. You can track the auction in real time, stay updated on the latest bids, and adjust your offer whenever you’re ready.
+              <br /><br />
+              When the timer runs out and your bid stands as the highest, congratulations — the item is yours! Complete your purchase, and get ready to welcome your latest find home.
+            </p>
+
           </div>
-
-          {/* Auction Info */}
-          <h2 className="text-5xl text-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.7)]">
-            LIVE AUCTION
-          </h2>
-          <p className="text-2xl text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
-            Clicks: {auctionClicks} / 3
-          </p>
-
-          {/* Button */}
-          <button
-            onClick={handleAuctionClick}
-            disabled={auctionClicks >= 3}
-            className={`px-16 py-6 text-2xl rounded-lg border-4 transition-all duration-300 ${auctionClicks >= 3
-              ? "bg-gradient-to-r from-green-500 to-emerald-400 border-green-400 shadow-[0_0_40px_rgba(16,185,129,0.6)]"
-              : "bg-gradient-to-r from-purple-600 to-purple-500 border-purple-400 shadow-[0_0_40px_rgba(168,85,247,0.6)] hover:scale-105 hover:shadow-[0_0_60px_rgba(168,85,247,0.8)]"
-              }`}
-          >
-            {auctionClicks >= 3 ? "BID PLACED ✓" : "PLACE BID"}
-          </button>
         </div>
+
+        {/* Bottom Section: Centered Try It Out + Placeholder + Button */}
+        <div className="flex flex-col items-center justify-center text-center space-y-10 mt-40 z-10">
+          <h3 className="text-[6vh] font-semibold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+            Try it out now
+          </h3>
+
+          {/* Bidding Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 items-center justify-items-center w-full md:w-[90%] gap-20 md:gap-56">
+            {/* LEFT SIDE — Timer and Info */}
+            <div className="flex flex-col items-center md:items-start text-left space-y-5 text-white/90">
+              {/* Item Name */}
+              <h3 className="text-3xl font-semibold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+                Minecraft Diamond Sword
+              </h3>
+
+              {/* Description */}
+              <p className="text-base text-purple-600 max-w-md leading-relaxed">
+                A rare collectible from the world of Minecraft. Crafted with precision and shine — perfect for fans and collectors alike.
+              </p>
+
+              {/* Timer & Current Bid */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-3 sm:space-y-0 mt-4">
+                <div>
+                  <h4 className="text-lg font-medium text-purple-500">Time Left</h4>
+                  <p className="text-3xl font-bold text-yellow-300 drop-shadow-[0_0_12px_rgba(250,204,21,0.6)]">
+                    {timeLeft}s
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-medium text-purple-500">Current Bid</h4>
+                  <p className="text-3xl font-semibold text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                    ${currentBid}
+                  </p>
+                </div>
+              </div>
+
+              {/* Result Message */}
+              {result && (
+                <p
+                  className={`text-xl font-medium mt-3 transition-all ${result.includes("won")
+                    ? "text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.6)]"
+                    : result.includes("lost")
+                      ? "text-red-400 drop-shadow-[0_0_10px_rgba(248,113,113,0.6)]"
+                      : "text-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)]"
+                    }`}
+                >
+                  {result}
+                </p>
+              )}
+            </div>
+
+            {/* CENTER — Placeholder Image */}
+            <img
+              src="assets/newdsword.jpg"
+              className="w-96 h-80 bg-purple-300/30 border-4 border-purple-500 rounded-2xl 
+                flex items-center justify-center text-purple-100 text-xl font-semibold
+                shadow-[0_0_30px_rgba(168,85,247,0.6),0_0_60px_rgba(147,51,234,0.4)]
+                hover:shadow-[0_0_60px_rgba(168,85,247,0.8),0_0_100px_rgba(147,51,234,0.6)]
+                transition-all duration-500"></img>
+
+            {/* RIGHT SIDE — Number Input + Button */}
+            <div className="flex flex-col items-center md:items-end space-y-6 text-white/90">
+              {/* Bid Input */}
+              <div className="relative w-full md:w-auto">
+                <input
+                  type="number"
+                  placeholder="Enter your bid"
+                  value={userBid}
+                  onChange={(e) => setUserBid(e.target.value)}
+                  className="w-64 px-6 py-3 rounded-lg bg-transparent border border-purple-600/60 text-center text-xl text-purple-100 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-500/70 focus:border-purple-400/90 transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_25px_rgba(168,85,247,0.4)]"
+                />
+              </div>
+
+              {/* Place Bid Button */}
+              <button
+                onClick={handleBid}
+                disabled={timeLeft <= 0}
+                className={`px-12 py-4 text-2xl font-semibold rounded-xl transition-all duration-300 tracking-wide
+      ${timeLeft <= 0
+                    ? "bg-gradient-to-r from-gray-700 to-gray-600 border border-gray-500 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-purple-600 to-purple-500 border border-purple-400/70 shadow-[0_0_30px_rgba(168,85,247,0.5)] hover:shadow-[0_0_60px_rgba(168,85,247,0.8)] hover:scale-[1.03] text-white"
+                  }`}
+              >
+                Place Bid
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+
+
+
       </section>
 
       {/* ABOUT SECTION */}
@@ -375,45 +494,50 @@ export default function FuturisticAuction() {
         {/* Left Side — Large Placeholder Image + Text */}
         <div className="flex-1 flex flex-col items-start justify-start space-y-6 w-1/2">
           {/* Lorem Text */}
-          <p className="text-purple-200 leading-relaxed text-lg">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.
-            Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet.
-            Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta.
+          <p className="text-purple-200 leading-relaxed text-md">
+            Why use BidHub?
+          </p>
+          <p className="text-purple-200 leading-relaxed text-lg max-w-2xl">
+            Our platform makes online auctions <span className="font-semibold text-purple-400">fair, transparent, and effortless</span>.
+            Track your bids in real time, compete confidently, and discover unique items — from rare collectibles to the latest tech.
+            <br /><br />
+            Bidding here is more than shopping — it's an <span className="font-semibold text-purple-400">experience of discovery and excitement</span>.
+            Join a community of collectors, uncover trending items, and turn each bid into a meaningful win.
+            With intuitive navigation on desktop and mobile, every auction is a chance to explore and bring home something special.
           </p>
 
           {/* Large Placeholder Image */}
-          <div className="w-full h-[65vh] bg-purple-400/50 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-white font-semibold shadow-[0_0_35px_rgba(168,85,247,0.7)]">
-            Large Placeholder
-          </div>
+          <img src="assets/shophouse.webp" className="w-[90vh] h-[65vh] bg-purple-400/50 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-white font-semibold shadow-[0_0_35px_rgba(168,85,247,0.7)]">
+          </img>
         </div>
 
         {/* Right Side — Smaller Image + Button, moved further down */}
         <div className="flex-1 flex flex-col items-center justify-center space-y-4 mt-40 lg:mt-0 lg:translate-y-60">
           {/* Small Placeholder */}
-          <div className="w-48 h-48 bg-purple-400/50 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-white font-semibold shadow-[0_0_25px_rgba(168,85,247,0.7)]">
-            Small Placeholder
-          </div>
+          <img src="assets/Artistguy.jpg" className="w-60 h-60 bg-purple-400/50 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-white font-semibold shadow-[0_0_25px_rgba(168,85,247,0.7)]">
+          </img>
 
           {/* Button */}
-          <button
-            className="px-8 py-4 text-lg font-semibold rounded-xl border-2 border-purple-400 bg-purple-600/20 
-                 hover:bg-purple-600 hover:shadow-[0_0_30px_rgba(168,85,247,0.7)] transition-all duration-300 text-white"
-          >
-            Find Out More About Us
-          </button>
+          <a href="/about">
+            <button
+              className="px-8 py-4 text-lg font-semibold rounded-xl border-2 border-purple-400 bg-purple-600/20 
+               hover:bg-purple-600 hover:shadow-[0_0_30px_rgba(168,85,247,0.7)] transition-all duration-300 text-white"
+            >
+              Find Out More About Us
+            </button>
+          </a>
         </div>
 
       </section>
 
-      {/* FAQ SECTION */}
+      {/* FAQ SECTION + Contact*/}
       <section className="bg-purple-300 text-white w-full h-[100vh] flex flex-col lg:flex-row items-start justify-start gap-12 px-12 py-20">
 
         {/* Left Side — Image + Caption + Button */}
         <div className="lg:w-1/3 flex flex-col items-center lg:items-start justify-start space-y-6 text-center lg:text-left">
           {/* Placeholder Image */}
-          <div className="w-80 h-60 bg-purple-300/20 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-purple-800 font-semibold shadow-[0_0_25px_rgba(168,85,247,0.5)]">
-            Placeholder Image
-          </div>
+          <img src="assets/Callcenter.jpg" className="w-65 h-70 bg-purple-300/20 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-purple-800 font-semibold shadow-[0_0_25px_rgba(168,85,247,0.5)]">
+          </img>
 
           {/* Caption */}
           <p className="text-purple-800 text-lg leading-relaxed">
@@ -422,12 +546,14 @@ export default function FuturisticAuction() {
           </p>
 
           {/* Glowing Button */}
+          <a href="/contact">
           <button
             className="px-8 py-4 mt-2 text-lg font-semibold rounded-xl border-2 border-purple-700 bg-purple-600/20 
                  hover:bg-purple-600 hover:shadow-[0_0_30px_rgba(168,85,247,0.7)] transition-all duration-300 text-white"
           >
             Chat With Us
           </button>
+          </a>
         </div>
 
         {/* Right Side — FAQ (Takes 2/3 Width) */}
@@ -460,49 +586,6 @@ export default function FuturisticAuction() {
           </Accordion>
         </div>
       </section>
-
-      <footer className="relative w-screen h-[100vh] bg-gradient-to-b from-purple-300 to-purple-200 flex items-center justify-center">
-        {/* --- Footer Body --- */}
-        <div className="relative w-[97vw] h-[93vh] bg-slate-900 mx-auto border-3 border-indigo-600 my-auto flex flex-col md:flex-row items-center justify-center gap-16 p-10 rounded-[1rem] shadow-lg">
-
-          <div className="absolute -top-[10px] left-1/2 -translate-x-1/2 w-[95vh] h-[15px] bg-slate-900 rounded-t-[20px] border-t-3 border-indigo-600 flex items-center justify-center"></div>
-          <div className="absolute -bottom-[10px] left-1/2 -translate-x-1/2 w-[142vh] h-[10px] bg-slate-900 rounded-b-[50px] border-b-3 border-indigo-600 flex items-center justify-center"></div>
-
-          {/* --- Footer Content --- */}
-          <div className="flex flex-col md:flex-row items-stretch justify-between w-full text-center md:text-left gap-8">
-
-            {/* Left Links - 1/3 width */}
-            <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
-              <p className="text-sm text-purple-100 font-semibold">Pages</p>
-              <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Featured</a>
-              <a href="/Categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Categories</a>
-              <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">About Us</a>
-              <a href="/how_it_works" className="hover:text-purple-300 transition-all font-extrabold text-xl">How it works</a>
-            </div>
-
-            {/* Center Logo with text above */}
-            <div className="flex-1 flex flex-col items-center justify-center text-center ">
-              <p className="text-purple-200 text-[5vh] font-semibold mb-4">
-                Welcome to <br />
-                <span className="text-yellow-300">BidHub</span>
-              </p>
-              <div className="w-48 h-48 bg-purple-200 rounded-2xl flex items-center justify-center font-bold text-black text-xl shadow-md">
-                Logo / Image
-              </div>
-              <p className="mt-4 text-gray-300 text-sm">© 2025 Your Company</p>
-            </div>
-
-            {/* Right Links - 1/3 width */}
-            <div className="flex-1 flex flex-col items-center justify-center text-white space-y-2">
-              <p className="text-sm text-purple-100 font-semibold">Start Now</p>
-              <a href="/featured_auctions" className="hover:text-purple-300 transition-all font-extrabold text-xl">Login</a>
-              <a href="/Categories" className="hover:text-purple-300 transition-all font-extrabold text-xl">Sign Up</a>
-              <a href="/about" className="hover:text-purple-300 transition-all font-extrabold text-xl">Contact Us</a>
-            </div>
-
-          </div>
-        </div>
-      </footer>
 
       {/* Floating animation styles */}
       <style>{`
