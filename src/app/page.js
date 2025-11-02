@@ -20,6 +20,8 @@ import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import BubbleNav from "@/components/testnav";
 import TunnelSquares from "@/components/tunnelsquare";
+//import { motion } from "motion/react";
+import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
 
 // ---------- Main Component ----------
 export default function FuturisticAuction() {
@@ -348,7 +350,7 @@ export default function FuturisticAuction() {
       {/* Info */}
       <section
         ref={sectionRef}
-        className="section min-h-screen bg-gradient-to-br from-purple-100 to-purple-200 text-purple-900 flex flex-col lg:flex-row justify-between px-24 relative"
+        className="section min-h-screen bg-gradient-to-b from-purple-100 to-purple-300 text-purple-900 flex flex-col lg:flex-row justify-between px-24 relative"
       >
         <div className="flex-1 flex flex-col justify-center py-24">
           <div className="max-w-3xl -translate-y-16 -ml-10">
@@ -384,18 +386,18 @@ export default function FuturisticAuction() {
       </section>
 
       {/* Featured Auctions */}
-      <section className="section min-h-screen bg-gradient-to-br from-purple-700 to-purple-800 px-12 pt-4 pb-20">
+      <section className="section min-h-screen bg-gradient-to-b from-purple-300 to-purple-200 px-12 pt-4 pb-20">
         {/* Header */}
         <div className="text-center mb-20 mt-15">
           <Link
             href="/featured_auctions"
-            className="inline-block md:text-5xl lg:text-6xl font-bold text-purple-300 leading-none hover:text-white transition-colors duration-300 relative group"
+            className="inline-block md:text-5xl lg:text-6xl font-bold text-purple-700 leading-none hover:text-white transition-colors duration-300 relative group"
           >
             Featured Auctions
             <span className="absolute bottom-0 left-0 w-0 h-[4px] bg-white transition-all duration-300 group-hover:w-full" />
           </Link>
 
-          <p className="max-w-3xl mx-auto text-purple-300 text-2xl mt-4">
+          <p className="max-w-3xl mx-auto text-purple-700 text-2xl mt-4">
             Browse through our carefully curated vintage collections
           </p>
         </div>
@@ -436,7 +438,7 @@ export default function FuturisticAuction() {
         className="relative w-full h-[170vh] flex flex-col items-center justify-start overflow-hidden"
       >
         {/* Background Gradient */}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-200 via-purple-300 to-purple-200"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-purple-200 to-purple-300"></div>
 
         {/* Top Section: Video + Text */}
         <div className="relative mt-[18vh] w-[85%] flex flex-col md:flex-row items-start justify-between z-10 space-y-16 md:space-y-0">
@@ -456,36 +458,34 @@ export default function FuturisticAuction() {
               How do I bid?
             </h2>
 
-            <p className="text-lg text-purple-600/90 leading-relaxed whitespace-pre-line">
-              Joining an auction is easy and exciting. Start by{" "}
-              <span className="text-purple-800 font-semibold">
+            <p className="text-lg text-purple-700/90 leading-relaxed whitespace-pre-line">
+              Joining an auction is simple and exciting. Start by{" "}
+              <Highlight className="font-semibold text-purple-800">
                 browsing the live listings
-              </span>{" "}
-              to discover items that catch your eye — from rare collectibles to
-              one-of-a-kind finds. <br/>When you’re ready,{" "}
-              <span className="text-purple-900 font-bold">
-                enter your bid amount
-              </span>{" "}
-              and watch the timer count down. Each new bid{" "}
-              <span className="text-yellow-500 font-semibold">
-                raises the stakes
-              </span>
-              , so stay sharp and don’t let the opportunity slip away! <br/>If the
-              clock hits zero and your bid remains the{" "}
-              <span className="text-green-600 font-semibold">highest</span>,
-              congratulations —{" "}
-              <span className="text-green-500 font-bold">
-                you’ve won the auction!
-              </span>{" "}
-              Complete your payment to secure your item and{" "}
-              <span className="text-purple-700 font-semibold">
-                make it officially yours.
-              </span>
-              <br/>Remember: bidding is about{" "}
-              <span className="text-pink-600 font-medium">
-                strategy and timing
-              </span>{" "}
-              — bid smart, bid bold, and enjoy the thrill of every second.
+              </Highlight>{" "}
+              to discover unique items that catch your eye — from rare
+              collectibles to everyday treasures.
+              {"\n"}
+              When you find something you love,{" "}
+              <Highlight className="font-semibold text-purple-800">
+                place your bid
+              </Highlight>{" "}
+              and watch the timer count down. Stay alert — each new bid raises
+              the competition and brings more excitement.
+              {"\n"}
+              If the clock hits zero and your bid remains the{" "}
+              <Highlight className="font-semibold text-green-600">
+                highest
+              </Highlight>
+              , congratulations — you’ve won! Complete your payment to secure
+              your item and make it officially yours.
+              {"\n"}
+              Remember:{" "}
+              <Highlight className="font-medium text-purple-800">
+                timing and strategy
+              </Highlight>{" "}
+              are everything — bid smart, stay focused, and enjoy the thrill of
+              the win.
             </p>
           </div>
         </div>
@@ -590,31 +590,40 @@ export default function FuturisticAuction() {
       </section>
 
       {/* ABOUT SECTION */}
-      <section className="section bg-purple-700 text-white w-full min-h-screen px-12 flex flex-col lg:flex-row items-start justify-start gap-12 py-12">
+      <section className="section bg-purple-300 text-white w-full min-h-screen px-12 flex flex-col lg:flex-row items-start justify-start gap-12 py-12">
         {/* Left Side — Large Placeholder Image + Text */}
         <div className="flex-1 flex flex-col items-start justify-start space-y-6 w-1/2">
           {/* Lorem Text */}
-          <p className="text-purple-200 leading-relaxed text-md">
-            Why use BidHub?
-          </p>
-          <p className="text-purple-200 leading-relaxed text-lg max-w-2xl">
-            Our platform makes online auctions{" "}
-            <span className="font-semibold text-purple-400">
-              fair, transparent, and effortless
-            </span>
-            . Track your bids in real time, compete confidently, and discover
-            unique items — from rare collectibles to the latest tech.
-            <br />
-            <br />
-            Bidding here is more than shopping — it's an{" "}
-            <span className="font-semibold text-purple-400">
-              experience of discovery and excitement
-            </span>
-            . Join a community of collectors, uncover trending items, and turn
-            each bid into a meaningful win. With intuitive navigation on desktop
-            and mobile, every auction is a chance to explore and bring home
-            something special.
-          </p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="text-center"
+          >
+            {/* Header */}
+            <h2 className="text-6xl font-bold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+              Why use BidHub?
+            </h2>
+
+            {/* Paragraph with small break */}
+            <p className="mt-4 text-purple-700 leading-relaxed text-lg max-w-2xl mx-auto">
+              Our platform makes online auctions{" "}
+              <Highlight className="font-semibold text-purple-600">
+                fair, transparent, and effortless
+              </Highlight>
+              . Track your bids in real time, compete confidently, and uncover
+              unique items — from rare collectibles to cutting-edge tech.
+              <br />
+              Bidding here is more than shopping — it’s an{" "}
+              <Highlight className="font-semibold text-purple-600">
+                experience of discovery and excitement
+              </Highlight>
+              . Join a growing community of collectors, explore trending
+              auctions, and turn each bid into a moment worth remembering. With
+              intuitive navigation across devices, every auction becomes a
+              seamless journey.
+            </p>
+          </motion.div>
 
           {/* Large Placeholder Image */}
           <img
@@ -644,7 +653,7 @@ export default function FuturisticAuction() {
       </section>
 
       {/* FAQ SECTION + Contact*/}
-      <section className="bg-purple-300 text-white w-full h-[100vh] flex flex-col lg:flex-row items-start justify-start gap-12 px-12 py-20">
+      <section className="bg-gradient-to-b from-purple-300 to-purple-400 text-white w-full h-[100vh] flex flex-col lg:flex-row items-start justify-start gap-12 px-12 py-20">
         {/* Left Side — Image + Caption + Button */}
         <div className="lg:w-1/3 flex flex-col items-center lg:items-start justify-start space-y-6 text-center lg:text-left">
           {/* Placeholder Image */}
