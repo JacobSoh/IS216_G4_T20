@@ -351,7 +351,7 @@ export default function ReviewWithComposer({ revieweeId, viewerId }) {
           {filteredReviews.map((review, index) => (
             <div
               key={`${review.reviewee_id}-${review.reviewer_id}-${index}`}
-              
+
             >
               <ReviewCard review={review} sb={sb} />
             </div>

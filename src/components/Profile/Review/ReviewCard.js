@@ -17,7 +17,7 @@ export default function ReviewCard({ review, sb }) {
 
 
     return (
-        <div className="group bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-md p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out">
+        <div className="group bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-md p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] hover:border-[var(--theme-primary)]/60">
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-4">
                     <div className="relative">

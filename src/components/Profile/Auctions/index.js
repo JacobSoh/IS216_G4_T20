@@ -1,17 +1,46 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
-import { Tab } from '@headlessui/react';
-import { supabaseBrowser } from '@/utils/supabase/client';
-import Link from 'next/link';
-import Spinner from '@/components/SpinnerComponent';
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
-function classNames(...classes) {
-    return classes.filter(Boolean).join(' ');
-}
+import { supabaseBrowser } from "@/utils/supabase/client";
+import Spinner from "@/components/SpinnerComponent";
 
-// Helper functions
-const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)}`;
+const AuctionTile = ({ auction }) => {
+  const startsAt = auction.start_time
+    ? new Date(auction.start_time).toLocaleString()
+    : "TBA";
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] transition-colors duration-300 hover:border-[var(--theme-primary)]">
+      <div className="relative h-40 w-full bg-[var(--theme-surface)]">
+        {auction.picUrl ? (
+          <img
+            src={auction.picUrl}
+            alt={auction.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-[var(--theme-muted)]">
+            No image
+          </div>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <h3 className="line-clamp-2 text-base font-semibold text-[var(--theme-surface-contrast)]">
+          {auction.name}
+        </h3>
+        <p className="line-clamp-3 text-sm text-[var(--theme-muted)]">
+          {auction.description || "No description"}
+        </p>
+        <div className="mt-auto text-xs text-[var(--theme-muted)]">
+          Starts:{" "}
+          <span className="text-[var(--theme-surface-contrast)]">{startsAt}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function Auctions({ userId }) {
   const sb = supabaseBrowser();
@@ -52,9 +81,7 @@ export default function Auctions({ userId }) {
           return;
         }
 
-        if (!active) {
-          return;
-        }
+        if (!active) return;
 
         const auctionsWithUrls =
           auctions?.map(({ object_path, thumbnail_bucket, ...rest }) => ({

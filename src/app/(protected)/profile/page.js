@@ -69,6 +69,37 @@ export default function ProfilePage() {
 		loadProfileData();
 	}, []);
 
+	useEffect(() => {
+		if (!profile?.id) return;
+		const sb = supabaseBrowser();
+
+		const channel = sb
+			.channel(`profile-wallet-${profile.id}`)
+			.on(
+				'postgres_changes',
+				{
+					event: '*',
+					schema: 'public',
+					table: 'profile',
+					filter: `id=eq.${profile.id}`
+				},
+				async () => {
+					try {
+						const refreshed = await getProfile();
+						await getAvatarPublicUrl(refreshed);
+						setProfile(refreshed);
+					} catch (error) {
+						console.error('Failed to refresh profile from realtime update:', error);
+					}
+				}
+			)
+			.subscribe();
+
+		return () => {
+			sb.removeChannel(channel);
+		};
+	}, [profile?.id]);
+
 	// Removed auto-open Settings logic; navigation tab now handles access
 
 	const handleDisplay = (type) => (e) => {
