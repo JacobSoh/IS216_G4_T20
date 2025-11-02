@@ -6,13 +6,16 @@ import { CategoryCard } from "@/components/AuctionCard";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 // Utility: Convert category name → slug
-const slugify = (name) =>
-  name
+const slugify = (text) => {
+  return text
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^\w-]+/g, "")
-    .replace(/--+/g, "-");
+    .replace(/\s*&\s*/g, "-")    // replace & with dash
+    .replace(/[\s/+]+/g, "-")    // spaces or + -> dashes
+    .replace(/[^\w-]+/g, "")     // remove other non-word chars
+    .replace(/--+/g, "-")        // collapse multiple dashes
+    .replace(/^-+|-+$/g, "");    // trim leading/trailing dashes
+};
 
 export default function FeaturedCategories() {
   const [categories, setCategories] = useState([]);
@@ -64,14 +67,14 @@ export default function FeaturedCategories() {
   }, []);
 
   return (
-    <section ref={featuredRef} className="min-h-screen relative pt-10 bg-[#0f1419] text-white">
+    <section ref={featuredRef} className="min-h-screen relative pt-10 bg-[var(--theme-primary-darker)] text-white">
       <div className="max-w-7xl mx-auto pb-20 px-6">
         {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[#33A1E0]">
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[var(--theme-cream)]">
             Categories
           </h2>
-          <p className="text-lg text-[#33A1E0]/80">
+          <p className="text-lg text-[var(--theme-cream)]">
             Browse categories to find items of your interest
           </p>
         </div>
