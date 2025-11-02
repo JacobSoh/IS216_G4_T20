@@ -38,7 +38,7 @@ export const AuctionHoverPicture = ({ name, picUrl }) => {
 
       {/* Title + Arrow */}
       <div className="flex justify-between items-center">
-        <h3 className="text-[3vh] text-purple-300 font-extrabold tracking-wide transition-colors duration-300 group-hover:text-white">
+        <h3 className="text-[3vh] text-purple-700 font-extrabold tracking-wide transition-colors duration-300 group-hover:text-gray-100">
           {name || 'Untitled Auction'}
         </h3>
         <span className="opacity-0 translate-x-3 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-white font-black text-[4vh]">

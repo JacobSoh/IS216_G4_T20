@@ -19,7 +19,7 @@ export default function AuctionsPage() {
       try {
         const { data: auctionData, error: auctionErr } = await supabase
           .from("auction")
-          .select("aid, name, description, end_time, thumbnail_bucket, object_path");
+          .select("aid, name, description, start_time, thumbnail_bucket, object_path");
         if (auctionErr) throw auctionErr;
         if (!auctionData || auctionData.length === 0) {
           setAuctions([]);
