@@ -18,6 +18,7 @@ const CONTROL_PRESETS = {
   itemName: { label: "Item Name", inputType: "text", placeholder: "Enter your item name" },
   minBid: { label: "Min Bid ($)", inputType: "number", placeholder: "Minimum bid is $1" },
   bidIncrement: { label: "Bid Increment", inputType: "number", placeholder: "Enter your bid increment (optional)" },
+  timeInterval: { label: "Item Display Duration (Mins)", inputType: "number", placeholder: "Enter time each item is shown (mins)" },
   minutes: { label: "", inputType: "number", placeholder: "MM" },
   seconds: { label: "", inputType: "number", placeholder: "SS" },
 };

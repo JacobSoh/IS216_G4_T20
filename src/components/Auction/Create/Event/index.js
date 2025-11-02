@@ -29,47 +29,46 @@ function reducer(s, a) {
 
 export default function AuctionCreateForm({ onSubmit }) {
   return (
-      <FieldGroup>
-        <div className='grid lg:grid-cols-2 gap-6 items-start'>
-          <FieldGroup className="flex flex-col gap-4">
-            {/* Make sure name="auctionName" */}
-            <CustomInput
-              type='auctionName'  
-              required={true}
-            />
-            
-            {/* Make sure name="auctionDescription" */}
-            <CustomTextarea
-              type="auctionDescription"
-              required={true}
-            />
-            
-            <div className='grid grid-cols-2 gap-4'>
-              {/* Make sure name="startDateTime" */}
-              <CustomerDatePicker
-                type="startDateTime"
-                required={true}
-              />
-              {/* Make sure name="endDateTime" */}
-              <CustomerDatePicker
-                type="endDateTime"
-                required={true}
-              />
-            </div>
-          </FieldGroup>
+    <FieldGroup>
+      <div className='grid lg:grid-cols-2 gap-6 items-start'>
+        <FieldGroup className="flex flex-col gap-4">
+          {/* Make sure name="auctionName" */}
+          <CustomInput
+            type='auctionName'
+            required={true}
+          />
 
-          <FieldGroup>
-            {/* Make sure name="auctionFile" */}
-            <CustomFileInput
-              type="auctionFile"
-              label="Upload Auction Image"
-              filterRule={/^image\//i}
-              maxLength={1}
+          {/* Make sure name="auctionDescription" */}
+          <CustomTextarea
+            type="auctionDescription"
+            required={true}
+          />
+          <div className='flex gap-6'>
+            <CustomerDatePicker
+              type="startDateTime"
               required={true}
             />
-          </FieldGroup>
-        </div>
-      </FieldGroup>
+            <CustomInput
+              type='timeInterval'
+              defaultValue={1}
+              min={1}
+              required={true}
+            />
+          </div>
+        </FieldGroup>
+
+        <FieldGroup>
+          {/* Make sure name="auctionFile" */}
+          <CustomFileInput
+            type="auctionFile"
+            label="Upload Auction Image"
+            filterRule={/^image\//i}
+            maxLength={1}
+            required={true}
+          />
+        </FieldGroup>
+      </div>
+    </FieldGroup>
   );
 }
 

@@ -27,7 +27,7 @@ export class User {
     items_bought;
 
     constructor(authUser, profile, statsData, review) {
-        const fullNameArr = [profile.firstName, profile.middleName, profile.lastName].filter(Boolean);
+        const fullNameArr = [profile.first_name, profile.middle_name, profile.last_name].filter(Boolean);
         // From Auth Database
         this.#id = authUser.id;
         this.email = authUser.email;
@@ -52,7 +52,6 @@ export class User {
         this.avg_rating = this.total_reviews > 0 ? Number(review.avg_rating).toFixed(1) : '0.0',
 
         this.stats = [
-            { title: 'Listing', number: statsData?.currentlyListed ?? 0 },
             { title: 'Sold', number: statsData?.itemsSold ?? 0 },
             { title: 'Won', number: statsData?.itemsWon ?? 0 }
         ];

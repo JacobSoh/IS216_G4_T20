@@ -6,7 +6,7 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url)
     const seller = searchParams.get('seller') || searchParams.get('oid')
-    const auctions = seller ? await getAuctionsByOwner(seller) : await getAllAuctions()
+    const auctions = seller ? await getAuctionsByOwner(seller) : await getAllAuctions();
     return NextResponse.json(
       {
         status: 200,

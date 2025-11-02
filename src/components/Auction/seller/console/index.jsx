@@ -24,7 +24,7 @@ export default function SellerConsole({ auctions = [] }) {
         <h1 className={`text-4xl font-bold text-[var(--theme-gold)]`}>
           Seller Console
         </h1>
-        <Button variant="brand" onClick={() => redirect('/auction/seller/create')}>Create Auction</Button>
+        <Button variant="brand" loadingOnClick={true} onClick={() => window.location.href = '/auction/seller/create'}>Create Auction</Button>
       </div>
       <Tabs defaultValue="manage" className='space-y-6'>
         <TabsList className='w-full'>

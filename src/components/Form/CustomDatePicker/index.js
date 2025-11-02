@@ -85,8 +85,8 @@ export function CustomerDatePicker({
   return (
     <Field>
       <FieldLabel htmlFor={id}>{label ?? preset.label}</FieldLabel>
-      <div className="flex flex-col gap-3">
-        <div className="flex gap-4 items-center">
+      <div className="flex flex-col gap-3 w-full">
+        <div className="flex gap-4 items-center w-full">
           {/* Date via calendar */}
           <Popover open={open} onOpenChange={setOpen}>
             <motion.div
@@ -102,13 +102,13 @@ export function CustomerDatePicker({
               onMouseMove={handleMouseMove}
               onMouseEnter={() => setHoverVisible(true)}
               onMouseLeave={() => setHoverVisible(false)}
-              className="rounded-md p-[2px] transition duration-300 w-fit"
+              className="rounded-md p-[2px] transition duration-300 w-full flex-1 min-w-0"
             >
               <PopoverTrigger asChild>
                 <Button
-                  variant="default"
+                  variant="brand_darker"
                   id={`${id}-date`}
-                  className="justify-between font-normal min-h-10"
+                  className="justify-between font-normal min-h-10 w-full"
                 >
                   {dateVal ? dateVal.toLocaleDateString() : (placeholder ?? preset.placeholder)}
                   <ChevronDownIcon />
@@ -142,7 +142,7 @@ export function CustomerDatePicker({
               const normalized = raw.length === 5 ? `${raw}:00` : raw;
               setTimeVal(normalized);                     // <- no notifyParent here
             }}
-            className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+            className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none w-full flex-1 min-w-0"
           />
         </div>
 

@@ -33,28 +33,28 @@ export default async function getProfile({ username } = {}) {
     const sb = supabaseBrowser();
     try {
         const {id: id, profile: profile, user: user} = username ? await getUserByUsername(username, sb) : await getUserByAuth(sb);
-
+        
         const nowIso = new Date().toISOString();
 
         // Get currently listed items (active auctions not yet sold)
-        const { data: currentlyListedItems, error: itemError } = await sb
-            .from('item')
-            .select(`
-                iid,
-                sold,
-                auction!inner(
-                    aid,
-                    end_time
-                )
-            `)
-            .eq('oid', id)
-            .eq('sold', false)
-            .gt('auction.end_time', nowIso);
+        // const { data: currentlyListedItems, error: itemError } = await sb
+        //     .from('item')
+        //     .select(`
+        //         iid,
+        //         sold,
+        //         auction!inner(
+        //             aid,
+        //             end_time
+        //         )
+        //     `)
+        //     .eq('oid', id)
+        //     .eq('sold', false)
+        //     .gt('auction.end_time', nowIso);
 
-        if (itemError) {
-            console.error('Currently listed error:', itemError);
-            throw new Error("Unable to retrieve user items");
-        }
+        // if (itemError) {
+        //     console.error('Currently listed error:', itemError);
+        //     throw new Error("Unable to retrieve user items");
+        // }
 
         // Get items sold (completed sales where user was seller)
         const { count: itemsSold, error: soldError } = await sb
@@ -87,7 +87,6 @@ export default async function getProfile({ username } = {}) {
         }
 
         const statsData = {
-            currentlyListed: currentlyListedItems?.length || 0,
             itemsSold: itemsSold || 0,
             itemsWon: itemsWon || 0
         };

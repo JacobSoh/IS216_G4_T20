@@ -41,6 +41,10 @@ import BlockingOverlay from '@/components/BlockingOverlay';
 import PersonaButton from '@/components/Persona'
 import { ShieldCheckIcon } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+
+import HammerLoader from '@/components/ui/hammer-loader';
+
 export default function ProfilePage() {
 	const { setModalHeader, setModalState, setModalForm } = useModal();
 	const [profile, setProfile] = useState(null);
@@ -53,6 +57,7 @@ export default function ProfilePage() {
 			try {
 				const profile = await getProfile();
 				await getAvatarPublicUrl(profile);
+				console.log(profile);
 				setProfile(profile);
 				setLoading(false);
 				console.log(profile);
@@ -167,69 +172,62 @@ export default function ProfilePage() {
 			{/* Profile Header */}
 			{/* >>>loading circle i think this one cleaner? can revert if you want<<<
 				{loading && (<aside className="flex items-center justify-center"><Spinner size="sssxl" /></aside>)} */}
+			<h1 className={`text-4xl font-bold text-[var(--theme-gold)] ${loading ? 'hidden' : 'space-y-8'}`}>
+				Welcome back, {profile?.full_name}!
+			</h1>
 			{loading && (
-				<div className="flex items-center justify-center h-[400px]">
-					<UISpinner className="size-6" />
-				</div>
+				// <div className="flex items-center justify-center h-[400px] text-6xl">
+				// 	<UISpinner className="size-40" /> Fetching your informtion!
+				// </div>
+				<HammerLoader/>
 			)}
 
-			<h1 className={`text-4xl font-bold text-[var(--theme-gold)] ${loading ? 'hidden' : ''}`}>
-				Welcome back, @{profile?.username}!
-			</h1>
-			<Card variant="default" className={loading ? 'hidden' : ''}>
-				<CardContent>
-					<div className="flex flex-col lg:flex-row items-center justify-between gap-4">
-						<div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full lg:w-auto">
-							{/* Avatar */}
-							<Avatar avatar_url={profile?.avatar_url} username={profile?.username} />
+			<div className={loading ? 'hidden' : 'space-y-8'}>
+				<Card variant="default">
+					<CardContent>
+						<div className="flex flex-col lg:flex-row justify-between items-center gap-8">
+							<div className="flex flex-col sm:flex-row items-center lg:items-start gap-4">
+								{/* Avatar */}
+								<Avatar avatar_url={profile?.avatar_url} username={profile?.username} />
 
-							{/* User Info */}
-							<div className="flex-1 text-center sm:text-left">
-								<div className="flex items-center justify-center sm:justify-start gap-3 mb-2 flex-wrap">
-									<h1 className="text-white text-xl font-bold m-0">@{profile?.username}</h1>
-									<AvgReview number={profile?.avg_rating} />
-									{profile?.verified
-										? <ShieldCheckIcon className="text-green-500" />
-										: <PersonaButton id={profile?.id} />
-									}
+								{/* User Info */}
+								<div className="flex-1 text-center sm:text-left">
+									<div className="flex items-center justify-center sm:justify-start gap-3 mb-2 flex-wrap">
+										<h1 className="text-white text-xl font-bold m-0">@{profile?.username}</h1>
+										<AvgReview number={profile?.avg_rating} />
+										{profile?.verified
+											? <ShieldCheckIcon className="text-green-500" />
+											: <PersonaButton id={profile?.id} />
+										}
+									</div>
 
-
-								</div>
-
-								{/* Stats */}
-								<div className="flex items-center justify-center sm:justify-start gap-3 text-sm flex-wrap">
-									{profile?.stats.map(v => (
-										<Stats key={v.title} {...v} />
-									))}
-									<span className="text-slate-500 text-xs ml-1">• Joined {getTimeAgo({ datetime: profile?.created_at })}</span>
+									{/* Stats */}
+									<div className="flex items-center justify-center sm:justify-start gap-3 text-sm flex-wrap">
+										{profile?.stats.map(v => (
+											<Stats key={v.title} {...v} />
+										))}
+										<span className="text-slate-500 text-xs ml-1">• Joined {getTimeAgo({ datetime: profile?.created_at })}</span>
+									</div>
 								</div>
 							</div>
-						</div>
 
-						<div className="flex gap-2 w-full lg:w-auto justify-center lg:justify-end flex-wrap">
-							<Options icon='creditcard' variant="gold_white" onClick={(handleDisplay(1))} text={profile?.wallet_balance} />
-							<Options icon='link' variant="info" onClick={(handleDisplay(2))} text='Share' />
-							<Options icon='gear' variant="secondary" onClick={(handleDisplay(3))} text='Edit' />
+							<div className="flex gap-2 w-full lg:w-auto justify-center lg:justify-end">
+								<Options icon='creditcard' variant="brand" onClick={(handleDisplay(1))} text={profile?.wallet_balance} />
+								<Options icon='link' variant="brand" onClick={(handleDisplay(2))} text='Share' />
+								<Options icon='gear' variant="secondary" onClick={(handleDisplay(3))} text='Edit' />
+							</div>
 						</div>
-					</div>
-				</CardContent>
-			</Card>
-			<div className={loading ? 'hidden' : ''}>
-				
-
-				<Tabs defaultValue="won" className='space-y-6'>
-					<div>
-						<TabsList className="w-full">
-							<TabsTrigger className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]" value="won">Items Won</TabsTrigger>
-							<TabsTrigger className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]" value="reviews">Reviews</TabsTrigger>
-						</TabsList>
-					</div>
-					<div className="bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] rounded-md overflow-hidden shadow-xl border border-[var(--theme-border)]">
-						<div>
+					</CardContent>
+				</Card>
+				<Tabs defaultValue="won" className='space-y-4'>
+					<TabsList className="w-full">
+						<TabsTrigger className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]" value="won">Items Won</TabsTrigger>
+						<TabsTrigger className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]" value="reviews">Reviews</TabsTrigger>
+					</TabsList>
+					<Card>
 							<TabsContent value="won"><ItemsWon userId={profile?.id} /></TabsContent>
 							<TabsContent value="reviews"><Reviews userId={profile?.id} /></TabsContent>
-						</div>
-					</div>
+					</Card>
 				</Tabs>
 			</div>
 
