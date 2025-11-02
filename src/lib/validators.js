@@ -13,3 +13,7 @@ export function validateUsername(v) {
 export function validatePassword(v) {
   return passwordRe.test(v);
 }
+
+export function validateRegistration(e, u, p, cp) {
+  return validateEmail(e) && validateUsername(u) && validatePassword(p) && p === cp;
+};

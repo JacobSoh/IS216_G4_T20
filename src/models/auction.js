@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { buildStoragePublicUrl } from '@/utils/storage'
+import 'server-only'
 
 export class Auction {
 	#aid

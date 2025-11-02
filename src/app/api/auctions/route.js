@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 
-import { getAllAuctions, setAuction } from '@/services/auctionService'
+import { getAllAuctions, getAuctionsByOwner, setAuction } from '@/services/auctionService'
 
-export async function GET() {
+export async function GET(req) {
   try {
-    const auctions = await getAllAuctions()
+    const { searchParams } = new URL(req.url)
+    const seller = searchParams.get('seller') || searchParams.get('oid')
+    const auctions = seller ? await getAuctionsByOwner(seller) : await getAllAuctions();
     return NextResponse.json(
       {
         status: 200,

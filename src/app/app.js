@@ -1,5 +1,6 @@
 /* Importing Style or Fonts */
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import '@/styles/globals.css';
 
 /* Importing Components */
@@ -18,12 +19,22 @@ export default async function RootLayout({ children }) {
 	const sb = await supabaseServer();
 	const { data: { session } } = await sb.auth.getSession();
 
-	return (
+    return (
 		<html lang="en">
-			<body className={`${inter.variable} antialiased bg-linear-(--custom-body-bg) bg-no-repeat text-(--custom-text-primary) leading-[1.6]`}>
+			<head>
+				<link rel="preconnect" href="https://cdn.withpersona.com" crossOrigin="anonymous" />
+				<link rel="dns-prefetch" href="//cdn.withpersona.com" />
+			</head>
+			<body className={`${inter.variable} antialiased bg-background text-foreground leading-[1.6]`}>
 				<Providers initialAuthed={!!session}>
 					{children}
 				</Providers>
+				<Script
+				  src="https://cdn.withpersona.com/dist/persona-v5.1.2.js"
+				  integrity="sha384-nuMfOsYXMwp5L13VJicJkSs8tObai/UtHEOg3f7tQuFWU5j6LAewJbjbF5ZkfoDo"
+				  crossOrigin="anonymous"
+				  strategy="beforeInteractive"
+				/>
 			</body>
 		</html>
 	)

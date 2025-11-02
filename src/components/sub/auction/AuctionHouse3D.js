@@ -22,8 +22,9 @@ import * as THREE from 'three'
 import { useAuctionLive } from '@/hooks/useAuctionLive'
 import { useAuctionChat } from '@/hooks/useAuctionChat'
 import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen'
-import { axiosBrowserClient } from '@/utils/axios/client'
+// replaced axiosBrowserClient with fetch
 import { buildStoragePublicUrl } from '@/utils/storage'
+import { ChatBubbleLeftIcon } from '@heroicons/react/24/solid'
 
 const pad = (value) => String(Math.max(0, Math.floor(value))).padStart(2, '0')
 
@@ -1014,10 +1015,11 @@ useEffect(() => {
 
     try {
       setIsBidding(true)
-      await axiosBrowserClient.post(`/api/auctions/${aid}/bid`, {
-        iid: currentLot.activeItem.iid,
-        amount: parsedAmount
-      })
+      await fetch(`${window.location.origin}/api/auctions/${aid}/bid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ iid: currentLot.activeItem.iid, amount: parsedAmount })
+      }).then(async (r) => { if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error || 'Unable to place bid'); } });
       const nextRequired = parsedAmount + bidIncrementValue
       setCurrentLot((prev) => {
         if (!prev) {
@@ -1076,9 +1078,11 @@ useEffect(() => {
     }
     try {
       setIsSendingChat(true)
-      await axiosBrowserClient.post(`/api/auctions/${aid}/chat`, {
-        message: chatInput.trim()
-      })
+      await fetch(`${window.location.origin}/api/auctions/${aid}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: chatInput.trim() })
+      }).then(async (r) => { if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error || 'Unable to send message'); } });
       setChatInput('')
       setChatFeedback('Message sent')
       // Refresh to get the latest messages from server including the new one
@@ -1145,7 +1149,7 @@ useEffect(() => {
         </div>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-xl border border-[var(--custom-border-color)] px-5 py-3 text-sm font-semibold text-[var(--custom-text-primary)] hover:bg-[var(--custom-bg-secondary)] transition"
+          className="inline-flex items-center gap-2 rounded-md border border-[var(--custom-border-color)] px-5 py-3 text-sm font-semibold text-[var(--custom-text-primary)] hover:bg-[var(--custom-bg-secondary)] transition"
         >
           Return Home
         </Link>
@@ -1165,7 +1169,7 @@ useEffect(() => {
         </div>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-xl border border-[var(--custom-border-color)] px-5 py-3 text-sm font-semibold text-[var(--custom-text-primary)] hover:bg-[var(--custom-bg-secondary)] transition"
+          className="inline-flex items-center gap-2 rounded-md border border-[var(--custom-border-color)] px-5 py-3 text-sm font-semibold text-[var(--custom-text-primary)] hover:bg-[var(--custom-bg-secondary)] transition"
         >
           Return Home
         </Link>
@@ -1208,7 +1212,7 @@ useEffect(() => {
         <>
           <div className="absolute top-6 left-6 z-10 pointer-events-auto">
             <Link href="/">
-              <button className="bg-[var(--custom-bg-tertiary)] hover:bg-[var(--custom-navy-blue)] text-[var(--custom-text-primary)] px-6 py-3 rounded-xl border border-[var(--custom-border-color)] backdrop-blur-sm font-semibold transition-all flex items-center gap-2">
+              <button className="bg-[var(--custom-bg-tertiary)] hover:bg-[var(--custom-navy-blue)] text-[var(--custom-text-primary)] px-6 py-3 rounded-md border border-[var(--custom-border-color)] backdrop-blur-sm font-semibold transition-all flex items-center gap-2">
                 <span>←</span> Home
               </button>
             </Link>
@@ -1216,7 +1220,7 @@ useEffect(() => {
 
           {/* Status Bar - Top Right */}
           <div className="absolute top-6 right-6 text-[var(--custom-text-primary)] z-10">
-            <div className="bg-[var(--custom-bg-tertiary)] p-4 rounded-xl border border-[var(--custom-border-color)] backdrop-blur-sm">
+            <div className="bg-[var(--custom-bg-tertiary)] p-4 rounded-md border border-[var(--custom-border-color)] backdrop-blur-sm">
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 ${isFetching ? 'bg-yellow-400 animate-ping' : 'bg-green-500 animate-pulse'} rounded-full`}></div>
                 <span className="text-sm font-medium uppercase tracking-wide">Live Auction</span>
@@ -1248,14 +1252,14 @@ useEffect(() => {
               className="w-12 h-12 md:w-14 md:h-14 bg-[var(--custom-bright-blue)] hover:bg-[var(--custom-ocean-blue)] text-white rounded-full shadow-lg flex items-center justify-center text-xl md:text-2xl transition-all"
               title="Live Chat"
             >
-              💬
+              <ChatBubbleLeftIcon />
             </button>
           </div>
 
           {/* Bidding Panel Popup - Bottom Left */}
           {isBidPanelOpen && (
             <div className="absolute bottom-20 left-4 md:bottom-24 md:left-6 w-[calc(100vw-2rem)] max-w-sm md:w-96 text-[var(--custom-text-primary)] z-[200]">
-              <div className="bg-[var(--custom-bg-tertiary)] p-4 md:p-6 rounded-xl border border-[var(--custom-border-color)] backdrop-blur-sm shadow-2xl">
+              <div className="bg-[var(--custom-bg-tertiary)] p-4 md:p-6 rounded-md border border-[var(--custom-border-color)] backdrop-blur-sm shadow-2xl">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg md:text-xl font-bold text-[var(--custom-cream-yellow)]">
                     🔨 Place Your Bid
@@ -1270,7 +1274,7 @@ useEffect(() => {
 
                 <div className="space-y-4">
                   {/* Current Bid Info */}
-                  <div className="bg-[var(--custom-bg-secondary)] p-3 md:p-4 rounded-lg space-y-2">
+                  <div className="bg-[var(--custom-bg-secondary)] p-3 md:p-4 rounded-md space-y-2">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-[var(--custom-text-muted)] text-xs md:text-sm uppercase tracking-wide">Current Bid</p>
@@ -1296,7 +1300,7 @@ useEffect(() => {
                       value={bidAmount}
                       onChange={(event) => setBidAmount(event.target.value)}
                       placeholder={`Min: $${nextBidMinimum.toFixed(2)}`}
-                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-[var(--custom-bg-secondary)] border border-[var(--custom-border-color)] rounded-lg text-[var(--custom-text-primary)] text-sm md:text-base focus:outline-none focus:border-[var(--custom-bright-blue)]"
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-[var(--custom-bg-secondary)] border border-[var(--custom-border-color)] rounded-md text-[var(--custom-text-primary)] text-sm md:text-base focus:outline-none focus:border-[var(--custom-bright-blue)]"
                     />
                     <p className="mt-2 text-[11px] md:text-xs text-[var(--custom-text-muted)]">
                       Enter in increments of ${bidIncrementValue.toFixed(2)}.
@@ -1307,7 +1311,7 @@ useEffect(() => {
                   <button
                     onClick={handleBidSubmit}
                     disabled={isBidding}
-                    className="w-full py-3 md:py-4 bg-[var(--custom-accent-red)] hover:bg-[#8b1f22] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all text-sm md:text-base"
+                    className="w-full py-3 md:py-4 bg-[var(--custom-accent-red)] hover:bg-[#8b1f22] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-md transition-all text-sm md:text-base"
                   >
                     {isBidding ? 'Submitting...' : 'Place Bid'}
                   </button>
@@ -1322,12 +1326,12 @@ useEffect(() => {
           {/* Chat Panel Popup - Bottom Right */}
           {isChatPanelOpen && (
             <div className="absolute bottom-20 right-4 md:bottom-24 md:right-6 w-[calc(100vw-2rem)] max-w-sm md:w-96 h-80 md:h-96 text-[var(--custom-text-primary)] z-[200]">
-              <div className="bg-[var(--custom-bg-tertiary)] rounded-xl border border-[var(--custom-border-color)] backdrop-blur-sm shadow-2xl h-full flex flex-col">
+              <div className="bg-[var(--custom-bg-tertiary)] rounded-md border border-[var(--custom-border-color)] backdrop-blur-sm shadow-2xl h-full flex flex-col">
                 {/* Chat Header */}
                 <div className="p-3 md:p-4 border-b border-[var(--custom-border-color)] flex justify-between items-center">
                   <div>
                     <h3 className="text-base md:text-lg font-bold text-[var(--custom-bright-blue)]">
-                      💬 Live Chat
+                      <ChatBubbleLeftIcon /> Live Chat
                     </h3>
                     <p className="text-xs text-[var(--custom-text-muted)]">
                       {chatParticipantCount} messages • {isChatFetching ? 'Updating…' : 'Live'}
@@ -1365,7 +1369,7 @@ useEffect(() => {
                         </div>
                         <div className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
                           <div
-                            className={`rounded-2xl px-3 py-2 shadow-sm ${
+                            className={`rounded-md px-3 py-2 shadow-sm ${
                               isOwn
                                 ? 'bg-[var(--custom-bright-blue)] text-white rounded-br-md'
                                 : 'bg-[var(--custom-bg-secondary)] text-[var(--custom-text-primary)] border border-[var(--custom-border-color)] rounded-bl-md'
@@ -1396,12 +1400,12 @@ useEffect(() => {
                       value={chatInput}
                       onChange={(event) => setChatInput(event.target.value)}
                       placeholder="Type a message..."
-                      className="flex-1 px-2 md:px-3 py-2 bg-[var(--custom-bg-secondary)] border border-[var(--custom-border-color)] rounded-lg text-xs md:text-sm text-[var(--custom-text-primary)] focus:outline-none focus:border-[var(--custom-bright-blue)]"
+                      className="flex-1 px-2 md:px-3 py-2 bg-[var(--custom-bg-secondary)] border border-[var(--custom-border-color)] rounded-md text-xs md:text-sm text-[var(--custom-text-primary)] focus:outline-none focus:border-[var(--custom-bright-blue)]"
                     />
                     <button
                       type="submit"
                       disabled={isSendingChat || !chatInput.trim()}
-                      className="px-3 md:px-4 py-2 bg-[var(--custom-bright-blue)] hover:bg-[var(--custom-ocean-blue)] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-all text-xs md:text-sm"
+                      className="px-3 md:px-4 py-2 bg-[var(--custom-bright-blue)] hover:bg-[var(--custom-ocean-blue)] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-md font-semibold transition-all text-xs md:text-sm"
                     >
                       {isSendingChat ? 'Sending…' : 'Send'}
                     </button>

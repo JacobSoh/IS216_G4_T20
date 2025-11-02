@@ -43,3 +43,14 @@ export async function insertAuctionChat(payload) {
   if (error) throw error
   return data ?? null
 }
+
+export async function deleteAuctionChatsByAuction(aid) {
+  const sb = supabaseServer()
+  const { error } = await (
+    await sb
+  ).from('auction_chat')
+    .delete()
+    .eq('aid', aid)
+  if (error) throw error
+  return true
+}

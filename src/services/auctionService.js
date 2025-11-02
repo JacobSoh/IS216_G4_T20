@@ -3,19 +3,33 @@ import 'server-only'
 import { Auction } from '@/models/auction'
 import {
   retrieveAllAuctions,
+  retrieveAuctionsByOwner,
   insertAuction,
   retrieveAuctionById,
   upAuctionById,
-  delAuctionById
+  delAuctionById,
+  updateAuctionTimer,
+  closeAuctionRecord
 } from '@/repositories/auctionRepo'
-import { retrieveItemsByAuction, retrieveItemById } from '@/repositories/itemRepo'
+import { retrieveItemsByAuction, retrieveItemById, markItemAsSold } from '@/repositories/itemRepo'
 import { retrieveAuctionChats, insertAuctionChat } from '@/repositories/auctionChatRepo'
 import {
   retrieveCurrentBidsByAuction,
   retrieveCurrentBidByItem,
   upsertCurrentBid
 } from '@/repositories/currentBidRepo'
+import {
+  insertBidHistory,
+  retrieveBidHistoryByAuction
+} from '@/repositories/bidHistoryRepo'
+import { insertItemSold } from '@/repositories/itemsSoldRepo'
 import { buildStoragePublicUrl } from '@/utils/storage'
+import {
+  transferWalletFunds
+} from '@/repositories/profileRepo'
+import {
+  insertWalletTransaction
+} from '@/repositories/walletTransactionRepo'
 
 const REQUIRED_FIELDS = ['oid', 'name', 'start_time', 'end_time', 'thumbnail_bucket', 'object_path']
 
@@ -40,7 +54,11 @@ function enhanceAuctionRecord(record) {
   return {
     ...auction.getJson(),
     owner: record.owner ?? null,
-    thumbnailUrl
+    thumbnailUrl,
+    // Include timer fields from the raw database record
+    time_interval: record.time_interval ?? null,
+    timer_started_at: record.timer_started_at ?? null,
+    timer_duration_seconds: record.timer_duration_seconds ?? null
   }
 }
 
@@ -60,25 +78,47 @@ function enhanceItemRecord(item, bidsMap) {
 
 function deriveActiveItem(items = []) {
   if (items.length === 0) return { active: null, next: null }
+
+  // Consider only items that currently have an active bid entry (lot is live)
+  const candidates = items.filter((item) => Boolean(item.current_bid) && item.sold !== true)
   let active = null
-  items.forEach((item, index) => {
-    if (!active) {
-      active = item
-      return
+
+  if (candidates.length > 0) {
+    active = candidates.reduce((latest, item) => {
+      if (!latest) return item
+      const latestTimestamp = latest.current_bid?.bid_datetime
+        ? new Date(latest.current_bid.bid_datetime).getTime()
+        : 0
+      const candidateTimestamp = item.current_bid?.bid_datetime
+        ? new Date(item.current_bid.bid_datetime).getTime()
+        : 0
+      return candidateTimestamp > latestTimestamp ? item : latest
+    }, null)
+  }
+
+  if (!active) {
+    const nextUnsold = items.find((item) => item.sold !== true) ?? null
+    return {
+      active: null,
+      next: nextUnsold
     }
-    const activeTimestamp = active.current_bid?.bid_datetime
-      ? new Date(active.current_bid.bid_datetime).getTime()
-      : 0
-    const candidateTimestamp = item.current_bid?.bid_datetime
-      ? new Date(item.current_bid.bid_datetime).getTime()
-      : 0
-    if (candidateTimestamp > activeTimestamp) {
-      active = item
-    }
-  })
-  if (!active) active = items[0]
+  }
+
   const activeIndex = items.findIndex((item) => item.iid === active.iid)
-  const next = activeIndex >= 0 && activeIndex + 1 < items.length ? items[activeIndex + 1] : null
+  let next = null
+  if (activeIndex >= 0) {
+    for (let idx = activeIndex + 1; idx < items.length; idx += 1) {
+      const candidate = items[idx]
+      if (candidate?.sold !== true) {
+        next = candidate
+        break
+      }
+    }
+  }
+  if (!next) {
+    next = items.find((item) => item.sold !== true && item.iid !== active.iid) ?? null
+  }
+
   return { active, next }
 }
 
@@ -105,6 +145,12 @@ export async function getAllAuctions() {
   const data = await retrieveAllAuctions()
   if (!data) throw new Error('Auctions not found')
   return data.map(enhanceAuctionRecord)
+}
+
+export async function getAuctionsByOwner(oid) {
+  if (!oid) throw new Error('Missing owner id')
+  const data = await retrieveAuctionsByOwner(oid)
+  return (data ?? []).map(enhanceAuctionRecord)
 }
 
 export async function setAuction(param) {
@@ -139,7 +185,13 @@ export async function deleteAuctionById(aid, oid) {
 }
 
 export async function getAuctionLiveState(aid) {
-  return hydrateAuctionData(aid)
+  const data = await hydrateAuctionData(aid)
+  // Also include bid history for the seller's management panel
+  const bidHistory = await retrieveBidHistoryByAuction(aid, { limit: 100 })
+  return {
+    ...data,
+    bidHistory
+  }
 }
 
 export async function setActiveAuctionItem({ aid, iid, actorId, currentPrice }) {
@@ -154,15 +206,29 @@ export async function setActiveAuctionItem({ aid, iid, actorId, currentPrice }) 
   if (!itemRecord || itemRecord.aid !== aid) {
     throw new Error('Item does not belong to this auction')
   }
+
+  // Check if item is already sold
+  if (itemRecord.sold) {
+    throw new Error('Cannot activate item: This item has already been sold')
+  }
+
   const price = currentPrice ?? itemRecord.min_bid
   const payload = {
     aid,
     iid,
     oid: auctionRecord.oid,
-    uid: actorId,
+    uid: null,
     current_price: price,
     bid_datetime: new Date().toISOString()
   }
+
+  // Start the countdown timer for this item
+  const defaultTimeInterval = auctionRecord.time_interval ?? 300 // Default 5 minutes
+  await updateAuctionTimer(aid, {
+    timer_started_at: new Date().toISOString(),
+    timer_duration_seconds: defaultTimeInterval
+  })
+
   const result = await upsertCurrentBid(payload)
   return result
 }
@@ -186,15 +252,30 @@ export async function placeBidForItem({ aid, iid, bidderId, amount }) {
   if (normalizedAmount + 1e-9 < minimumRequired) {
     throw new Error(`Bid must be at least ${minimumRequired.toFixed(2)}`)
   }
-  const payload = {
+
+  const bidDatetime = new Date().toISOString()
+
+  // 1. Insert into bid_history (permanent record of this bid)
+  const historyPayload = {
+    aid,
+    iid,
+    uid: bidderId,
+    oid: itemRecord.oid,
+    bid_amount: normalizedAmount,
+    bid_datetime: bidDatetime
+  }
+  await insertBidHistory(historyPayload)
+
+  // 2. Update current_bid (current highest bid for this item)
+  const currentBidPayload = {
     aid,
     iid,
     uid: bidderId,
     oid: itemRecord.oid,
     current_price: normalizedAmount,
-    bid_datetime: new Date().toISOString()
+    bid_datetime: bidDatetime
   }
-  return upsertCurrentBid(payload)
+  return upsertCurrentBid(currentBidPayload)
 }
 
 export async function getAuctionChatMessages(aid, { limit = 120 } = {}) {
@@ -214,4 +295,176 @@ export async function postAuctionChatMessage({ aid, uid, message }) {
     uid,
     message: message.trim()
   })
+}
+
+/**
+ * Close an item sale - marks item as sold and records the sale
+ * Only works if the item has received bids
+ */
+export async function closeItemSale({ aid, iid, actorId }) {
+  // Verify auction ownership
+  const auctionRecord = await retrieveAuctionById(aid)
+  if (!auctionRecord) {
+    throw new Error('Auction not found')
+  }
+  if (auctionRecord.oid !== actorId) {
+    throw new Error('Only the auction owner can close item sales')
+  }
+
+  // Get item details
+  const itemRecord = await retrieveItemById(iid)
+  if (!itemRecord || itemRecord.aid !== aid) {
+    throw new Error('Item does not belong to this auction')
+  }
+
+  // Check if already sold
+  if (itemRecord.sold) {
+    throw new Error('Item is already marked as sold')
+  }
+
+  // Get current bid
+  const currentBid = await retrieveCurrentBidByItem(iid)
+  const hasBids = Boolean(
+    currentBid &&
+    currentBid.uid &&
+    currentBid.uid !== auctionRecord.oid
+  )
+
+  // If there are bids, complete the payment and log to items_sold table
+  let paymentTransactionId = null
+
+  if (hasBids) {
+    const buyerId = currentBid.uid
+    const sellerId = itemRecord.oid
+    const finalPrice = Number(currentBid.current_price)
+
+    try {
+      // Transfer funds directly from buyer to seller
+      await transferWalletFunds(buyerId, sellerId, finalPrice)
+
+      // Create payment transaction record for buyer
+      const paymentTransaction = await insertWalletTransaction({
+        uid: buyerId,
+        transaction_type: 'payment',
+        amount: finalPrice,
+        status: 'completed',
+        related_item_id: iid,
+        description: `Payment for item: ${itemRecord.title}`,
+        completed_at: new Date().toISOString()
+      })
+
+      paymentTransactionId = paymentTransaction?.tid ?? null
+
+      // Create credit transaction for seller
+      await insertWalletTransaction({
+        uid: sellerId,
+        transaction_type: 'sale',
+        amount: finalPrice,
+        status: 'completed',
+        related_item_id: iid,
+        description: `Sale of item: ${itemRecord.title}`,
+        completed_at: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error('Error processing payment:', error)
+      throw new Error(`Failed to process payment: ${error.message}`)
+    }
+
+    // Log to items_sold table
+    const itemSoldPayload = {
+      iid,
+      aid,
+      buyer_id: buyerId,
+      seller_id: sellerId,
+      final_price: finalPrice,
+      sold_at: new Date().toISOString(),
+      payment_transaction_id: paymentTransactionId
+    }
+    await insertItemSold(itemSoldPayload)
+  }
+
+  // Mark item as sold in items table (whether or not there are bids)
+  await markItemAsSold(iid, { sold: true })
+
+  // Clear the countdown timer
+  await updateAuctionTimer(aid, {
+    timer_started_at: null,
+    timer_duration_seconds: null
+  })
+
+  return {
+    success: true,
+    itemId: iid,
+    buyerId: hasBids ? currentBid.uid : null,
+    finalPrice: hasBids ? currentBid.current_price : null,
+    hasBids,
+    paymentTransactionId
+  }
+}
+
+/**
+ * Check if an item can be activated (not sold)
+ */
+export async function canActivateItem(iid) {
+  const itemRecord = await retrieveItemById(iid)
+  if (!itemRecord) {
+    return { canActivate: false, reason: 'Item not found' }
+  }
+  if (itemRecord.sold) {
+    return { canActivate: false, reason: 'Item has already been sold' }
+  }
+  return { canActivate: true }
+}
+
+/**
+ * Adjust the countdown timer for the active item
+ * @param {string} aid - Auction ID
+ * @param {number} durationSeconds - New duration in seconds
+ * @param {string} actorId - User ID of the actor (must be auction owner)
+ */
+export async function adjustAuctionTimer({ aid, durationSeconds, actorId }) {
+  // Verify auction ownership
+  const auctionRecord = await retrieveAuctionById(aid)
+  if (!auctionRecord) {
+    throw new Error('Auction not found')
+  }
+  if (auctionRecord.oid !== actorId) {
+    throw new Error('Only the auction owner can adjust the timer')
+  }
+
+  // Validate duration
+  const duration = Number(durationSeconds)
+  if (!Number.isFinite(duration) || duration < 0) {
+    throw new Error('Invalid duration: must be a positive number')
+  }
+
+  // Update the timer with new duration, restart the timer
+  await updateAuctionTimer(aid, {
+    timer_started_at: new Date().toISOString(),
+    timer_duration_seconds: duration
+  })
+
+  return {
+    success: true,
+    timer_started_at: new Date().toISOString(),
+    timer_duration_seconds: duration
+  }
+}
+
+export async function closeAuction({ aid, actorId }) {
+  const auctionRecord = await retrieveAuctionById(aid)
+  if (!auctionRecord) {
+    throw new Error('Auction not found')
+  }
+  if (auctionRecord.oid !== actorId) {
+    throw new Error('Only the auction owner can close this auction')
+  }
+
+  const closedAt = new Date().toISOString()
+  await closeAuctionRecord(aid, { end_time: closedAt })
+
+  return {
+    success: true,
+    closedAt
+  }
 }
