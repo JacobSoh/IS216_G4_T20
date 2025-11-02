@@ -209,7 +209,7 @@ export default function BubbleNav() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
               >
-                {["About", "Enquiries"].map((text, i) => (
+                {["About", "Contact"].map((text, i) => (
                   <motion.a
                     key={text}
                     href={`/${text.toLowerCase()}`}

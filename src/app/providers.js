@@ -95,8 +95,17 @@ export default function Providers({ initialAuthed, children }) {
     /^\/auction\/view\/[^/]+$/.test(pathname) && pathname !== "/auction/create";
   const isMinimalLayout = pathname === "/" || isAuctionDetail;
 
-  const noPaddingPages = ["/featured_auctions"]; // Add your page path here
-  if (pathname.startsWith("/categories/")) noPaddingPages.push(pathname);
+  const noPaddingPages = ["/featured_auctions"];
+  // Check multiple paths
+  if (
+    pathname.startsWith("/categories/") ||
+    pathname === "/contact" ||
+    pathname === "/about" ||
+    pathname === "/how_it_works"
+  ) {
+    noPaddingPages.push(pathname);
+  }
+
   const disablePadding = noPaddingPages.includes(pathname);
 
   // One-time email verification toast from middleware flash cookie
