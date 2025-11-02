@@ -37,7 +37,7 @@ export default function SellerConsole({ auctions = [] }) {
               <SellerDatatable auctions={auctions} />
             </CardContent>
           </Card>
-          
+
         </TabsContent>
         <TabsContent value="dashboard">
           <SellerDashboard auctions={auctions} />

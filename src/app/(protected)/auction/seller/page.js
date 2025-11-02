@@ -14,7 +14,7 @@ export default async function SellerPage() {
       const res = await fetch(`${base}/api/auctions?seller=${encodeURIComponent(user.id)}`, { cache: 'no-store' });
       const json = await res.json();
       auctions = Array.isArray(json?.record) ? json.record : [];
-      console.log(auctions);
+      console.log("this is auctions", auctions);
     }
   } catch {}
 

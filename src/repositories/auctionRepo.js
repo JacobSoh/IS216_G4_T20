@@ -7,7 +7,6 @@ const baseAuctionSelect = `
   name,
   description,
   start_time,
-  end_time,
   thumbnail_bucket,
   object_path,
   time_interval,
@@ -120,7 +119,6 @@ export async function updateAuctionTimer(aid, timerData) {
 export async function closeAuctionRecord(aid, { end_time }) {
   const sb = supabaseServer()
   const payload = {
-    end_time,
     timer_started_at: null,
     timer_duration_seconds: null
   }
