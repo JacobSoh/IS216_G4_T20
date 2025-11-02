@@ -8,7 +8,7 @@ import Spinner from "@/components/SpinnerComponent";
 import ReviewCard from "@/components/Profile/Review/ReviewCard";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { CustomSelect, CustomTextarea } from "@/components/Form";
 import { useModal } from "@/context/ModalContext";
 
 const MIN_REVIEW_LENGTH = 10;
@@ -16,34 +16,34 @@ const MIN_REVIEW_LENGTH = 10;
 function ReviewFormFields({ initialStars, initialReview }) {
   return (
     <div className="space-y-4">
-      <div>
-        <Label htmlFor="review-stars" className="text-[var(--theme-muted)]">
-          Rating
-        </Label>
-        <select
-          id="review-stars"
-          name="review-stars"
+      <div className="max-w-xs">
+        <CustomSelect
+          type="review-stars"
+          label="Rating"
+          placeholder="Select rating"
           defaultValue={initialStars}
-          className="mt-1 w-24 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-[var(--theme-surface-contrast)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
-        >
-          {[1, 2, 3, 4, 5].map((value) => (
-            <option key={value} value={value}>
-              {value} star{value > 1 ? "s" : ""}
-            </option>
-          ))}
-        </select>
+          options={Array.from({ length: 5 }, (_, idx) => {
+            const val = (idx + 1).toString();
+            return {
+              value: val,
+              label: `${val} star${val !== "1" ? "s" : ""}`,
+            };
+          }).reverse()}
+        />
       </div>
 
       <div>
         <Label htmlFor="review-text" className="text-[var(--theme-muted)]">
           Share your experience
         </Label>
-        <Textarea
+        <CustomTextarea
+          type="reviewText"
           id="review-text"
           name="review-text"
           defaultValue={initialReview}
-          placeholder="Tell other buyers about this seller…"
-          className="mt-1 min-h-[140px] resize-y border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] focus-visible:ring-[var(--theme-primary)]"
+          placeholder="Tell other buyers about this seller..."
+          autoGrow
+          className="mt-1 border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] focus-visible:ring-[var(--theme-primary)]"
         />
       </div>
     </div>
@@ -309,32 +309,29 @@ export default function ReviewWithComposer({ revieweeId, viewerId }) {
         )}
 
         <div className="flex w-full flex-col gap-3 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-sm text-[var(--theme-muted)] md:w-auto md:flex-row md:items-center md:gap-4">
-          <label className="flex flex-col gap-2 md:flex-row md:items-center md:gap-2">
-            <span>Filter by rating</span>
-            <select
-              value={starFilter}
-              onChange={(event) => setStarFilter(event.target.value)}
-              className="rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-[var(--theme-surface-contrast)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
-            >
-              <option value="all">All</option>
-              {[5, 4, 3, 2, 1].map((value) => (
-                <option key={value} value={value}>
-                  {value} star{value > 1 ? "s" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-2 md:flex-row md:items-center md:gap-2">
-            <span>Sort by date</span>
-            <select
-              value={sortOrder}
-              onChange={(event) => setSortOrder(event.target.value)}
-              className="rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-[var(--theme-surface-contrast)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
-            >
-              <option value="desc">Newest first</option>
-              <option value="asc">Oldest first</option>
-            </select>
-          </label>
+          <CustomSelect
+            type="review-filter-rating"
+            label="Filter by rating"
+            value={starFilter}
+            onChange={(event) => setStarFilter(event.target.value)}
+            options={[
+              { value: "all", label: "All" },
+              ...[5, 4, 3, 2, 1].map((value) => ({
+                value: value.toString(),
+                label: `${value} star${value > 1 ? "s" : ""}`,
+              })),
+            ]}
+          />
+          <CustomSelect
+            type="review-sort-order"
+            label="Sort by date"
+            value={sortOrder}
+            onChange={(event) => setSortOrder(event.target.value)}
+            options={[
+              { value: "desc", label: "Newest first" },
+              { value: "asc", label: "Oldest first" },
+            ]}
+          />
         </div>
       </div>
 
@@ -351,7 +348,6 @@ export default function ReviewWithComposer({ revieweeId, viewerId }) {
           {filteredReviews.map((review, index) => (
             <div
               key={`${review.reviewee_id}-${review.reviewer_id}-${index}`}
-
             >
               <ReviewCard review={review} sb={sb} />
             </div>

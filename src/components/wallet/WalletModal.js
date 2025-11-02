@@ -4,6 +4,7 @@ import { useState, useEffect, useReducer } from 'react';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { createTopUpPayment } from '@/utils/hitpay/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { CustomSelect, CustomTextarea } from '@/components/Form';
 
 const initialWallet = {
     wallet_balance: 0,
@@ -42,8 +43,18 @@ export default function WalletModal({
         accountNumber: '',
         accountName: ''
     });
+    const [withdrawNote, setWithdrawNote] = useState('');
 
     const quickAmounts = [10, 50, 100, 200, 500];
+    const BANK_OPTIONS = [
+        { value: 'DBS', label: 'DBS Bank' },
+        { value: 'OCBC', label: 'OCBC Bank' },
+        { value: 'UOB', label: 'UOB' },
+        { value: 'HSBC', label: 'HSBC' },
+        { value: 'Standard Chartered', label: 'Standard Chartered' },
+        { value: 'Maybank', label: 'Maybank' },
+        { value: 'CIMB', label: 'CIMB Bank' },
+    ];
 
     useEffect(() => {
 
@@ -129,7 +140,7 @@ export default function WalletModal({
                     transaction_type: 'withdraw',
                     amount: amount,
                     status: 'pending',
-                    description: `Withdrawal to ${bankDetails.bankName} - ${bankDetails.accountNumber}`,
+                    description: `Withdrawal to ${bankDetails.bankName} - ${bankDetails.accountNumber}${withdrawNote ? ` | ${withdrawNote}` : ''}`,
                     created_at: new Date().toISOString()
                 });
 
@@ -147,6 +158,7 @@ export default function WalletModal({
             setSuccess('Withdrawal request submitted successfully! Processing time: 1-3 business days');
             setWithdrawAmount('');
             setBankDetails({ bankName: '', accountNumber: '', accountName: '' });
+            setWithdrawNote('');
 
             setTimeout(() => {
                 window.location.reload();
@@ -298,12 +310,13 @@ export default function WalletModal({
                         </p>
 
                         <div className="space-y-4">
-                            <input
-                                type="text"
-                                placeholder="Bank Name"
+                            <CustomSelect
+                                type="withdrawBank"
+                                label="Bank"
+                                placeholder="Select your bank"
+                                options={BANK_OPTIONS}
                                 value={bankDetails.bankName}
-                                onChange={(e) => setBankDetails({ ...bankDetails, bankName: e.target.value })}
-                                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500"
+                                onChange={(event) => setBankDetails({ ...bankDetails, bankName: event.target.value })}
                             />
                             <input
                                 type="text"
@@ -325,6 +338,15 @@ export default function WalletModal({
                                 value={withdrawAmount}
                                 onChange={(e) => setWithdrawAmount(e.target.value)}
                                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500"
+                            />
+                            <CustomTextarea
+                                type="withdrawNote"
+                                label="Notes (optional)"
+                                placeholder="Include any reference or instructions for this withdrawal"
+                                value={withdrawNote}
+                                onChange={(event) => setWithdrawNote(event.target.value)}
+                                autoGrow
+                                className="bg-gray-700 border border-gray-600 text-white"
                             />
                             <button
                                 onClick={handleWithdraw}

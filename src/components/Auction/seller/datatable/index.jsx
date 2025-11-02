@@ -1,9 +1,17 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { redirect } from "next/navigation";
-import { ArrowUpDown, Eye, Pencil, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import {
+  ArrowUpDown,
+  Eye,
+  Pencil,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+} from "lucide-react";
 
+import { supabaseBrowser } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CustomInput } from "@/components/Form";
 import {
@@ -14,18 +22,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-function deriveStatus({ start_time, end_time }) {
-  try {
-    const now = Date.now();
-    const s = start_time ? new Date(start_time).getTime() : null;
-    const e = end_time ? new Date(end_time).getTime() : null;
-    if (s && now < s) return "scheduled";
-    if (s && e && now >= s && now <= e) return "live";
-    if (e && now > e) return "ended";
-  } catch { }
-  return "scheduled";
-}
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -43,29 +39,128 @@ function formatDate(iso) {
   }
 }
 
+function isItemSold(item) {
+  const value = item?.sold;
+  if (value === true || value === 1 || value === "true") return true;
+  if (value === false || value === 0 || value === "false") return false;
+  return value != null ? Boolean(value) : false;
+}
+
+function deriveStatus(auction, items, { ready }) {
+  try {
+    const startMs = auction?.start_time
+      ? new Date(auction.start_time).getTime()
+      : null;
+    if (!startMs || Number.isNaN(startMs)) return "scheduled";
+
+    const now = Date.now();
+    if (now < startMs) return "scheduled";
+
+    if (!Array.isArray(items)) {
+      const fallbackItems = Array.isArray(auction?.items) ? auction.items : [];
+      if (!ready) return "live";
+      if (!fallbackItems.length) return "ended";
+      const hasPendingFallback = fallbackItems.some((item) => !isItemSold(item));
+      return hasPendingFallback ? "live" : "ended";
+    }
+
+    if (!items.length) {
+      return ready ? "ended" : "live";
+    }
+
+    const hasPending = items.some((item) => !isItemSold(item));
+    return hasPending ? "live" : "ended";
+  } catch (error) {
+    console.warn("[SellerDatatable] Failed to derive status", error);
+    return "scheduled";
+  }
+}
+
 const statusOrder = { draft: 0, scheduled: 1, live: 2, ended: 3 };
 
 export default function SellerDatatable({ auctions = [] }) {
+  const sb = supabaseBrowser();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [sortKey, setSortKey] = useState("status");
-  const [sortDir, setSortDir] = useState("desc"); // asc | desc
+  const [sortDir, setSortDir] = useState("desc");
   const [page, setPage] = useState(1);
+  const [auctionItems, setAuctionItems] = useState({});
+  const [itemsReady, setItemsReady] = useState(false);
+  const [itemsLoading, setItemsLoading] = useState(false);
   const pageSize = 5;
-  const loading = false;
+
+  useEffect(() => {
+    const ids = (auctions ?? [])
+      .map((auction) => auction?.aid)
+      .filter((id) => Boolean(id));
+    if (!ids.length) {
+      setAuctionItems({});
+      setItemsReady(true);
+      setItemsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setItemsLoading(true);
+    setItemsReady(false);
+
+    sb
+      .from("item")
+      .select("aid, sold")
+      .in("aid", ids)
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.error("[SellerDatatable] Failed to fetch items", error);
+          setAuctionItems({});
+          setItemsReady(true);
+          setItemsLoading(false);
+          return;
+        }
+
+        const grouped = (data ?? []).reduce((acc, item) => {
+          const key = item?.aid;
+          if (!key) return acc;
+          if (!acc[key]) acc[key] = [];
+          acc[key].push({ sold: item?.sold ?? null });
+          return acc;
+        }, {});
+
+        setAuctionItems(grouped);
+        setItemsReady(true);
+        setItemsLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error("[SellerDatatable] Unexpected item fetch error", err);
+        setAuctionItems({});
+        setItemsReady(true);
+        setItemsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [sb, auctions]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (auctions || []).map((a) => ({
-      ...a,
-      _status: deriveStatus(a),
-    })).filter((a) => {
-      const title = a?.name || '';
-      const matchQuery = !q || title.toLowerCase().includes(q);
-      const matchStatus = status === "all" || a._status === status;
-      return matchQuery && matchStatus;
-    });
-  }, [query, status, auctions]);
+    return (auctions || [])
+      .map((auction) => {
+        const items = auctionItems[auction?.aid] ?? auction?.items;
+        return {
+          ...auction,
+          _status: deriveStatus(auction, items, { ready: itemsReady }),
+        };
+      })
+      .filter((auction) => {
+        const title = auction?.name || "";
+        const matchQuery = !q || title.toLowerCase().includes(q);
+        const matchStatus = status === "all" || auction._status === status;
+        return matchQuery && matchStatus;
+      });
+  }, [query, status, auctions, auctionItems, itemsReady]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -73,12 +168,12 @@ export default function SellerDatatable({ auctions = [] }) {
       const dir = sortDir === "asc" ? 1 : -1;
       switch (sortKey) {
         case "title": {
-          const at = (a.name || '').toString();
-          const bt = (b.name || '').toString();
+          const at = (a.name || "").toString();
+          const bt = (b.name || "").toString();
           return dir * at.localeCompare(bt);
         }
         case "bids":
-          return dir * (a.bids - b.bids);
+          return dir * ((a.bids ?? 0) - (b.bids ?? 0));
         case "startAt": {
           const av = a.start_time ? new Date(a.start_time).getTime() : 0;
           const bv = b.start_time ? new Date(b.start_time).getTime() : 0;
@@ -92,14 +187,14 @@ export default function SellerDatatable({ auctions = [] }) {
         case "status":
         default:
           return dir * (statusOrder[a._status] - statusOrder[b._status]);
-      };
+      }
     });
     return arr;
   }, [filtered, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-
   const currentPage = Math.min(page, totalPages);
+
   const paged = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return sorted.slice(start, start + pageSize);
@@ -117,6 +212,8 @@ export default function SellerDatatable({ auctions = [] }) {
     });
   }
 
+  const loading = itemsLoading;
+
   return (
     <div className="bg-slate-800 rounded-md p-4 border border-slate-700">
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
@@ -125,9 +222,9 @@ export default function SellerDatatable({ auctions = [] }) {
             <CustomInput
               placeholder="Search auctions by title…"
               value={query}
-              onChange={(e) => {
+              onChange={(event) => {
                 setPage(1);
-                setQuery(e.target.value);
+                setQuery(event.target.value);
               }}
             />
             <Search className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
@@ -136,9 +233,9 @@ export default function SellerDatatable({ auctions = [] }) {
         <div>
           <select
             value={status}
-            onChange={(e) => {
+            onChange={(event) => {
               setPage(1);
-              setStatus(e.target.value);
+              setStatus(event.target.value);
             }}
             className="h-10 rounded-md border bg-[var(--theme-surface)] border-[var(--theme-border)] px-3 text-sm text-[var(--theme-surface-contrast)]"
           >
@@ -156,19 +253,49 @@ export default function SellerDatatable({ auctions = [] }) {
           <TableHeader>
             <TableRow>
               <TableHead className="min-w-[220px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("title")}>Title <ArrowUpDown className="ml-1" /></Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleSort("title")}
+                >
+                  Title <ArrowUpDown className="ml-1" />
+                </Button>
               </TableHead>
               <TableHead className="min-w-[120px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("status")}>Status <ArrowUpDown className="ml-1" /></Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleSort("status")}
+                >
+                  Status <ArrowUpDown className="ml-1" />
+                </Button>
               </TableHead>
               <TableHead className="min-w-[200px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("startAt")}>Start <ArrowUpDown className="ml-1" /></Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleSort("startAt")}
+                >
+                  Start <ArrowUpDown className="ml-1" />
+                </Button>
               </TableHead>
               <TableHead className="min-w-[200px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("endAt")}>End <ArrowUpDown className="ml-1" /></Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleSort("endAt")}
+                >
+                  End <ArrowUpDown className="ml-1" />
+                </Button>
               </TableHead>
               <TableHead className="text-right min-w-[100px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("bids")}>Bids <ArrowUpDown className="ml-1" /></Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleSort("bids")}
+                >
+                  Bids <ArrowUpDown className="ml-1" />
+                </Button>
               </TableHead>
               <TableHead className="text-right min-w-[160px]">Actions</TableHead>
             </TableRow>
@@ -176,26 +303,44 @@ export default function SellerDatatable({ auctions = [] }) {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">Loading…</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  Loading…
+                </TableCell>
               </TableRow>
             ) : paged.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">No results.</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No results.
+                </TableCell>
               </TableRow>
             ) : (
-              paged.map((a) => (
-                <TableRow key={a.aid}>
-                  <TableCell className="font-medium">{a.name}</TableCell>
-                  <TableCell className="capitalize">{a._status}</TableCell>
-                  <TableCell>{formatDate(a.start_time)}</TableCell>
-                  <TableCell>{formatDate(a.end_time)}</TableCell>
-                  <TableCell className="text-right">{a.bids ?? 0}</TableCell>
+              paged.map((auction) => (
+                <TableRow key={auction.aid}>
+                  <TableCell className="font-medium">{auction.name}</TableCell>
+                  <TableCell className="capitalize">{auction._status}</TableCell>
+                  <TableCell>{formatDate(auction.start_time)}</TableCell>
+                  <TableCell>{formatDate(auction.end_time)}</TableCell>
+                  <TableCell className="text-right">
+                    {auction.bids ?? 0}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => redirect(`/auction/view/${a.aid}/manage`)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          redirect(`/auction/view/${auction.aid}/manage`)
+                        }
+                      >
                         <Eye /> View
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => redirect(`/auction/seller/edit/${a.aid}`)}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          redirect(`/auction/seller/edit/${auction.aid}`)
+                        }
+                      >
                         <Pencil /> Edit
                       </Button>
                     </div>
@@ -224,7 +369,7 @@ export default function SellerDatatable({ auctions = [] }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
             disabled={currentPage <= 1 || loading}
           >
             <ChevronLeft /> Previous
@@ -232,7 +377,7 @@ export default function SellerDatatable({ auctions = [] }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             disabled={currentPage >= totalPages || loading}
           >
             Next <ChevronRight />

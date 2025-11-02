@@ -252,8 +252,8 @@ export default function ProfilePage() {
 				</Card>
 				<Tabs defaultValue="won" className='space-y-4'>
 					<TabsList className="w-full">
-						<TabsTrigger className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]" value="won">Items Won</TabsTrigger>
-						<TabsTrigger className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]" value="reviews">Reviews</TabsTrigger>
+						<TabsTrigger value="won">Items Won</TabsTrigger>
+						<TabsTrigger value="reviews">Reviews</TabsTrigger>
 					</TabsList>
 					<Card>
 							<TabsContent value="won"><ItemsWon userId={profile?.id} /></TabsContent>
