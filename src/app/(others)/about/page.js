@@ -42,46 +42,55 @@ export default function About() {
           transition={{ duration: 0.6 }}
           className="max-w-5xl mx-auto bg-[var(--theme-primary)]/90 backdrop-blur-md rounded-2xl shadow-lg px-6 py-12 space-y-16 mb-20"
         >
-          {/* Who We Are */}
+          {/* About BidHub */}
           <div>
-            <h2 className="text-3xl font-semibold mb-3">Who We Are</h2>
+            <h2 className="text-3xl font-semibold mb-3">Why BidHub Exists</h2>
             <p className="leading-relaxed">
-              We are a passionate team dedicated to creating meaningful digital
-              experiences. Our goal is to empower businesses and individuals
-              with innovative solutions that drive growth, creativity, and
-              connection.
+              In a world where online marketplaces can be overwhelming and
+              opaque, finding affordable goods can feel like a challenge. BidHub
+              was created to provide a clear, engaging, and fair real-time
+              auction platform that puts transparency and affordability first.
             </p>
           </div>
 
-          {/* Mission */}
+          {/* Inspiration */}
+          <div>
+            <h2 className="text-3xl font-semibold mb-3">Our Inspiration</h2>
+            <p className="leading-relaxed">
+              BidHub draws inspiration from both traditional online carousels
+              and Telegram-style auctions, combining the best of both worlds.
+              Our goal is to create an intuitive, fast-paced auction experience
+              where users can easily discover deals, participate in live
+              bidding, and feel confident that the system is fair and
+              transparent.
+            </p>
+          </div>
+
+          {/* How It Works */}
+          <div>
+            <h2 className="text-3xl font-semibold mb-3">
+              How BidHub Helps You
+            </h2>
+            <p className="leading-relaxed">
+              By merging real-time updates with a visually appealing carousel
+              interface, BidHub allows users to browse auctions quickly, track
+              bidding activity live, and win items at competitive prices. Every
+              interaction is designed to be intuitive and trustworthy, ensuring
+              that everyone has a fair chance to find affordable goods they
+              love.
+            </p>
+          </div>
+
+          {/* Our Mission */}
           <div>
             <h2 className="text-3xl font-semibold mb-3">Our Mission</h2>
             <p className="leading-relaxed">
-              Our mission is to deliver exceptional value through design,
-              technology, and collaboration — while staying true to our values
-              of integrity, innovation, and community.
+              Our mission is to make online auctions accessible, transparent,
+              and enjoyable for everyone. We aim to empower users with a
+              reliable platform that blends speed, interactivity, and clarity,
+              so finding great deals is no longer a guessing game — it’s a
+              seamless, exciting experience.
             </p>
-          </div>
-
-          {/* Story */}
-          <div>
-            <h2 className="text-3xl font-semibold mb-3">Our Story</h2>
-            <p className="leading-relaxed">
-              Founded in 2021, our journey began with a simple idea: to make
-              digital spaces more human-centered. Since then, we’ve grown into a
-              dynamic team helping brands build their identity and connect
-              authentically with their audiences.
-            </p>
-          </div>
-
-          {/* What We Do */}
-          <div>
-            <h2 className="text-3xl font-semibold mb-3">What We Do</h2>
-            <ul className="list-disc ml-6 leading-relaxed">
-              <li>Custom Web & App Development</li>
-              <li>Brand Identity & UI/UX Design</li>
-              <li>Content Strategy & Marketing</li>
-            </ul>
           </div>
 
           {/* Values */}
@@ -113,34 +122,34 @@ export default function About() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {[
                 {
-                  name: "Alex Rivera",
+                  name: "Benedic",
                   title: "Founder & CEO",
-                  img: "/assets/team/alex.jpg",
+                  img: "/assets/team/benedic.jpg",
                 },
                 {
-                  name: "Jamie Lee",
+                  name: "Jacob",
                   title: "Lead Designer",
-                  img: "/assets/team/jamie.jpg",
+                  img: "/assets/team/jacob.jpg",
                 },
                 {
-                  name: "Taylor Smith",
+                  name: "Jared",
                   title: "Developer",
-                  img: "/assets/team/taylor.jpg",
+                  img: "/assets/team/jared.jpg",
                 },
                 {
-                  name: "Morgan Patel",
+                  name: "Javen",
                   title: "Marketing Lead",
-                  img: "/assets/team/morgan.jpg",
+                  img: "/assets/team/javen.jpg",
                 },
                 {
-                  name: "Jordan Kim",
+                  name: "Joshua",
                   title: "Product Manager",
-                  img: "/assets/team/jordan.jpg",
+                  img: "/assets/team/joshua.jpg",
                 },
                 {
-                  name: "Samira Ali",
+                  name: "Kai Wen",
                   title: "UX Researcher",
-                  img: "/assets/team/samira.jpg",
+                  img: "/assets/team/Kaiwen.jpg",
                 },
               ].map((person) => (
                 <motion.div

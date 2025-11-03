@@ -7,19 +7,19 @@ const steps = [
   {
     number: 1,
     title: "Discover",
-    desc: "We start by understanding your vision, goals, and challenges. Through research and collaboration, we define a clear path forward.",
+    desc: "Find auctions and browse categories that pique your interests and excite you",
     icon: "🔍",
   },
   {
     number: 2,
-    title: "Design & Build",
-    desc: "Our team creates tailored designs and transforms them into interactive, user-friendly digital experiences that work beautifully.",
+    title: "Strategize",
+    desc: "Analyze the starting bid and the minimum bid amounts to get the most value from your bids",
     icon: "⚙️",
   },
   {
     number: 3,
-    title: "Deliver & Support",
-    desc: "Once everything is perfect, we launch and provide ongoing support to ensure lasting success and continuous improvement.",
+    title: "Win",
+    desc: "Once everything is perfect, time your bids to become the highest bidder at the end of the allocated time to win",
     icon: "🚀",
   },
 ];
