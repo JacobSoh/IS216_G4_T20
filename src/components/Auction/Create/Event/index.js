@@ -27,7 +27,7 @@ function reducer(s, a) {
   };
 };
 
-export default function AuctionCreateForm({ onSubmit }) {
+export default function AuctionCreateForm({ onSubmit, initialData }) {
   return (
     <FieldGroup>
       <div className='grid lg:grid-cols-2 gap-6 items-start'>
@@ -36,23 +36,31 @@ export default function AuctionCreateForm({ onSubmit }) {
           <CustomInput
             type='auctionName'
             required={true}
+            defaultValue={initialData?.auctionName ?? ''}
           />
 
           {/* Make sure name="auctionDescription" */}
           <CustomTextarea
             type="auctionDescription"
             required={true}
+            defaultValue={initialData?.auctionDescription ?? ''}
           />
           <div className='flex gap-6'>
             <CustomerDatePicker
               type="startDateTime"
               required={true}
+              defaultValue={initialData?.startDateTime}
             />
             <CustomInput
               type='timeInterval'
-              defaultValue={1}
               min={1}
               required={true}
+              // Show minutes if provided (time_interval is seconds)
+              defaultValue={
+                initialData?.timeIntervalMinutes !== undefined
+                  ? initialData.timeIntervalMinutes
+                  : 1
+              }
             />
           </div>
         </FieldGroup>
@@ -65,6 +73,7 @@ export default function AuctionCreateForm({ onSubmit }) {
             filterRule={/^image\//i}
             maxLength={1}
             required={true}
+            existingFiles={initialData?.existingFiles ?? null}
           />
         </FieldGroup>
       </div>

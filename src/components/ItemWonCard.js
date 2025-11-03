@@ -13,9 +13,9 @@ const ItemWonCard = ({ iid, title, description, final_price, sold_at, picUrl }) 
   };
 
   return (
-    <div className="group bg-white rounded-md overflow-hidden border border-gray-200 hover:border-green-500 transition-all duration-300 hover:shadow-lg flex flex-col h-full">
+    <>
       {/* Image */}
-      <div className="h-40 bg-gray-200 relative overflow-hidden flex items-center justify-center">
+      {/* <div className="h-40 bg-gray-200 relative overflow-hidden flex items-center justify-center">
         {picUrl ? (
           <img
             src={picUrl}
@@ -25,10 +25,10 @@ const ItemWonCard = ({ iid, title, description, final_price, sold_at, picUrl }) 
         ) : (
           <span className="text-gray-400 text-sm font-medium">No Image</span>
         )}
-      </div>
+      </div> */}
 
       {/* Card content */}
-      <div className="p-4 flex flex-col flex-1">
+      <div className="flex flex-col flex-1">
         <h3 className="text-base font-semibold text-gray-800 mb-2 group-hover:text-green-600 transition-colors line-clamp-2">
           {title || '\u00A0\u00A0'}
         </h3>
@@ -52,7 +52,7 @@ const ItemWonCard = ({ iid, title, description, final_price, sold_at, picUrl }) 
           </span>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

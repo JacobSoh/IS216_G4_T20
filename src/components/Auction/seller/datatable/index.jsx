@@ -2,18 +2,31 @@
 
 import React, { useMemo, useState } from "react";
 import { redirect } from "next/navigation";
-import { ArrowUpDown, Eye, Pencil, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Pencil, ChevronLeft, ChevronRight, Search, Trash } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { CustomInput } from "@/components/Form";
+// import {
+//   Table,
+//   TableBody,
+//   TableCell,
+//   TableHead,
+//   TableHeader,
+//   TableRow,
+// } from "@/components/ui/table";
+
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+import { CustomSelect } from "@/components/Form/CustomSelect";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 function deriveStatus({ start_time, end_time }) {
   try {
@@ -115,97 +128,140 @@ export default function SellerDatatable({ auctions = [] }) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
       return k;
     });
+  };
+
+  function SortIcon({ column }) {
+    if (sortKey !== column) return <ArrowUpDown className="ml-1" />;
+    return sortDir === "asc" ? (
+      <ArrowUp className="ml-1" />
+    ) : (
+      <ArrowDown className="ml-1" />
+    );
   }
 
   return (
-    <div className="bg-slate-800 rounded-md p-4 border border-slate-700">
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-        <div className="flex-1 min-w-0">
-          <div className="relative">
-            <CustomInput
-              placeholder="Search auctions by title…"
-              value={query}
-              onChange={(e) => {
-                setPage(1);
-                setQuery(e.target.value);
-              }}
-            />
-            <Search className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
-          </div>
-        </div>
-        <div>
-          <select
-            value={status}
-            onChange={(e) => {
-              setPage(1);
-              setStatus(e.target.value);
-            }}
-            className="h-10 rounded-md border bg-[var(--theme-surface)] border-[var(--theme-border)] px-3 text-sm text-[var(--theme-surface-contrast)]"
-          >
-            <option value="all">All statuses</option>
-            <option value="draft">Draft</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="live">Live</option>
-            <option value="ended">Ended</option>
-          </select>
-        </div>
+    <div className="space-y-4">
+      <div className="relative">
+        <CustomInput
+          placeholder="Search auctions by title…"
+          value={query}
+          onChange={(e) => {
+            setPage(1);
+            setQuery(e.target.value);
+          }}
+        />
+        <Search className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
       </div>
-
-      <div className="mt-4 overflow-hidden rounded-md border border-slate-700">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="min-w-[220px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("title")}>Title <ArrowUpDown className="ml-1" /></Button>
-              </TableHead>
-              <TableHead className="min-w-[120px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("status")}>Status <ArrowUpDown className="ml-1" /></Button>
-              </TableHead>
-              <TableHead className="min-w-[200px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("startAt")}>Start <ArrowUpDown className="ml-1" /></Button>
-              </TableHead>
-              <TableHead className="min-w-[200px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("endAt")}>End <ArrowUpDown className="ml-1" /></Button>
-              </TableHead>
-              <TableHead className="text-right min-w-[100px]">
-                <Button variant="ghost" size="sm" onClick={() => toggleSort("bids")}>Bids <ArrowUpDown className="ml-1" /></Button>
-              </TableHead>
-              <TableHead className="text-right min-w-[160px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">Loading…</TableCell>
-              </TableRow>
-            ) : paged.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">No results.</TableCell>
-              </TableRow>
-            ) : (
-              paged.map((a) => (
-                <TableRow key={a.aid}>
-                  <TableCell className="font-medium">{a.name}</TableCell>
-                  <TableCell className="capitalize">{a._status}</TableCell>
-                  <TableCell>{formatDate(a.start_time)}</TableCell>
-                  <TableCell>{formatDate(a.end_time)}</TableCell>
-                  <TableCell className="text-right">{a.bids ?? 0}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => redirect(`/auction/view/${a.aid}/manage`)}>
-                        <Eye /> View
-                      </Button>
-                      <Button variant="secondary" size="sm" onClick={() => redirect(`/auction/seller/edit/${a.aid}`)}>
-                        <Pencil /> Edit
-                      </Button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {
+          loading ? (
+            <span>loading</span>
+          ) : paged.length === 0 ? (
+            <span>Null</span>
+          ) : paged.map(v => {
+            const sb = supabaseBrowser();
+            const picUrl = sb.storage
+              .from(v.thumbnail_bucket || 'thumbnail')
+              .getPublicUrl(v.object_path).data.publicUrl
+            return (
+              <Card key={v.aid}>
+                <CardHeader>
+                  {picUrl ? (
+                    <img
+                      src={picUrl}
+                      alt={v?.title}
+                      className="object-cover w-full max-h-40 bg-white rounded-md"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full min-h-40 max-h-40 bg-[var(--theme-primary-darker)] rounded-md font-bold">
+                      NO IMAGE
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  )}
+                  <CardTitle className='mt-4'>
+                    {v?.title}
+                  </CardTitle>
+                  <CardDescription className='line-clamp-4'>
+                    {v?.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-white text-xs">Final Price</span>
+                    <span className="text-[var(--theme-gold)] text-sm font-bold flex items-center gap-1">
+                      {/* ${item?.final_price.toFixed(2)} */}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white text-xs">Won On</span>
+                    <span className="text-gray-400 text-sm font-medium flex items-center gap-1">
+                      {/* <Calendar className="w-3 h-3" /> */}
+                      {/* {formatDate(item?.sold_at)} */}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        }
       </div>
+      <Card>
+        <CardContent>
+          {/* <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[220px]">
+                  <Button variant="ghost" size="sm" onClick={() => toggleSort("title")}>
+                    Title <SortIcon column="title" />
+                  </Button>
+                </TableHead>
+                <TableHead className="min-w-[200px]">
+                  <Button variant="ghost" size="sm" onClick={() => toggleSort("startAt")}>
+                    Start <SortIcon column="startAt" />
+                  </Button>
+                </TableHead>
+                <TableHead className="text-right min-w-[100px]">
+                  <Button variant="ghost" size="sm" onClick={() => toggleSort("bids")}>
+                    Bids <SortIcon column="bids" />
+                  </Button>
+                </TableHead>
+                <TableHead className="text-right min-w-[160px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">Loading…</TableCell>
+                </TableRow>
+              ) : paged.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">No results.</TableCell>
+                </TableRow>
+              ) : (
+                paged.map((a) => (
+                  <TableRow key={a.aid}>
+                    <TableCell className="font-medium">{a.name}</TableCell>
+                    <TableCell>{formatDate(a.start_time)}</TableCell>
+                    <TableCell className="text-right">{a.bids ?? 0}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="gold_white" size="sm" onClick={() => window.location.href = `/auction/view/${a.aid}/manage`}>
+                          <Eye /> View
+                        </Button>
+                        <Button variant="brand" size="sm" onClick={() => window.location.href = `/auction/seller/edit/${a.aid}`}>
+                          <Pencil /> Edit
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => window.location.href = `/auction/view/${a.aid}/manage`}>
+                          <Trash /> Delete
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table> */}
+        </CardContent>
+      </Card>
 
       <div className="flex items-center justify-between gap-3 py-3">
         <div className="text-muted-foreground text-sm">

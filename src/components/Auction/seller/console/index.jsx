@@ -4,8 +4,8 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.jsx";
-import SellerDatatable from "@/components/auction/seller/datatable";
-import SellerDashboard from "@/components/auction/seller/dashboard";
+import SellerDatatable from "@/components/Auction/seller/datatable";
+import SellerDashboard from "@/components/Auction/seller/dashboard";
 
 import {
   Card,
@@ -32,12 +32,11 @@ export default function SellerConsole({ auctions = [] }) {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         </TabsList>
         <TabsContent value="manage">
-          <Card>
+          <Card variant='default'>
             <CardContent>
               <SellerDatatable auctions={auctions} />
             </CardContent>
           </Card>
-          
         </TabsContent>
         <TabsContent value="dashboard">
           <SellerDashboard auctions={auctions} />

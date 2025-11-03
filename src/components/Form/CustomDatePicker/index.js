@@ -54,6 +54,7 @@ export function CustomerDatePicker({
   placeholder,
   fullWidth = true,
   id: idProp,
+  defaultValue, // Date | string (ISO) | undefined
   ...rest
 }) {
   const autoId = useId();
@@ -61,10 +62,17 @@ export function CustomerDatePicker({
   const preset = resolveControl(type);
 
   // Local states derived from initial value (or now)
-  const date = new Date();
+  const initialDate = (() => {
+    if (!defaultValue) return new Date();
+    try {
+      return defaultValue instanceof Date ? defaultValue : new Date(defaultValue);
+    } catch {
+      return new Date();
+    }
+  })();
   const [open, setOpen] = useState(false);
-  const [dateVal, setDateVal] = useState(date ?? null);           // Date | null
-  const [timeVal, setTimeVal] = useState(toHHMMSS(date));       // "HH:MM:SS"
+  const [dateVal, setDateVal] = useState(initialDate ?? null);           // Date | null
+  const [timeVal, setTimeVal] = useState(toHHMMSS(initialDate));       // "HH:MM:SS"
 
   // Combined string for the <input type="datetime-local">
   const combined = useMemo(() => {

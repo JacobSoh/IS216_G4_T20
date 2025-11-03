@@ -51,6 +51,7 @@ export default function ProfilePage() {
 	const [loading, setLoading] = useState(true);
 	const router = useRouter();
 	const [blocking, setBlocking] = useState(false);
+	const [activeTab, setActiveTab] = useState('won');
 
 	useEffect(() => {
 		const loadProfileData = async () => {
@@ -179,7 +180,7 @@ export default function ProfilePage() {
 				// <div className="flex items-center justify-center h-[400px] text-6xl">
 				// 	<UISpinner className="size-40" /> Fetching your informtion!
 				// </div>
-				<HammerLoader/>
+				<HammerLoader />
 			)}
 
 			<div className={loading ? 'hidden' : 'space-y-8'}>
@@ -219,14 +220,25 @@ export default function ProfilePage() {
 						</div>
 					</CardContent>
 				</Card>
-				<Tabs defaultValue="won" className='space-y-4'>
+				{/* Track active tab to drive header */}
+				<Tabs value={activeTab ?? 'won'} onValueChange={setActiveTab} className='space-y-4'>
 					<TabsList className="w-full">
-						<TabsTrigger className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]" value="won">Items Won</TabsTrigger>
-						<TabsTrigger className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]" value="reviews">Reviews</TabsTrigger>
+						<TabsTrigger value="won">Items Won</TabsTrigger>
+						<TabsTrigger value="reviews">Reviews</TabsTrigger>
 					</TabsList>
-					<Card>
+					<Card variant='default'>
+						<CardHeader>
+							<CardTitle>
+								{activeTab === 'reviews' ? 'Reviews' : 'Items Won'}
+							</CardTitle>
+							<CardDescription>
+								{activeTab === 'reviews' ? 'An overview of people who left review for you' : 'An overview of items you\'ve won.'}
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
 							<TabsContent value="won"><ItemsWon userId={profile?.id} /></TabsContent>
 							<TabsContent value="reviews"><Reviews userId={profile?.id} /></TabsContent>
+						</CardContent>
 					</Card>
 				</Tabs>
 			</div>

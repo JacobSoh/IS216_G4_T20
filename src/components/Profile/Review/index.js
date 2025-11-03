@@ -6,6 +6,16 @@ import { supabaseBrowser } from '@/utils/supabase/client';
 import Spinner from '@/components/SpinnerComponent';
 import ReviewCard from '@/components/Profile/Review/ReviewCard';
 
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+
 
 export default function PopulateReviews({ userId }) {
     const sb = supabaseBrowser();
