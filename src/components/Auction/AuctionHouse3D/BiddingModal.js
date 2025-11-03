@@ -17,7 +17,10 @@ export default function BiddingModal({
   nextBidMinimum,
   handleBidSubmit,
   isBidding,
-  bidFeedback
+  bidFeedback,
+  hasBid,
+  status,
+  awaitingMessage
 }) {
   const [walletBalance, setWalletBalance] = useState(null)
   const [loadingWallet, setLoadingWallet] = useState(true)
@@ -85,6 +88,32 @@ export default function BiddingModal({
 
   if (!isOpen) return null
 
+  // Show awaiting message if auction hasn't started yet
+  if (status === 'awaiting_start') {
+    return (
+      <div className="absolute bottom-20 left-4 md:bottom-24 md:left-6 w-[calc(100vw-2rem)] max-w-sm md:w-96 text-white z-[200]">
+        <div className="bg-black/90 p-4 md:p-6 rounded-xl border border-[var(--theme-secondary)]/50 backdrop-blur-sm shadow-[0_0_40px_rgba(176,38,255,0.5)]">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg md:text-xl font-bold text-[var(--theme-secondary)]">
+              ⏳ Auction Starting Soon
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-purple-300 hover:text-white text-xl"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="bg-[var(--theme-primary)]/90 p-6 rounded-lg border-2 border-[var(--theme-accent)]/40 text-center">
+            <p className="text-[var(--theme-cream)] text-base md:text-lg leading-relaxed">
+              {awaitingMessage || 'Please stay seated - the auctioneer will open the first lot shortly.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="absolute bottom-20 left-4 md:bottom-24 md:left-6 w-[calc(100vw-2rem)] max-w-sm md:w-96 text-white z-[200]">
       <div className="bg-black/90 p-4 md:p-6 rounded-xl border border-[var(--theme-secondary)]/50 backdrop-blur-sm shadow-[0_0_40px_rgba(176,38,255,0.5)]">
@@ -118,7 +147,9 @@ export default function BiddingModal({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[var(--theme-accent)] text-xs md:text-sm uppercase tracking-wide">Current Bid</p>
-                <p className="text-xl md:text-2xl font-bold text-[var(--theme-gold)]">${lotBidValue.toLocaleString()}</p>
+                <p className="text-xl md:text-2xl font-bold text-[var(--theme-gold)]">
+                  {hasBid ? `$${lotBidValue.toLocaleString()}` : 'No Bids'}
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-[var(--theme-accent)] text-xs md:text-sm uppercase tracking-wide">Min Increment</p>
