@@ -14,10 +14,7 @@ export default function TunnelSquares({ show = true, onComplete }) {
       count++;
       const isFinal = count === totalSquares;
 
-      setSquares((prev) => [
-        ...prev,
-        { id: count, final: isFinal },
-      ]);
+      setSquares((prev) => [...prev, { id: count, final: isFinal }]);
 
       if (isFinal) {
         clearInterval(timer);
@@ -38,7 +35,7 @@ export default function TunnelSquares({ show = true, onComplete }) {
         {squares.map(({ id, final }) => (
           <motion.div
             key={id}
-            className="absolute border-1 border-purple-500 shadow-[0_0_30px_#a855f7]"
+            className="absolute border border-purple-500 shadow-[0_0_30px_#a855f7]"
             initial={{ opacity: 0, scale: 0.1, z: -2000 }}
             animate={
               final
@@ -56,7 +53,24 @@ export default function TunnelSquares({ show = true, onComplete }) {
                   }
             }
             exit={{ opacity: 0 }}
-            style={{ width: "125px", height: "80px" }}
+            style={{
+              width:
+                typeof window !== "undefined"
+                  ? window.innerWidth < 640
+                    ? "70px" // mobile (sm)
+                    : window.innerWidth < 1024
+                    ? "100px" // tablet (md)
+                    : "125px" // desktop (lg)
+                  : "125px",
+              height:
+                typeof window !== "undefined"
+                  ? window.innerHeight < 640
+                    ? "120px" // mobile (sm)
+                    : window.innerHeight < 1024
+                    ? "100px" // tablet (md)
+                    : "80px" // desktop (lg)
+                  : "80px"
+            }}
           />
         ))}
       </AnimatePresence>

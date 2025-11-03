@@ -147,7 +147,7 @@ export default function BubbleNav() {
 
               {/* RIGHT SIDE — Nav Links */}
               <motion.ul
-                className="flex flex-col items-center md:items-end -space-y-3 text-[11vh] font-semibold text-purple-800 md:w-1/2"
+                className="flex flex-col items-center md:items-end space-y-4 lg:text-8xl md:text-3xl sm:text-3xl font-semibold text-purple-800 md:w-1/2"
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
@@ -213,7 +213,7 @@ export default function BubbleNav() {
                   <motion.a
                     key={text}
                     href={`/${text.toLowerCase()}`}
-                    className="relative cursor-pointer text-[3vh] font-semibold text-purple-700"
+                    className="relative cursor-pointer lg:text-[3vh] md:text-[2vh] font-semibold text-purple-700"
                     whileHover="hover"
                     initial="rest"
                     animate="rest"
