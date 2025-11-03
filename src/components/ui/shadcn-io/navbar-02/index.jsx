@@ -24,7 +24,7 @@ const Logo = (props) => <Hammer aria-hidden className="h-[1em] w-[1em]" {...prop
 // Default navigation links (BidHub)
 // Parents act as submenu labels; children are actual links.
 const defaultNavigationLinks = [
-  { href: '/', label: 'Browse Auctions', icon: 'ShoppingBag' },
+  { href: '/featured_auctions', label: 'Browse Auctions', icon: 'ShoppingBag' },
   { href: '/categories', label: 'Categories', icon: 'BarChart3' },
   {
     label: 'About Us',

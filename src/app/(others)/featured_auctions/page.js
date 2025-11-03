@@ -94,7 +94,7 @@ export default function AuctionsPage() {
 
       {/* Top Big Auction Carousel */}
       {!isLoading && auctions.length > 0 ? (
-        <Link href={`/auction/${auctions[currentIndex].aid}`}>
+        <Link href={`/auction/view/${auctions[currentIndex].aid}`}>
           <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden cursor-pointer">
             <BigAuctionCard
               key={auctions[currentIndex].aid}
@@ -150,7 +150,7 @@ export default function AuctionsPage() {
             <AuctionHoverPictureSkeleton key={`skeleton-grid-${i}`} />
           ))
           : auctions.slice(0, 6).map((a) => (
-            <Link key={a.aid} href={`/auction/${a.aid}`} className="block">
+            <Link key={a.aid} href={`/auction/view/${a.aid}`} className="block">
               <AuctionHoverPicture
                 name={a.name}
                 picUrl={a.picUrl}

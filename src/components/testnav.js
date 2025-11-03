@@ -20,29 +20,13 @@ export default function BubbleNav() {
     { name: "Home", href: "/" },
     { name: "Auctions", href: "/featured_auctions" },
     { name: "Categories", href: "/categories" },
-    { name: "Profile", href: "/Profile" },
+    { name: "Profile", href: "/profile" },
   ];
 
   return (
     <nav className="fixed top-0 right-0 w-full flex justify-end items-start p-6 z-[9999]">
-      {/* Hamburger / Close + Login only when open */}
+      {/* Hamburger / Close button */}
       <div className="flex items-center gap-3">
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.button
-              key="login"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => setLoggedIn(!loggedIn)}
-              className="h-[44px] px-4 bg-red-600 hover:bg-[#b2292d] rounded-md text-sm font-medium text-white transition-all duration-300 shadow-xl z-[10000]"
-            >
-              {loggedIn ? "Logout" : "Login"}
-            </motion.button>
-          )}
-        </AnimatePresence>
-
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="relative z-[10000] h-[44px] w-[44px] flex items-center justify-center bg-purple-900 rounded-md text-white hover:bg-purple-700 shadow-xl transition-all duration-300"
@@ -73,20 +57,6 @@ export default function BubbleNav() {
               transition={{ delay: 0.25 }}
               className="fixed inset-0 bg-purple-300 flex flex-col md:flex-row items-center justify-between px-10 py-20 z-[9999]"
             >
-              {/* Logo (Top Left) */}
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="absolute top-6 left-8 flex items-center space-x-3"
-              >
-                <img
-                  src="/assets/logo.png"
-                  alt="BidHub Logo"
-                  className="w-8 h-8 object-contain"
-                />
-              </motion.div>
-
               {/* LEFT SIDE — Floating Image Grid */}
               <div className="grid grid-cols-2 gap-y-8 ml-5 md:w-1/2 justify-items-center items-center">
                 {/* Left Column */}

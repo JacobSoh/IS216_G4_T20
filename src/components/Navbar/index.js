@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, redirect, useSearchParams } from 'next/navigation';
 import { Navbar02 } from '@/components/ui/shadcn-io/navbar-02';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -19,6 +19,7 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
   const autoOpenedRef = useRef(false);
   const { isAuthed, logout } = useSupabaseAuth(initialAuthed);
   const { setModalHeader, setModalState, setModalForm } = useModal();
+  const [isVerified, setIsVerified] = useState(false);
 
   // Using defaultNavigationLinks from Navbar02; keep local list for future if needed.
 
@@ -92,8 +93,8 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
 
   const onSignInClick = async () => {
     if (isAuthed) {
-      // Instant logout + redirect handled inside hook
-      logout({ redirectTo: '/' });
+      // Instant logout, stay on current page
+      logout();
       // Optional: no toast due to immediate navigation; keep UX clean
     } else {
       openLogin();
@@ -107,8 +108,6 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
       openRegister();
     }
   };
-
-  // Note: removed route-based effects to avoid any path-dependent rendering
 
   // Auto-open login modal via query string: ?login=1&next=/path
   useEffect(() => {
@@ -136,7 +135,7 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
     submenu: true,
     type: 'simple',
     items: [
-      { href: '/', label: 'Browse Auctions' },
+      { href: '/featured_auctions', label: 'Browse Auctions' },
       ...(isAuthed ? [{ href: '/auction/seller', label: 'Manage Auctions' }] : []),
     ],
   };

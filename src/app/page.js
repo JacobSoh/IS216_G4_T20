@@ -28,8 +28,21 @@ export default function FuturisticAuction() {
   //const scrollRef = useRef(null);
   const sectionRef = useRef(null);
   const heroRef = useRef(null);
-  const [showTunnel] = useState(true);
+  const [showTunnel, setShowTunnel] = useState(true);
   const [showLanding, setShowLanding] = useState(false);
+
+  // Check if animation has been shown this session
+  useEffect(() => {
+    const hasSeenAnimation = sessionStorage.getItem('hasSeenHomeAnimation');
+    if (hasSeenAnimation === 'true') {
+      // Skip animation, show landing immediately
+      setShowTunnel(false);
+      setShowLanding(true);
+    } else {
+      // Mark animation as seen for this session
+      sessionStorage.setItem('hasSeenHomeAnimation', 'true');
+    }
+  }, []);
 
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -416,7 +429,7 @@ export default function FuturisticAuction() {
                 return (
                   <Link
                     key={auction.aid}
-                    href={`/auction/${auction.aid}`}
+                    href={`/auction/view/${auction.aid}`}
                     passHref
                   >
                     <div className="cursor-pointer">
