@@ -627,7 +627,7 @@ export default function FuturisticAuction() {
 
           {/* Large Placeholder Image */}
           <img
-            src="assets/shophouse.webp"
+            src="assets/shophouse.jpg"
             className="w-[90vh] h-[65vh] bg-purple-400/50 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-white font-semibold shadow-[0_0_35px_rgba(168,85,247,0.7)]"
           ></img>
         </div>

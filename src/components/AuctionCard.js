@@ -5,7 +5,7 @@ export const AuctionHoverPicture = ({ name, picUrl }) => {
   return (
     <div className="flex flex-col w-[29vw] max-w-[750px] group cursor-pointer mb-16 mx-auto">
       {/* Image container with black dotted skeleton background */}
-      <div className="relative w-full h-[500px] rounded-sm">
+      <div className="relative w-full h-[500px] border-3 border-[var(--theme-secondary)] drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] rounded-sm">
         {/* Black background with corner dots */}
         <div className="absolute inset-0 bg-black rounded-sm">
           <div className="absolute top-2 left-2 w-2 h-2 bg-purple-500 rounded-full" />
@@ -71,60 +71,61 @@ export const AuctionHoverPictureSkeleton = () => {
   );
 };
 
-export const AuctionCard = ({ name, description, picUrl, startTime, endTime }) => {
+export const AuctionCard = ({ name, description, start_time, picUrl }) => {
   return (
-    <div className="flex flex-col w-[29vw] max-w-[300px] group cursor-pointer mb-16 mx-auto">
-      {/* Image container */}
-      <div className="relative w-full h-[300px] rounded-sm overflow-hidden">
+    <div className="w-[220px] border-2 border-[var(--theme-secondary)] bg-[var(--theme-primary)] rounded-sm drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] flex flex-col">
+      {/* Image */}
+      <div className="w-full h-48 bg-gray-200">
         {picUrl ? (
           <img
             src={picUrl}
             alt={name}
-            className="w-full h-full object-cover rounded-sm transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-purple-500/10 flex items-center justify-center text-purple-400 rounded-sm">
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
             No Image
           </div>
         )}
-
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-purple-600/0 group-hover:bg-purple-600/20 transition-colors duration-500 rounded-sm pointer-events-none" />
       </div>
 
-      <div className="h-4" />
-
-      {/* Text + arrow */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg text-purple-300 font-bold group-hover:text-white">{name}</h3>
-          <p className="text-sm text-purple-200 group-hover:text-white/90">{description}</p>
-          <p className="text-xs text-purple-400 mt-1">
-            {startTime} - {endTime}
-          </p>
+      {/* Info */}
+      <div className="p-4 flex flex-col flex-1 min-h-[160px]">
+        <h3 className="text-lg text-[var(--theme-cream)] font-bold mb-2 truncate">
+          {name}
+        </h3>
+        <div className="text-sm text-[var(--theme-cream)] mb-2 line-clamp-4 overflow-hidden min-h-[5rem]">
+          {description}
         </div>
-        <span className="opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-white font-black text-2xl">
-          →
-        </span>
+        {start_time && (
+          <p className="text-xs text-gray-500 mt-auto">
+            Start: {new Date(start_time).toLocaleDateString()}
+          </p>
+        )}
       </div>
     </div>
   );
 };
 
-// 2️⃣ Skeleton for AuctionCard
+// Skeleton Card
 export const AuctionCardSkeleton = () => {
   return (
-    <div className="flex flex-col w-[29vw] max-w-[300px] mb-16 mx-auto animate-pulse">
-      <div className="relative w-full h-[300px] bg-purple-700 rounded-sm" />
-      <div className="h-4" />
-      <div className="w-3/4 h-6 bg-purple-500 rounded-md mb-2" />
-      <div className="w-full h-4 bg-purple-300 rounded-md mb-1" />
-      <div className="w-2/3 h-4 bg-purple-300 rounded-md" />
+    <div className="w-[220px] border-2 border-[var(--theme-secondary)] bg-[var(--theme-primary)] rounded-sm drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] animate-pulse flex flex-col">
+      {/* Image placeholder */}
+      <div className="w-full h-48 bg-gray-300" />
+
+      {/* Info placeholder */}
+      <div className="p-4 flex flex-col flex-1 min-h-[160px]">
+        <div className="h-6 bg-gray-400 rounded w-3/4 mb-2" /> {/* Name */}
+        <div className="h-20 bg-gray-400 rounded w-full mb-2" /> {/* Description placeholder longer */}
+        <div className="h-3 bg-gray-400 rounded w-1/2 mt-auto" /> {/* Start date */}
+      </div>
     </div>
   );
 };
 
-// 3️⃣ Category Card
+
+// Category Card
 export const CategoryCard = ({ name, picUrl }) => {
   return (
     <div className="flex flex-col w-[15vw] group cursor-pointer mb-16 mx-auto">
@@ -187,6 +188,7 @@ export const BigAuctionCard = ({ name, description, picUrl, endTime, currentBid 
   );
 };
 
+//Big Auction Card (featured_auction page)
 export const BigAuctionCardSkeleton = () => {
   return (
     <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.3)] animate-pulse">

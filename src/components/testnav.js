@@ -12,7 +12,7 @@ export default function BubbleNav() {
   const imageItems = [
     { src: "/assets/kidshomedrawing.jpg", alt: "Home" },
     { src: "/assets/gavel.jpg", alt: "Auctions" },
-    { src: "/assets/pileofstuff.webp", alt: "Categories" },
+    { src: "/assets/categories.png", alt: "Categories" },
     { src: "/assets/thinkingguy.jpg", alt: "Profile" },
   ];
 
@@ -209,7 +209,7 @@ export default function BubbleNav() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
               >
-                {["About", "Enquiries"].map((text, i) => (
+                {["About", "Contact"].map((text, i) => (
                   <motion.a
                     key={text}
                     href={`/${text.toLowerCase()}`}

@@ -1,56 +1,84 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { AuctionHoverPicture, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
+import { AuctionCard, AuctionCardSkeleton } from "@/components/AuctionCard";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
-// Utility to generate slug from a string
+// Utility to generate clean slugs
 const slugify = (text) => {
   return text
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, "-")       // spaces -> dashes
-    .replace(/[^\w-]+/g, "")    // remove non-word chars
-    .replace(/--+/g, "-");      // collapse multiple dashes
+    .replace(/\s*&\s*/g, "-") // replace & with dash
+    .replace(/[\s/+]+/g, "-") // spaces or + -> dashes
+    .replace(/[^\w-]+/g, "") // remove other non-word chars
+    .replace(/--+/g, "-") // collapse multiple dashes
+    .replace(/^-+|-+$/g, ""); // trim leading/trailing dashes
 };
 
 export default function CategoryPage() {
   const { slug } = useParams();
   const [categoryName, setCategoryName] = useState("");
   const [auctions, setAuctions] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingCategory, setIsLoadingCategory] = useState(true);
+  const [isLoadingAuctions, setIsLoadingAuctions] = useState(true);
 
   useEffect(() => {
-    const fetchAuctions = async () => {
-      setIsLoading(true);
+    const fetchCategory = async () => {
+      setIsLoadingCategory(true);
       const supabase = supabaseBrowser();
 
       try {
-        // 1️⃣ Get all categories and find the one matching the slug
-        const { data: categories, error: catErr } = await supabase
+        const { data: categories, error } = await supabase
           .from("category")
           .select("category_name");
 
-        if (catErr) throw catErr;
-        if (!categories || categories.length === 0) throw new Error("No categories found");
-
-        const matched = categories.find(c => slugify(c.category_name) === slug);
-        if (!matched) {
-          console.warn("No matching category for slug:", slug);
+        if (error) throw error;
+        if (!categories || categories.length === 0) {
           setCategoryName("Unknown Category");
-          setAuctions([]);
+          return;
+        }
+
+        const matched = categories.find(
+          (c) => slugify(c.category_name) === slug.toLowerCase()
+        );
+
+        if (!matched) {
+          setCategoryName("Unknown Category");
           return;
         }
 
         setCategoryName(matched.category_name);
+      } catch (err) {
+        console.error("Category fetch error:", err);
+        setCategoryName("Unknown Category");
+      } finally {
+        setIsLoadingCategory(false);
+      }
+    };
 
-        // 2️⃣ Get all item IDs in this category
+    fetchCategory();
+  }, [slug]);
+
+  useEffect(() => {
+    const fetchAuctions = async () => {
+      if (!categoryName || categoryName === "Unknown Category") {
+        setAuctions([]);
+        setIsLoadingAuctions(false);
+        return;
+      }
+
+      setIsLoadingAuctions(true);
+      const supabase = supabaseBrowser();
+
+      try {
+        // 1️⃣ Get item IDs for this category
         const { data: itemCategories, error: icErr } = await supabase
           .from("item_category")
           .select("itemid")
-          .eq("category_name", matched.category_name);
+          .eq("category_name", categoryName);
 
         if (icErr) throw icErr;
         if (!itemCategories || itemCategories.length === 0) {
@@ -58,9 +86,9 @@ export default function CategoryPage() {
           return;
         }
 
-        const itemIds = itemCategories.map(ic => ic.itemid);
+        const itemIds = itemCategories.map((ic) => ic.itemid);
 
-        // 3️⃣ Get auctions for these items
+        // 2️⃣ Get auctions for these items
         const { data: itemsData, error: itemErr } = await supabase
           .from("item")
           .select("iid, aid")
@@ -72,65 +100,65 @@ export default function CategoryPage() {
           return;
         }
 
-        const auctionIds = [...new Set(itemsData.map(i => i.aid))];
+        const auctionIds = [...new Set(itemsData.map((i) => i.aid))];
 
         const { data: auctionData, error: auctionErr } = await supabase
           .from("auction")
-          .select("aid, name, description, end_time, thumbnail_bucket, object_path")
+          .select(
+            "aid, name, description, start_time, thumbnail_bucket, object_path"
+          )
           .in("aid", auctionIds);
 
         if (auctionErr) throw auctionErr;
+
         if (!auctionData || auctionData.length === 0) {
           setAuctions([]);
           return;
         }
 
-        // Map auctions to include public image URLs
         const mapped = auctionData.map((a) => {
-          const { data: publicData } = supabase
-            .storage
+          const { data: publicData } = supabase.storage
             .from(a.thumbnail_bucket)
             .getPublicUrl(a.object_path);
           return {
             aid: a.aid,
             name: a.name,
             description: a.description,
-            endTime: new Date(a.end_time).toLocaleString(),
+            start_time: new Date(a.start_time).toLocaleString(),
             picUrl: publicData?.publicUrl || null,
           };
         });
 
         setAuctions(mapped);
       } catch (err) {
-        console.error("Category fetch error:", err);
-        setCategoryName("Unknown Category");
+        console.error("Auctions fetch error:", err);
         setAuctions([]);
       } finally {
-        setIsLoading(false);
+        setIsLoadingAuctions(false);
       }
     };
 
     fetchAuctions();
-  }, [slug]);
+  }, [categoryName]);
 
   return (
-    <section className="min-h-screen relative pt-10 bg-gradient-to-b from-[#fff5e1] to-[#ffefea]">
-      <div className="max-w-7xl mx-auto pb-15 px-6">
+    <section className="min-h-screen relative pt-10 bg-[var(--theme-primary-darker)]">
+      <div className="max-w-7xl mx-auto pb-15 pt-15 px-6">
         {/* Page Header */}
         <div className="text-center mb-16">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gray-800">
-            {categoryName.charAt(0).toUpperCase() + categoryName.slice(1)}
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[var(--theme-cream)]">
+            {isLoadingCategory ? "Loading..." : categoryName}
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-[var(--theme-cream)]">
             Browse auctions for items in this category
           </p>
         </div>
 
         {/* Auctions Section */}
-        {isLoading ? (
+        {isLoadingAuctions ? (
           <div className="flex flex-wrap justify-center gap-10">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <AuctionHoverPictureSkeleton key={i} />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <AuctionCardSkeleton key={i} />
             ))}
           </div>
         ) : auctions.length === 0 ? (
@@ -145,7 +173,12 @@ export default function CategoryPage() {
                 href={`/auction/${a.aid}`}
                 className="transform transition-transform hover:scale-105"
               >
-                <AuctionHoverPicture name={a.name} picUrl={a.picUrl} />
+                <AuctionCard
+                  name={a.name}
+                  description={a.description} // ✅ Pass description here
+                  start_time={a.start_time} // ✅ Pass start date if you have it
+                  picUrl={a.picUrl}
+                />
               </Link>
             ))}
           </div>

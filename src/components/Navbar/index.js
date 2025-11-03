@@ -136,7 +136,7 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
     submenu: true,
     type: 'simple',
     items: [
-      { href: '/', label: 'Browse Auctions' },
+      { href: '/featured_auctions', label: 'Browse Auctions' },
       ...(isAuthed ? [{ href: '/auction/seller', label: 'Manage Auctions' }] : []),
     ],
   };
