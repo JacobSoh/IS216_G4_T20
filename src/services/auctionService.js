@@ -153,6 +153,64 @@ export async function getAuctionsByOwner(oid) {
   return (data ?? []).map(enhanceAuctionRecord)
 }
 
+function normalizeSoldFlag(value) {
+  if (value === true || value === 'true' || value === 1) return true
+  if (value === false || value === 'false' || value === 0) return false
+  return Boolean(value)
+}
+
+function deriveAuctionStatusFromItems(auction, items = []) {
+  const startMs = auction?.start_time
+    ? new Date(auction.start_time).getTime()
+    : null
+  if (!startMs || Number.isNaN(startMs)) return 'scheduled'
+  const now = Date.now()
+  if (now < startMs) return 'scheduled'
+  if (!Array.isArray(items) || items.length === 0) {
+    return 'ended'
+  }
+  const hasUnsold = items.some((item) => !normalizeSoldFlag(item?.sold))
+  return hasUnsold ? 'live' : 'ended'
+}
+
+export async function getAuctionSummariesByOwner(oid) {
+  if (!oid) throw new Error('Missing owner id')
+  const rawAuctions = await retrieveAuctionsByOwner(oid)
+  if (!rawAuctions || rawAuctions.length === 0) {
+    return []
+  }
+  const enhanced = rawAuctions.map(enhanceAuctionRecord)
+  const ids = enhanced.map((auction) => auction.aid).filter(Boolean)
+  let itemsByAuction = new Map()
+  if (ids.length > 0) {
+    const items = await retrieveItemSoldStateByAuctions(ids)
+    itemsByAuction = items.reduce((map, row) => {
+      const key = row?.aid
+      if (!key) return map
+      const list = map.get(key) ?? []
+      list.push(row)
+      map.set(key, list)
+      return map
+    }, new Map())
+  }
+  return enhanced.map((auction) => {
+    const items = itemsByAuction.get(auction.aid) ?? []
+    const status = deriveAuctionStatusFromItems(auction, items)
+    const unsoldItems = items.filter((item) => !normalizeSoldFlag(item?.sold)).length
+    return {
+      aid: auction.aid,
+      name: auction.name,
+      description: auction.description,
+      start_time: auction.start_time,
+      end_time: auction.end_time ?? null,
+      thumbnailUrl: auction.thumbnailUrl ?? null,
+      status,
+      totalItems: items.length,
+      unsoldItems
+    }
+  })
+}
+
 export async function setAuction(param) {
   const validation = validateParam(param)
   if (!validation.success) throw new Error(validation.message)

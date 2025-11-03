@@ -13,7 +13,7 @@ export class User {
     full_name;
     avatar_bucket;
     object_path;
-    avatar_url;
+    #avatarUrl;
     #wallet_balance;
 
     stats;
@@ -43,6 +43,7 @@ export class User {
         this.full_name = fullNameArr.length > 0 ? fullNameArr.join(' ') : profile.username
         this.avatar_bucket = profile.avatar_bucket || 'avatar';
         this.object_path = profile.object_path;
+        this.#avatarUrl = profile.avatar_url || null;
         this.wallet_balance = profile.wallet_balance.toFixed(2);
         this.wallet_held = profile.wallet_held.toFixed(2);
         this.address = profile.address || '';
@@ -89,8 +90,12 @@ export class User {
         this.#profile = profile;
     }
 
+    get avatar_url() {
+        return this.#avatarUrl;
+    }
+
     set avatar_url(avatar_url) {
-        this.avatar_url = avatar_url;
+        this.#avatarUrl = avatar_url;
     }
 
     // get id() {

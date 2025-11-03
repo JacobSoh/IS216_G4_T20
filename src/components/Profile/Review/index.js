@@ -100,14 +100,14 @@ export default function PopulateReviews({ userId }) {
 
 
     return (
-        <div className="space-y-5">
-            {/* Review Cards */}
+        <div className="space-y-4">
             {state.reviews.map((review, index) => (
-                <ReviewCard
+                <div
                     key={`${review.reviewee_id}-${review.time_created}-${index}`}
-                    review={review}
-                    sb={sb}
-                />
+                    className="p-5"
+                >
+                    <ReviewCard review={review} sb={sb} />
+                </div>
             ))}
         </div>
     );

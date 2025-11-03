@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { redirect } from "next/navigation";
 import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Pencil, ChevronLeft, ChevronRight, Search, Trash } from "lucide-react";
 
+import { supabaseBrowser } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CustomInput } from "@/components/Form";
 // import {
@@ -28,18 +29,6 @@ import {
 import { CustomSelect } from "@/components/Form/CustomSelect";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
-function deriveStatus({ start_time, end_time }) {
-  try {
-    const now = Date.now();
-    const s = start_time ? new Date(start_time).getTime() : null;
-    const e = end_time ? new Date(end_time).getTime() : null;
-    if (s && now < s) return "scheduled";
-    if (s && e && now >= s && now <= e) return "live";
-    if (e && now > e) return "ended";
-  } catch { }
-  return "scheduled";
-}
-
 function formatDate(iso) {
   if (!iso) return "—";
   try {
@@ -56,29 +45,128 @@ function formatDate(iso) {
   }
 }
 
+function isItemSold(item) {
+  const value = item?.sold;
+  if (value === true || value === 1 || value === "true") return true;
+  if (value === false || value === 0 || value === "false") return false;
+  return value != null ? Boolean(value) : false;
+}
+
+function deriveStatus(auction, items, { ready }) {
+  try {
+    const startMs = auction?.start_time
+      ? new Date(auction.start_time).getTime()
+      : null;
+    if (!startMs || Number.isNaN(startMs)) return "scheduled";
+
+    const now = Date.now();
+    if (now < startMs) return "scheduled";
+
+    if (!Array.isArray(items)) {
+      const fallbackItems = Array.isArray(auction?.items) ? auction.items : [];
+      if (!ready) return "live";
+      if (!fallbackItems.length) return "ended";
+      const hasPendingFallback = fallbackItems.some((item) => !isItemSold(item));
+      return hasPendingFallback ? "live" : "ended";
+    }
+
+    if (!items.length) {
+      return ready ? "ended" : "live";
+    }
+
+    const hasPending = items.some((item) => !isItemSold(item));
+    return hasPending ? "live" : "ended";
+  } catch (error) {
+    console.warn("[SellerDatatable] Failed to derive status", error);
+    return "scheduled";
+  }
+}
+
 const statusOrder = { draft: 0, scheduled: 1, live: 2, ended: 3 };
 
 export default function SellerDatatable({ auctions = [] }) {
+  const sb = supabaseBrowser();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [sortKey, setSortKey] = useState("status");
-  const [sortDir, setSortDir] = useState("desc"); // asc | desc
+  const [sortDir, setSortDir] = useState("desc");
   const [page, setPage] = useState(1);
+  const [auctionItems, setAuctionItems] = useState({});
+  const [itemsReady, setItemsReady] = useState(false);
+  const [itemsLoading, setItemsLoading] = useState(false);
   const pageSize = 5;
-  const loading = false;
+
+  useEffect(() => {
+    const ids = (auctions ?? [])
+      .map((auction) => auction?.aid)
+      .filter((id) => Boolean(id));
+    if (!ids.length) {
+      setAuctionItems({});
+      setItemsReady(true);
+      setItemsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setItemsLoading(true);
+    setItemsReady(false);
+
+    sb
+      .from("item")
+      .select("aid, sold")
+      .in("aid", ids)
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.error("[SellerDatatable] Failed to fetch items", error);
+          setAuctionItems({});
+          setItemsReady(true);
+          setItemsLoading(false);
+          return;
+        }
+
+        const grouped = (data ?? []).reduce((acc, item) => {
+          const key = item?.aid;
+          if (!key) return acc;
+          if (!acc[key]) acc[key] = [];
+          acc[key].push({ sold: item?.sold ?? null });
+          return acc;
+        }, {});
+
+        setAuctionItems(grouped);
+        setItemsReady(true);
+        setItemsLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error("[SellerDatatable] Unexpected item fetch error", err);
+        setAuctionItems({});
+        setItemsReady(true);
+        setItemsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [sb, auctions]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (auctions || []).map((a) => ({
-      ...a,
-      _status: deriveStatus(a),
-    })).filter((a) => {
-      const title = a?.name || '';
-      const matchQuery = !q || title.toLowerCase().includes(q);
-      const matchStatus = status === "all" || a._status === status;
-      return matchQuery && matchStatus;
-    });
-  }, [query, status, auctions]);
+    return (auctions || [])
+      .map((auction) => {
+        const items = auctionItems[auction?.aid] ?? auction?.items;
+        return {
+          ...auction,
+          _status: deriveStatus(auction, items, { ready: itemsReady }),
+        };
+      })
+      .filter((auction) => {
+        const title = auction?.name || "";
+        const matchQuery = !q || title.toLowerCase().includes(q);
+        const matchStatus = status === "all" || auction._status === status;
+        return matchQuery && matchStatus;
+      });
+  }, [query, status, auctions, auctionItems, itemsReady]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -86,12 +174,12 @@ export default function SellerDatatable({ auctions = [] }) {
       const dir = sortDir === "asc" ? 1 : -1;
       switch (sortKey) {
         case "title": {
-          const at = (a.name || '').toString();
-          const bt = (b.name || '').toString();
+          const at = (a.name || "").toString();
+          const bt = (b.name || "").toString();
           return dir * at.localeCompare(bt);
         }
         case "bids":
-          return dir * (a.bids - b.bids);
+          return dir * ((a.bids ?? 0) - (b.bids ?? 0));
         case "startAt": {
           const av = a.start_time ? new Date(a.start_time).getTime() : 0;
           const bv = b.start_time ? new Date(b.start_time).getTime() : 0;
@@ -105,14 +193,14 @@ export default function SellerDatatable({ auctions = [] }) {
         case "status":
         default:
           return dir * (statusOrder[a._status] - statusOrder[b._status]);
-      };
+      }
     });
     return arr;
   }, [filtered, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-
   const currentPage = Math.min(page, totalPages);
+
   const paged = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return sorted.slice(start, start + pageSize);
@@ -138,6 +226,8 @@ export default function SellerDatatable({ auctions = [] }) {
       <ArrowDown className="ml-1" />
     );
   }
+
+  const loading = itemsLoading;
 
   return (
     <div className="space-y-4">
@@ -280,7 +370,7 @@ export default function SellerDatatable({ auctions = [] }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
             disabled={currentPage <= 1 || loading}
           >
             <ChevronLeft /> Previous
@@ -288,7 +378,7 @@ export default function SellerDatatable({ auctions = [] }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             disabled={currentPage >= totalPages || loading}
           >
             Next <ChevronRight />

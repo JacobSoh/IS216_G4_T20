@@ -4,3 +4,4 @@ export * from './CustomTextarea';
 export * from './CustomDatePicker';
 export * from './CustomFileInput';
 export * from './CustomAddressInput';
+export * from './CustomSelect';

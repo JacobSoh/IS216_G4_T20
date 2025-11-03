@@ -1,15 +1,6 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { useMotionTemplate, useMotionValue, motion } from "motion/react";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 export function CustomSelect({
   type,
@@ -19,6 +10,7 @@ export function CustomSelect({
   placeholder = "Select an option",
   options = [],
   value,
+  defaultValue,
   onChange,
   disabled = false,
   className,
@@ -26,7 +18,7 @@ export function CustomSelect({
 }) {
   const autoId = useId();
   const id = `select-${type}-${autoId}`;
-  const [isFocused, setIsFocused] = useState(false);
+  const [innerValue, setInnerValue] = useState(defaultValue ?? "");
 
   // Hover observer effect like CustomInput
   const radius = 100;
@@ -39,17 +31,42 @@ export function CustomSelect({
     mouseY.set(clientY - top);
   };
 
-  const handleValueChange = (val) => {
-    if (typeof onChange === 'function') {
+  const isControlled = value !== undefined;
+
+  const handleValueChange = (event) => {
+    const val = event?.target?.value ?? "";
+    if (!isControlled) {
+      setInnerValue(val);
+    }
+    if (typeof onChange === "function") {
       try {
         const maybe = onChange(type);
-        if (typeof maybe === 'function') {
-          return maybe({ target: { name: type, value: val } });
+        if (typeof maybe === "function") {
+          maybe({ target: { name: type, value: val } });
+          return;
         }
-      } catch {}
+      } catch { }
       onChange({ target: { name: type, value: val } });
     }
   };
+
+  const safeOptions = Array.isArray(options)
+    ? options.filter(
+        (opt) =>
+          opt &&
+          opt.label != null &&
+          opt.value !== undefined &&
+          String(opt.value) !== ""
+      )
+    : [];
+
+  useEffect(() => {
+    if (!isControlled) {
+      setInnerValue(defaultValue ?? "");
+    }
+  }, [defaultValue, isControlled]);
+
+  const currentValue = isControlled ? value : innerValue;
 
   return (
     <Field>
@@ -73,36 +90,30 @@ export function CustomSelect({
         onMouseLeave={() => setHoverVisible(false)}
         className="rounded-md p-[2px] transition duration-300 w-full"
       >
-        <Select
-          value={value ?? ''}
-          onValueChange={handleValueChange}
+        <select
+          id={id}
+          name={type}
+          value={currentValue ?? ""}
+          onChange={handleValueChange}
+          required={required}
           disabled={disabled}
+          aria-invalid={!!err || undefined}
+          className={`flex h-10 w-full rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-[var(--theme-surface-contrast)] placeholder:text-[var(--theme-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] disabled:cursor-not-allowed disabled:opacity-60 ${className ?? ""}`}
           {...rest}
         >
-          <SelectTrigger className={`w-full ${className ?? ''}`} aria-invalid={!!err || undefined}>
-            <SelectValue placeholder={placeholder} />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.isArray(options) && options.length > 0 ? (
-              <SelectGroup>
-                {options
-                  .filter((opt) => opt && opt.label != null && opt.value !== undefined && String(opt.value) !== "")
-                  .map((opt) => {
-                    const val = String(opt.value);
-                    return (
-                      <SelectItem key={val} value={val}>
-                        {opt.label}
-                      </SelectItem>
-                    );
-                  })}
-              </SelectGroup>
-            ) : (
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">{placeholder}</div>
-            )}
-          </SelectContent>
-        </Select>
+          <option value="" disabled>
+            {placeholder}
+          </option>
+          {safeOptions.map((opt) => {
+            const val = String(opt.value);
+            return (
+              <option key={val} value={val}>
+                {opt.label}
+              </option>
+            );
+          })}
+        </select>
       </motion.div>
-      <input type="hidden" name={type} value={value ?? ''} readOnly />
       {/* <select
         id={id}
         name={type}
