@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/card";
 
 import { CustomSelect } from "@/components/Form/CustomSelect";
-import { supabaseBrowser } from "@/utils/supabase/client";
 
 function formatDate(iso) {
   if (!iso) return "—";

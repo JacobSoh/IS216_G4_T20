@@ -142,10 +142,15 @@ const buildLotFromSnapshot = (snapshot) => {
   const bidIncrement = Number.isFinite(Number(displayItem?.bid_increment)) && Number(displayItem?.bid_increment) > 0
     ? Number(displayItem?.bid_increment)
     : 0.01
+  // Check if there's actually a bid placed by a user (uid is set)
+  // When item becomes active, current_bid is created with uid=null and current_price=min_bid
+  // Only when someone actually bids does uid get set
+  const hasActualBid = activeBid && activeBid.uid != null
   const currentBidValue = awaitingStart
     ? Number(displayItem?.min_bid ?? 0)
     : Number(activeBid?.current_price ?? displayItem?.min_bid ?? 0)
-  const nextBidMinimum = currentBidValue + bidIncrement
+  // Next bid minimum: if there's an actual bid, add increment; otherwise just use min_bid
+  const nextBidMinimum = hasActualBid ? currentBidValue + bidIncrement : minBid
 
   // Get item timer data from auction
   const itemTimerStartedAt = auction.timer_started_at ? new Date(auction.timer_started_at) : null
@@ -168,7 +173,7 @@ const buildLotFromSnapshot = (snapshot) => {
     minBid,
     bidIncrement,
     nextBidMinimum,
-    hasBid: awaitingStart ? false : Boolean(activeBid),
+    hasBid: awaitingStart ? false : hasActualBid,
     auctionEndsAt: auction.end_time ?? null,
     auctionStartsAt: auction.start_time ?? null,
     itemTimerSeconds: awaitingStart ? null : itemTimerDuration,
@@ -591,8 +596,9 @@ useEffect(() => {
     [currentLot.bidIncrement]
   )
   const nextBidMinimum = useMemo(() => {
-    return lotBidValue + bidIncrementValue
-  }, [lotBidValue, bidIncrementValue])
+    // If there's a current bid (hasBid), add increment; otherwise just use min_bid
+    return currentLot.hasBid ? lotBidValue + bidIncrementValue : minBidValue
+  }, [lotBidValue, bidIncrementValue, minBidValue, currentLot.hasBid])
   const modalLotData = useMemo(() => buildScreenLot(currentLot, currentLot.nextItem, itemTimerSeconds), [currentLot, itemTimerSeconds])
   const auctionStart = useMemo(
     () => (currentLot.auctionStartsAt ? new Date(currentLot.auctionStartsAt) : null),
@@ -721,9 +727,6 @@ useEffect(() => {
                 <span className="text-sm font-medium uppercase tracking-wide text-[var(--theme-secondary)]">Live Auction</span>
               </div>
               <div className="space-y-1">
-                <p className="text-purple-200 text-xs">
-                  Auction ends: {currentLot.timeRemaining}
-                </p>
                 {itemTimerSeconds !== null && (
                   <p className="text-purple-200 text-xs">
                     Item timer: {pad(Math.floor(itemTimerSeconds / 60))}:{pad(itemTimerSeconds % 60)}
@@ -804,6 +807,9 @@ useEffect(() => {
             handleBidSubmit={handleBidSubmit}
             isBidding={isBidding}
             bidFeedback={bidFeedback}
+            hasBid={currentLot.hasBid}
+            status={currentLot.status}
+            awaitingMessage={currentLot.awaitingMessage}
           />
 
           {/* Chat Panel Popup - Bottom Right */}

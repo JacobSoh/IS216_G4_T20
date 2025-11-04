@@ -299,10 +299,13 @@ export async function placeBidForItem({ aid, iid, bidderId, amount }) {
   const currentBid = await retrieveCurrentBidByItem(iid)
   const rawIncrement = Number(itemRecord.bid_increment ?? 0.01)
   const bidIncrement = Number.isFinite(rawIncrement) && rawIncrement > 0 ? rawIncrement : 0.01
-  const currentPrice = currentBid?.current_price ? Number(currentBid.current_price) : null
+  // Check if there's an actual bidder (uid is set), not just if current_price exists
+  // When item becomes active, current_bid is created with uid=null and current_price=min_bid
+  const hasActualBid = currentBid && currentBid.uid != null
+  const currentPrice = hasActualBid ? Number(currentBid.current_price) : null
   const minimumRequired = currentPrice !== null
     ? currentPrice + bidIncrement
-    : Math.max(Number(itemRecord.min_bid ?? 0), bidIncrement)
+    : Number(itemRecord.min_bid ?? 0)
   const normalizedAmount = Number(amount)
   if (!Number.isFinite(normalizedAmount)) {
     throw new Error('Bid amount must be a valid number')

@@ -106,70 +106,27 @@ export default function FeaturedStorePage() {
       .replace(/^-+|-+$/g, "");
 
   return (
-    <div className="w-full overflow-x-hidden pb-16 pt-20 space-y-20 bg-[var(--theme-primary-darker)] text-white">
-      {/* ===== Header ===== */}
-      <div className="text-center px-4">
-        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 bg-gradient-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-transparent">
-          Live Auctions
-        </h1>
-      </div>
+    <div className="space-y-12 px-6 lg:px-8 py-12 bg-gray-900 min-h-screen text-white">
 
-      {/* ===== Featured Carousel ===== */}
-      <div className="px-4 sm:px-8 lg:px-16">
-        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">Popular</h2>
-          <span className="text-white/70 text-lg sm:text-2xl font-semibold">
-            The latest. See what’s new, now.
-          </span>
-        </div>
+      {/* Popular Right Now Header */}
+      <h2 className="text-4xl font-extrabold text-white mb-8 -mt-5">Popular Right Now</h2>
 
-        {/* ✅ Responsive Carousel */}
-        <div className="relative w-full h-[350px] sm:h-[450px] md:h-[500px] flex justify-center items-center">
-          {isLoading ? (
-            <BigAuctionCardSkeleton />
-          ) : auctions.length > 0 ? (
-            isMobile ? (
-              // === Single card view (mobile / tablet)
-              <motion.div
-                key={auctions[currentIndex].aid}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.6 }}
-                className="absolute cursor-pointer"
-              >
-                <Link href={`/auction/${auctions[currentIndex].aid}`}>
-                  <BigAuctionCard {...auctions[currentIndex]} />
-                </Link>
-              </motion.div>
-            ) : (
-              // === 3-card layout (desktop)
-              [-1, 0, 1].map((pos) => {
-                const auctionIndex = getCircularIndex(currentIndex + pos);
-                const scale = pos === 0 ? 1 : 0.75;
-                const xOffset = pos * 320;
-                const zIndex = pos === 0 ? 10 : 5;
-                const opacity = pos === 0 ? 1 : 0.8;
-
-                return (
-                  <motion.div
-                    key={auctions[auctionIndex].aid}
-                    initial={{ x: xOffset, scale, opacity }}
-                    animate={{ x: xOffset, scale, opacity }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                    className="absolute cursor-pointer"
-                    style={{ zIndex }}
-                  >
-                    <Link href={`/auction/${auctions[auctionIndex].aid}`}>
-                      <BigAuctionCard {...auctions[auctionIndex]} />
-                    </Link>
-                  </motion.div>
-                );
-              })
-            )
-          ) : (
-            <p className="text-white/60">No featured auctions found.</p>
-          )}
+      {/* Top Big Auction Carousel */}
+      {!isLoading && auctions.length > 0 ? (
+        <Link href={`/auction/view/${auctions[currentIndex].aid}`}>
+          <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden cursor-pointer">
+            <BigAuctionCard
+              key={auctions[currentIndex].aid}
+              name={auctions[currentIndex].name}
+              description={auctions[currentIndex].description}
+              picUrl={auctions[currentIndex].picUrl}
+              endTime={auctions[currentIndex].endTime}
+            />
+          </div>
+        </Link>
+      ) : (
+        <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden">
+          <BigAuctionCardSkeleton key="big-auction-skeleton" />
         </div>
       </div>
 
@@ -214,28 +171,23 @@ export default function FeaturedStorePage() {
         </div>
       </div>
 
-      {/* ===== Live Auctions Grid ===== */}
-      <div className="px-4 sm:px-8 lg:px-16">
-        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-10 text-center lg:text-left">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white">
-            Live Auctions
-          </h2>
-          <span className="text-white/70 text-lg sm:text-2xl font-semibold">
-            Explore what's trending right now.
-          </span>
-        </div>
+      {/* Live Auctions Header */}
+      <h2 className="text-4xl font-extrabold text-white my-7">Live Auctions</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 justify-items-center">
-          {isLoading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <AuctionHoverPictureSkeleton key={i} />
-              ))
-            : auctions.slice(0, 6).map((a) => (
-                <Link key={a.aid} href={`/auction/${a.aid}`}>
-                  <AuctionHoverPicture name={a.name} picUrl={a.picUrl} />
-                </Link>
-              ))}
-        </div>
+      {/* Auctions Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {isLoading
+          ? Array.from({ length: 6 }).map((_, i) => (
+            <AuctionHoverPictureSkeleton key={`skeleton-grid-${i}`} />
+          ))
+          : auctions.slice(0, 6).map((a) => (
+            <Link key={a.aid} href={`/auction/view/${a.aid}`} className="block">
+              <AuctionHoverPicture
+                name={a.name}
+                picUrl={a.picUrl}
+              />
+            </Link>
+          ))}
       </div>
 
       {/* ===== Pagination ===== */}

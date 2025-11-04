@@ -170,7 +170,7 @@ export default function CategoryPage() {
             {auctions.map((a) => (
               <Link
                 key={a.aid}
-                href={`/auction/${a.aid}`}
+                href={`/auction/view/${a.aid}`}
                 className="transform transition-transform hover:scale-105"
               >
                 <AuctionCard

@@ -33,7 +33,7 @@ export function useSupabaseAuth(initialAuthedProp) {
 
     // Instant, safe logout: optimistic UI + immediate redirect
     const logout = useCallback(async (options = {}) => {
-        const { redirectTo = '/' } = options;
+        const { redirectTo } = options;
 
         // 1) Optimistic local state and guard across pages
         try {
@@ -46,13 +46,18 @@ export function useSupabaseAuth(initialAuthedProp) {
             try { if (typeof window !== 'undefined') sessionStorage.removeItem(LOGOUT_FLAG); } catch {}
         });
 
-        // 3) Immediate hard redirect to a safe page (no back to protected)
+        // 3) Redirect only if redirectTo is provided, otherwise just refresh
         try {
-            if (typeof window !== 'undefined') {
-                window.location.replace(redirectTo);
-                // After replace, code continues until navigation commits; no need to await
+            if (redirectTo) {
+                if (typeof window !== 'undefined') {
+                    window.location.replace(redirectTo);
+                    // After replace, code continues until navigation commits; no need to await
+                } else {
+                    router.replace(redirectTo);
+                }
             } else {
-                router.replace(redirectTo);
+                // Just refresh to update UI without changing page
+                safeRefresh();
             }
         } catch {
             // As a fallback, refresh the router to re-render unauth state
