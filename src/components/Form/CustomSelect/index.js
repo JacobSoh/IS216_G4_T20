@@ -98,7 +98,7 @@ export function CustomSelect({
           required={required}
           disabled={disabled}
           aria-invalid={!!err || undefined}
-          className={`flex h-10 w-full rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-[var(--theme-surface-contrast)] placeholder:text-[var(--theme-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] disabled:cursor-not-allowed disabled:opacity-60 ${className ?? ""}`}
+          className={`flex h-10 w-full rounded-md border border-[var(--theme-primary)] bg-background px-3 py-2 text-sm text-[var(--theme-surface-contrast)] placeholder:text-[var(--theme-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] disabled:cursor-not-allowed disabled:opacity-60 ${className ?? ""}`}
           {...rest}
         >
           <option value="" disabled>

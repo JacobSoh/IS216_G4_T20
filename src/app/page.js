@@ -18,7 +18,7 @@ import {
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
-import BubbleNav from "@/components/testnav";
+import BubbleNav from "@/components/Navbar/testnav";
 import TunnelSquares from "@/components/tunnelsquare";
 //import { motion } from "motion/react";
 import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";

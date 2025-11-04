@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
 import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Pencil, ChevronLeft, ChevronRight, Search, Trash } from "lucide-react";
 
 import { supabaseBrowser } from "@/utils/supabase/client";
@@ -26,7 +27,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { CustomSelect } from "@/components/Form/CustomSelect";
+const CustomSelect = dynamic(() => import("@/components/Form/CustomSelect").then(m => m.CustomSelect ?? m.default), { ssr: false });
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -93,7 +94,7 @@ export default function SellerDatatable({ auctions = [] }) {
   const [auctionItems, setAuctionItems] = useState({});
   const [itemsReady, setItemsReady] = useState(false);
   const [itemsLoading, setItemsLoading] = useState(false);
-  const pageSize = 5;
+  const pageSize = 8;
 
   useEffect(() => {
     const ids = (auctions ?? [])
@@ -241,7 +242,7 @@ export default function SellerDatatable({ auctions = [] }) {
         />
         <Search className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch content-stretch">
         {
           loading ? (
             <span>loading</span>
@@ -253,104 +254,11 @@ export default function SellerDatatable({ auctions = [] }) {
               .from(v.thumbnail_bucket || 'thumbnail')
               .getPublicUrl(v.object_path).data.publicUrl
             return (
-              <Card key={v.aid}>
-                <CardHeader>
-                  {picUrl ? (
-                    <img
-                      src={picUrl}
-                      alt={v?.title}
-                      className="object-cover w-full max-h-40 bg-white rounded-md"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center w-full min-h-40 max-h-40 bg-[var(--theme-primary-darker)] rounded-md font-bold">
-                      NO IMAGE
-                    </div>
-                  )}
-                  <CardTitle className='mt-4'>
-                    {v?.title}
-                  </CardTitle>
-                  <CardDescription className='line-clamp-4'>
-                    {v?.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-white text-xs">Final Price</span>
-                    <span className="text-[var(--theme-gold)] text-sm font-bold flex items-center gap-1">
-                      {/* ${item?.final_price.toFixed(2)} */}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white text-xs">Won On</span>
-                    <span className="text-gray-400 text-sm font-medium flex items-center gap-1">
-                      {/* <Calendar className="w-3 h-3" /> */}
-                      {/* {formatDate(item?.sold_at)} */}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+              <FlipAuctionCard key={v.aid} auction={v} thumbnail={picUrl} />
             );
           })
         }
       </div>
-      <Card>
-        <CardContent>
-          {/* <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[220px]">
-                  <Button variant="ghost" size="sm" onClick={() => toggleSort("title")}>
-                    Title <SortIcon column="title" />
-                  </Button>
-                </TableHead>
-                <TableHead className="min-w-[200px]">
-                  <Button variant="ghost" size="sm" onClick={() => toggleSort("startAt")}>
-                    Start <SortIcon column="startAt" />
-                  </Button>
-                </TableHead>
-                <TableHead className="text-right min-w-[100px]">
-                  <Button variant="ghost" size="sm" onClick={() => toggleSort("bids")}>
-                    Bids <SortIcon column="bids" />
-                  </Button>
-                </TableHead>
-                <TableHead className="text-right min-w-[160px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">Loading…</TableCell>
-                </TableRow>
-              ) : paged.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">No results.</TableCell>
-                </TableRow>
-              ) : (
-                paged.map((a) => (
-                  <TableRow key={a.aid}>
-                    <TableCell className="font-medium">{a.name}</TableCell>
-                    <TableCell>{formatDate(a.start_time)}</TableCell>
-                    <TableCell className="text-right">{a.bids ?? 0}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="gold_white" size="sm" onClick={() => window.location.href = `/auction/view/${a.aid}/manage`}>
-                          <Eye /> View
-                        </Button>
-                        <Button variant="brand" size="sm" onClick={() => window.location.href = `/auction/seller/edit/${a.aid}`}>
-                          <Pencil /> Edit
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => window.location.href = `/auction/view/${a.aid}/manage`}>
-                          <Trash /> Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table> */}
-        </CardContent>
-      </Card>
 
       <div className="flex items-center justify-between gap-3 py-3">
         <div className="text-muted-foreground text-sm">
@@ -382,6 +290,110 @@ export default function SellerDatatable({ auctions = [] }) {
           >
             Next <ChevronRight />
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FlipAuctionCard({ auction, thumbnail }) {
+  const [flipped, setFlipped] = React.useState(false);
+  const handleFlip = () => setFlipped((f) => !f);
+
+  const onEdit = (e) => {
+    e.stopPropagation();
+    window.location.href = `/auction/seller/edit/${auction.aid}`;
+  };
+  const onDelete = async (e) => {
+    e.stopPropagation();
+    if (!confirm('Delete this auction?')) return;
+    try {
+      const res = await fetch('/api/auctions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aid: auction.aid })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data?.status >= 400) {
+        throw new Error(data?.error || 'Failed to delete');
+      }
+      // Optimistic remove: hide card by flipping back and dispatching a custom event
+      setFlipped(false);
+      // Trigger a soft reload; this page is client-side so refresh is okay
+      try { window.location.reload(); } catch {}
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || 'Delete failed');
+    }
+  };
+
+  return (
+    <div
+      className="relative h-full min-h-105"
+      style={{ perspective: '1200px' }}
+      onClick={handleFlip}
+    >
+      <div
+        className="transition-transform duration-500 relative h-full"
+        style={{ transformStyle: 'preserve-3d', transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+      >
+        {/* Front */}
+        <div className="absolute inset-0 [backface-visibility:hidden]">
+          <Card className="h-full flex flex-col">
+            <CardHeader className="flex-shrink-0">
+              {thumbnail ? (
+                <img
+                  src={thumbnail}
+                  alt={auction?.name}
+                  className="object-cover w-full max-h-40 bg-white rounded-md"
+                />
+              ) : (
+                <div className="flex items-center justify-center w-full min-h-40 max-h-40 bg-[var(--theme-primary-darker)] rounded-md font-bold">
+                  NO IMAGE
+                </div>
+              )}
+              <CardTitle className="mt-4 line-clamp-2">{auction?.name}</CardTitle>
+              <CardDescription className="line-clamp-4">
+                {auction?.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="mt-auto">
+              <Button
+                variant="brand"
+                className="w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.href = `/auction/view/${auction.aid}`;
+                }}
+              >
+                View Details
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Back */}
+        <div
+          className="absolute inset-0 rotate-y-180 [backface-visibility:hidden]"
+          style={{ transform: 'rotateY(180deg)' }}
+        >
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <CardTitle>Action</CardTitle>
+              <CardDescription>Choose an action for "{auction?.name}"</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 mt-auto">
+              <Button variant="brand" className="w-full" onClick={onEdit}>
+                <Pencil className="mr-1" /> Edit
+              </Button>
+              <Button variant="destructive" className="w-full" onClick={onDelete}>
+                <Trash className="mr-1" /> Delete
+              </Button>
+              <Button variant="outline" className="w-full" onClick={(e) => { e.stopPropagation(); setFlipped(false); }}>
+                Back
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

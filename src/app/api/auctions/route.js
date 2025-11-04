@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { getAllAuctions, getAuctionsByOwner, setAuction } from '@/services/auctionService'
+import { getAllAuctions, getAuctionsByOwner, setAuction, deleteAuctionById } from '@/services/auctionService'
+import { getServerUser } from '@/utils/auth'
 
 export async function GET(req) {
   try {
@@ -30,6 +31,23 @@ export async function POST(req) {
       },
       { status: 200 }
     )
+  } catch (e) {
+    return NextResponse.json({ status: 500, error: e.message }, { status: 500 })
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const user = await getServerUser()
+    if (!user) {
+      return NextResponse.json({ status: 401, error: 'Unauthorized' }, { status: 401 })
+    }
+    const { aid } = await req.json()
+    if (!aid) {
+      return NextResponse.json({ status: 400, error: 'Missing auction id (aid)' }, { status: 400 })
+    }
+    await deleteAuctionById(aid, user.id)
+    return NextResponse.json({ status: 200, success: true }, { status: 200 })
   } catch (e) {
     return NextResponse.json({ status: 500, error: e.message }, { status: 500 })
   }

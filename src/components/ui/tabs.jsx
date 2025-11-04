@@ -9,6 +9,10 @@ function Tabs({
   className,
   ...props
 }) {
+  // Avoid SSR/CSR id mismatches produced by Radix id generation
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
   return (
     <TabsPrimitive.Root
       data-slot="tabs"

@@ -218,10 +218,6 @@ export default function CategorySalesPieChart({ sellerId }) {
 
   return (
     <Box sx={{ width: "100%", textAlign: "center" }}>
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-        Category & Sales Distribution
-      </Typography>
-
       <Box sx={{ display: "flex", justifyContent: "center", height: 400 }}>
           <PieChart
             series={[
@@ -257,6 +253,10 @@ export default function CategorySalesPieChart({ sellerId }) {
                 hidden: true,
               },
             }}
+            sx={{
+              "& .MuiChartsLegend-label": { fill: '#fff' },
+              "& .MuiChartsTooltip-root": { color: '#111' },
+            }}
           />
       </Box>
 
@@ -289,7 +289,7 @@ export default function CategorySalesPieChart({ sellerId }) {
                 borderRadius: "2px",
               }}
             />
-            <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+            <Typography variant="body2" sx={{ fontSize: "0.875rem", color: '#fff' }}>
               {category.label}
             </Typography>
           </Box>

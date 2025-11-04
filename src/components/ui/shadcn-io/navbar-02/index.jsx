@@ -66,8 +66,11 @@ export const Navbar02 = React.forwardRef((
     signInHref = '#signin',
     ctaText = 'Get Started',
     ctaHref = null,
+    secondaryCtaText = null,
+    secondaryCtaHref = null,
     onSignInClick,
     onCtaClick,
+    onSecondaryCtaClick,
     onLogoClick,
     ...props
   },
@@ -282,6 +285,27 @@ export const Navbar02 = React.forwardRef((
               }}>
               {ctaText}
             </Button>
+          )}
+
+          {secondaryCtaText && (
+            secondaryCtaHref ? (
+              <a
+                href={secondaryCtaHref}
+                className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-100 disabled:brightness-95 disabled:saturate-75 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-[var(--theme-primary)] text-white hover:bg-[var(--theme-secondary)] focus-visible:ring-[color:var(--theme-secondary)]/40 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5">
+                <span className="text-white">{secondaryCtaText}</span>
+              </a>
+            ) : (
+              <Button
+                size="sm"
+                variant="brand"
+                loadingOnClick
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (onSecondaryCtaClick) onSecondaryCtaClick();
+                }}>
+                {secondaryCtaText}
+              </Button>
+            )
           )}
         </div>
       </div>

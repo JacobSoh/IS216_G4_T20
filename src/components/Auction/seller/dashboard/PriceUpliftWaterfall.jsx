@@ -171,13 +171,9 @@ export default function PriceUpliftWaterfall({ sellerId }) {
 
   return (
     <Box sx={{ width: "100%", textAlign: "center" }}>
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-        Price-Uplift Waterfall
-      </Typography>
       <Typography
         variant="body2"
-        color="text.secondary"
-        sx={{ mb: 2, fontSize: "0.875rem" }}
+        sx={{ mb: 2, fontSize: "0.875rem", color: 'var(--nav-text-muted)' }}
       >
         Value created beyond minimum bid per category — total uplift: $
         {waterfallData.totalUplift?.toFixed(2) || "0.00"} (
@@ -215,8 +211,22 @@ export default function PriceUpliftWaterfall({ sellerId }) {
           ]}
           colors={waterfallData.colors}
           margin={{ top: 20, right: 24, bottom: 72, left: 48 }}
-          slotProps={{
-            legend: { hidden: true },
+          slotProps={{ legend: { hidden: true } }}
+          sx={{
+            "& .MuiChartsAxis-tickLabel": {
+              fill: '#fff',
+              whiteSpace: 'nowrap',
+            },
+            "& .MuiChartsAxis-label": {
+              fill: 'var(--theme-secondary)'
+            },
+            "& .MuiChartsGrid-line": {
+              stroke: 'color-mix(in oklab, white 15%, transparent)'
+            },
+            /* >>> AXIS LINES & TICKS TO WHITE <<< */
+            "& .MuiChartsAxis-bottom .MuiChartsAxis-line": { stroke: "var(--theme-gold)" }, // x-axis line
+            "& .MuiChartsAxis-left .MuiChartsAxis-line": { stroke: "var(--theme-gold)" },   // y-axis line
+            "& .MuiChartsAxis-tick": { stroke: "var(--theme-gold)" },
           }}
         />
       </Box>
@@ -239,7 +249,7 @@ export default function PriceUpliftWaterfall({ sellerId }) {
               borderRadius: "2px",
             }}
           />
-          <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: '#fff' }}>
             Start (Min Bids)
           </Typography>
         </Box>
@@ -252,7 +262,7 @@ export default function PriceUpliftWaterfall({ sellerId }) {
               borderRadius: "2px",
             }}
           />
-          <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: '#fff' }}>
             Category Uplift
           </Typography>
         </Box>
@@ -265,7 +275,7 @@ export default function PriceUpliftWaterfall({ sellerId }) {
               borderRadius: "2px",
             }}
           />
-          <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: '#fff' }}>
             Total Revenue
           </Typography>
         </Box>

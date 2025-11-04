@@ -211,13 +211,12 @@ export default function ReserveCalibration({ sellerId }) {
 
   return (
     <Box sx={{ width: "100%", textAlign: "center" }}>
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#fff' }}>
         Reserve Calibration
       </Typography>
       <Typography
         variant="body2"
-        color="text.secondary"
-        sx={{ mb: 2, fontSize: "0.875rem" }}
+        sx={{ mb: 2, fontSize: "0.875rem", color: 'var(--nav-text-muted)' }}
       >
         Distribution of final price / minimum bid ratios — optimize reserves to
         balance revenue and sell-through
@@ -253,8 +252,22 @@ export default function ReserveCalibration({ sellerId }) {
           ]}
           colors={calibrationData.colors}
           margin={{ top: 20, right: 24, bottom: 96, left: 48 }}
-          slotProps={{
-            legend: { hidden: true },
+          slotProps={{ legend: { hidden: true } }}
+          sx={{
+            "& .MuiChartsAxis-tickLabel": {
+              fill: '#fff',
+              whiteSpace: 'nowrap',
+            },
+            "& .MuiChartsAxis-label": {
+              fill: 'var(--theme-secondary)'
+            },
+            "& .MuiChartsGrid-line": {
+              stroke: 'color-mix(in oklab, white 15%, transparent)'
+            },
+            /* >>> AXIS LINES & TICKS TO WHITE <<< */
+            "& .MuiChartsAxis-bottom .MuiChartsAxis-line": { stroke: "var(--theme-gold)" }, // x-axis line
+            "& .MuiChartsAxis-left .MuiChartsAxis-line": { stroke: "var(--theme-gold)" },   // y-axis line
+            "& .MuiChartsAxis-tick": { stroke: "var(--theme-gold)" },
           }}
         />
       </Box>
@@ -283,15 +296,15 @@ export default function ReserveCalibration({ sellerId }) {
               border: `1px solid ${calibrationData.colors[index]}`,
             }}
           >
-            <Typography variant="body2" sx={{ fontSize: "0.75rem", fontWeight: 600 }}>
+            <Typography variant="body2" sx={{ fontSize: "0.75rem", fontWeight: 600, color: '#fff' }}>
               {category}:
             </Typography>
-            <Typography variant="body2" sx={{ fontSize: "0.75rem" }}>
+            <Typography variant="body2" sx={{ fontSize: "0.75rem", color: '#fff' }}>
               {calibrationData.medians[index].toFixed(2)}x
             </Typography>
             <Typography
               variant="body2"
-              sx={{ fontSize: "0.75rem", fontStyle: "italic" }}
+              sx={{ fontSize: "0.75rem", fontStyle: "italic", color: '#fff' }}
             >
               ({calibrationData.recommendations[index]})
             </Typography>
@@ -317,7 +330,7 @@ export default function ReserveCalibration({ sellerId }) {
               borderRadius: "2px",
             }}
           />
-          <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: '#fff' }}>
             Raise reserves (&lt;1.05x)
           </Typography>
         </Box>
@@ -330,7 +343,7 @@ export default function ReserveCalibration({ sellerId }) {
               borderRadius: "2px",
             }}
           />
-          <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: '#fff' }}>
             Optimal (1.05-1.5x)
           </Typography>
         </Box>
@@ -343,7 +356,7 @@ export default function ReserveCalibration({ sellerId }) {
               borderRadius: "2px",
             }}
           />
-          <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+          <Typography variant="body2" sx={{ fontSize: "0.875rem", color: '#fff' }}>
             Lower reserves (&gt;1.5x)
           </Typography>
         </Box>

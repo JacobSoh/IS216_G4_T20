@@ -90,6 +90,8 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
 
   const signInText = isAuthed ? 'Logout' : 'Login';
   const ctaText = isAuthed ? 'Profile' : 'Join Us';
+  const secondaryCtaText = isAuthed ? 'Dashboard' : null;
+  const secondaryCtaHref = isAuthed ? '/auction/seller' : null;
 
   const onSignInClick = async () => {
     if (isAuthed) {
@@ -106,6 +108,11 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
       redirect('/profile');
     } else {
       openRegister();
+    }
+  };
+  const onSecondaryCtaClick = () => {
+    if (isAuthed) {
+      redirect('/auction/seller');
     }
   };
 
@@ -166,6 +173,9 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
       ctaText={ctaText}
       ctaHref={isAuthed ? '/profile' : undefined}
       onCtaClick={onCtaClick}
+      secondaryCtaText={secondaryCtaText}
+      secondaryCtaHref={secondaryCtaHref}
+      onSecondaryCtaClick={onSecondaryCtaClick}
     />
   );
 }

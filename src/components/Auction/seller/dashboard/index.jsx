@@ -11,6 +11,7 @@ import BidHeatmap from "@/components/Auction/seller/dashboard/BidHeatmap";
 import PriceUpliftWaterfall from "@/components/Auction/seller/dashboard/PriceUpliftWaterfall";
 import ReserveCalibration from "@/components/Auction/seller/dashboard/ReserveCalibration";
 import { CustomSelect } from "@/components/Form";
+import { Card, CardAction, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -161,7 +162,6 @@ const categoryColorPalette = [
 ];
 
 export default function SellerDashboard({ auctions = [] }) {
-  console.log("here", auctions);
   const sb = supabaseBrowser();
   const [sellerId, setSellerId] = useState(() => auctions?.[0]?.oid ?? null);
   const [soldRows, setSoldRows] = useState([]);
@@ -264,8 +264,8 @@ export default function SellerDashboard({ auctions = [] }) {
         itemTitle: item?.item?.title ?? "Untitled Item",
         categories: Array.isArray(item?.item?.item_category)
           ? item.item.item_category
-              .map((category) => category?.category_name)
-              .filter(Boolean)
+            .map((category) => category?.category_name)
+            .filter(Boolean)
           : [],
       }));
 
@@ -464,7 +464,7 @@ export default function SellerDashboard({ auctions = [] }) {
     const daySpan = Math.max(
       1,
       Math.round((currentEnd.getTime() - currentStart.getTime()) / MS_PER_DAY) +
-        1
+      1
     );
 
     const previousEnd = normalizeRangeEnd(
@@ -505,8 +505,8 @@ export default function SellerDashboard({ auctions = [] }) {
       sellThroughDeltaPoints > 0
         ? "up"
         : sellThroughDeltaPoints < 0
-        ? "down"
-        : "flat";
+          ? "down"
+          : "flat";
 
     const currentPrices = currentSold
       .map((row) => row.finalPrice)
@@ -518,13 +518,13 @@ export default function SellerDashboard({ auctions = [] }) {
     const averagePrice =
       currentPrices.length > 0
         ? currentPrices.reduce((sum, value) => sum + value, 0) /
-          currentPrices.length
+        currentPrices.length
         : 0;
     const medianPrice = computeMedian(currentPrices);
     const previousAverage =
       previousPrices.length > 0
         ? previousPrices.reduce((sum, value) => sum + value, 0) /
-          previousPrices.length
+        previousPrices.length
         : 0;
 
     const priceDeltaPct = computePercentChange(averagePrice, previousAverage);
@@ -534,11 +534,11 @@ export default function SellerDashboard({ auctions = [] }) {
         ? priceDeltaPct > 0
           ? "up"
           : priceDeltaPct < 0
-          ? "down"
-          : "flat"
+            ? "down"
+            : "flat"
         : hasPricePrevious
-        ? "flat"
-        : "flat";
+          ? "flat"
+          : "flat";
 
     return {
       sellThrough: {
@@ -894,177 +894,179 @@ export default function SellerDashboard({ auctions = [] }) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-md border border-[var(--theme-primary)]/40 bg-slate-800/70 p-4 shadow-lg shadow-[var(--theme-primary)]/10">
-          <p className="text-sm text-slate-400">Lifetime Revenue</p>
-          <p className="text-2xl font-semibold text-slate-100">
-            {formatCurrency(revenueAggregation.totalRevenue)}
-          </p>
-        </div>
-        <div className="rounded-md border border-[var(--theme-primary)]/40 bg-slate-800/70 p-4 shadow-lg shadow-[var(--theme-primary)]/10">
-          <p className="text-sm text-slate-400">Items Sold</p>
-          <p className="text-2xl font-semibold text-slate-100">
-            {revenueAggregation.totalSold}
-          </p>
-        </div>
-        <div className="rounded-md border border-[var(--theme-primary)]/40 bg-slate-800/70 p-4 shadow-lg shadow-[var(--theme-primary)]/10">
-          <p className="text-sm text-slate-400">Sell-through Rate</p>
-          <div className="mt-1 flex items-baseline justify-between gap-2">
-            <p className="text-2xl font-semibold text-slate-100">
-              {formatPercentage(sellThrough.rate)}
+        <Card variant='default'>
+          <CardContent>
+            <p className="text-sm text-[var(--nav-text-muted)]">Lifetime Revenue</p>
+            <p className="text-2xl font-semibold text-white">
+              {formatCurrency(revenueAggregation.totalRevenue)}
             </p>
-            <span className="text-xs text-slate-400">
-              {sellThrough.totalItems > 0
-                ? `${sellThrough.soldCount}/${sellThrough.totalItems} sold`
-                : "No listings"}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-2 text-xs">
-            {sellThrough.hasPrevious ? (
-              <>
-                {sellThrough.trend === "up" ? (
-                  <ArrowUpRight className="size-4 text-emerald-400" />
-                ) : sellThrough.trend === "down" ? (
-                  <ArrowDownRight className="size-4 text-red-400" />
-                ) : (
-                  <span className="inline-flex h-2 w-2 rounded-full bg-slate-500" />
-                )}
-                <span
-                  className={`font-medium ${
-                    sellThrough.trend === "up"
+          </CardContent>
+        </Card>
+        <Card variant='default'>
+          <CardContent>
+            <p className="text-sm text-[var(--nav-text-muted)]">Items Sold</p>
+            <p className="text-2xl font-semibold text-white">
+              {revenueAggregation.totalSold}
+            </p>
+          </CardContent>
+        </Card>
+        <Card variant='default'>
+          <CardContent>
+            <p className="text-sm text-[var(--nav-text-muted)]">Sell-through Rate</p>
+            <div className="mt-1 flex items-baseline justify-between gap-2">
+              <p className="text-2xl font-semibold text-white">
+                {formatPercentage(sellThrough.rate)}
+              </p>
+              <span className="text-xs text-[var(--nav-text-muted)]">
+                {sellThrough.totalItems > 0
+                  ? `${sellThrough.soldCount}/${sellThrough.totalItems} sold`
+                  : "No listings"}
+              </span>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              {sellThrough.hasPrevious ? (
+                <>
+                  {sellThrough.trend === "up" ? (
+                    <ArrowUpRight className="size-4 text-emerald-400" />
+                  ) : sellThrough.trend === "down" ? (
+                    <ArrowDownRight className="size-4 text-red-400" />
+                  ) : (
+                    <span className="inline-flex h-2 w-2 rounded-full bg-slate-500" />
+                  )}
+                  <span
+                    className={`font-medium ${sellThrough.trend === "up"
                       ? "text-emerald-400"
                       : sellThrough.trend === "down"
-                      ? "text-red-400"
-                      : "text-slate-400"
-                  }`}
-                >
-                  {formattedSellThroughDelta}
-                </span>
-                <span className="text-slate-400">vs prior</span>
-              </>
-            ) : (
-              <span className="text-slate-500">No prior period</span>
-            )}
-          </div>
-        </div>
-        <div className="rounded-md border border-[var(--theme-primary)]/40 bg-slate-800/70 p-4 shadow-lg shadow-[var(--theme-primary)]/10">
-          <p className="text-sm text-slate-400">Average Final Price</p>
-          <div className="mt-1 flex items-baseline justify-between gap-2">
-            <p className="text-2xl font-semibold text-slate-100">
-              {formatCurrency(priceMetrics.average)}
-            </p>
-            <span className="text-xs text-slate-400">
-              Median {formatCurrency(priceMetrics.median)}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-2 text-xs">
-            {priceMetrics.hasPrevious && formattedPriceDelta ? (
-              <>
-                {priceMetrics.trend === "up" ? (
-                  <ArrowUpRight className="size-4 text-emerald-400" />
-                ) : priceMetrics.trend === "down" ? (
-                  <ArrowDownRight className="size-4 text-red-400" />
-                ) : (
-                  <span className="inline-flex h-2 w-2 rounded-full bg-slate-500" />
-                )}
-                <span
-                  className={`font-medium ${
-                    priceMetrics.trend === "up"
+                        ? "text-red-400"
+                        : "text-[var(--nav-text-muted)]"
+                      }`}
+                  >
+                    {formattedSellThroughDelta}
+                  </span>
+                  <span className="text-[var(--nav-text-muted)]">vs prior</span>
+                </>
+              ) : (
+                <span className="text-[var(--nav-text-muted)]">No prior period</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <Card variant='default'>
+          <CardContent>
+            <p className="text-sm text-[var(--nav-text-muted)]">Average Final Price</p>
+            <div className="mt-1 flex items-baseline justify-between gap-2">
+              <p className="text-2xl font-semibold text-white">
+                {formatCurrency(priceMetrics.average)}
+              </p>
+              <span className="text-xs text-[var(--nav-text-muted)]">
+                Median {formatCurrency(priceMetrics.median)}
+              </span>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              {priceMetrics.hasPrevious && formattedPriceDelta ? (
+                <>
+                  {priceMetrics.trend === "up" ? (
+                    <ArrowUpRight className="size-4 text-emerald-400" />
+                  ) : priceMetrics.trend === "down" ? (
+                    <ArrowDownRight className="size-4 text-red-400" />
+                  ) : (
+                    <span className="inline-flex h-2 w-2 rounded-full bg-slate-500" />
+                  )}
+                  <span
+                    className={`font-medium ${priceMetrics.trend === "up"
                       ? "text-emerald-400"
                       : priceMetrics.trend === "down"
-                      ? "text-red-400"
-                      : "text-slate-400"
-                  }`}
-                >
-                  {formattedPriceDelta}
+                        ? "text-red-400"
+                        : "text-[var(--nav-text-muted)]"
+                      }`}
+                  >
+                    {formattedPriceDelta}
+                  </span>
+                  <span className="text-[var(--nav-text-muted)]">vs prior</span>
+                </>
+              ) : (
+                <span className="text-[var(--nav-text-muted)]">
+                  {priceMetrics.sampleSize > 0 ? "No prior period" : "Awaiting sales"}
                 </span>
-                <span className="text-slate-400">vs prior</span>
-              </>
-            ) : (
-              <span className="text-slate-500">
-                {priceMetrics.sampleSize > 0 ? "No prior period" : "Awaiting sales"}
-              </span>
-            )}
-          </div>
-        </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="rounded-md border border-[var(--theme-primary)]/40 bg-slate-800/70 p-4 shadow-xl shadow-[var(--theme-primary)]/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-100">
-              Revenue Over Time
-            </h2>
-            <p className="text-xs text-slate-400">
-              Stacked by category with smallest segments on top
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-32">
-              <CustomSelect
-                type="timeframe"
-                value={timeframe}
-                onChange={(event) => {
-                  setTimeframe(event.target.value);
-                }}
-                options={[
-                  { value: "day", label: "Daily" },
-                  { value: "month", label: "Monthly" },
-                ]}
-              />
-            </div>
-            {timeframe === "day" ? (
-              <div className="w-36">
-                <CustomSelect
-                  type="month"
-                  value={
-                    resolvedMonth != null ? String(resolvedMonth) : ""
-                  }
-                  disabled={availableMonths.length === 0}
-                  onChange={(event) => {
-                    const value = Number(event.target.value);
-                    if (Number.isInteger(value) && value >= 0 && value <= 11) {
-                      setSelectedMonth(value);
-                    }
-                  }}
-                  options={(availableMonths.length ? availableMonths : []).map(
-                    (month) => ({
-                      value: String(month),
-                      label: monthNames[month],
-                    })
-                  )}
-                />
-              </div>
-            ) : (
+      <Card variant='default'>
+        <CardHeader>
+          <CardTitle>Revenue Over Time</CardTitle>
+          <CardDescription>Stacked by category with smallest segments on top</CardDescription>
+          <CardAction>
+            <div className="flex flex-wrap items-center gap-3 mt-2">
               <div className="w-32">
                 <CustomSelect
-                  type="year"
-                  value={
-                    resolvedYear != null ? String(resolvedYear) : ""
-                  }
-                  disabled={availableYears.length === 0}
+                  type="timeframe"
+                  value={timeframe}
                   onChange={(event) => {
-                    const value = Number(event.target.value);
-                    if (!Number.isNaN(value)) {
-                      setSelectedYear(value);
-                    }
+                    setTimeframe(event.target.value);
                   }}
-                  options={availableYears.map((year) => ({
-                    value: String(year),
-                    label: String(year),
-                  }))}
+                  options={[
+                    { value: "day", label: "Daily" },
+                    { value: "month", label: "Monthly" },
+                  ]}
                 />
               </div>
-            )}
-          </div>
-        </div>
-        <div className="mt-6">
+              {timeframe === "day" ? (
+                <div className="w-36">
+                  <CustomSelect
+                    type="month"
+                    value={
+                      resolvedMonth != null ? String(resolvedMonth) : ""
+                    }
+                    disabled={availableMonths.length === 0}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+                      if (Number.isInteger(value) && value >= 0 && value <= 11) {
+                        setSelectedMonth(value);
+                      }
+                    }}
+                    options={(availableMonths.length ? availableMonths : []).map(
+                      (month) => ({
+                        value: String(month),
+                        label: monthNames[month],
+                      })
+                    )}
+                  />
+                </div>
+              ) : (
+                <div className="w-32">
+                  <CustomSelect
+                    type="year"
+                    value={
+                      resolvedYear != null ? String(resolvedYear) : ""
+                    }
+                    disabled={availableYears.length === 0}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+                      if (!Number.isNaN(value)) {
+                        setSelectedYear(value);
+                      }
+                    }}
+                    options={availableYears.map((year) => ({
+                      value: String(year),
+                      label: String(year),
+                    }))}
+                  />
+                </div>
+              )}
+            </div>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
           {loading ? (
-            <p className="text-sm text-slate-400">Loading revenue data…</p>
+            <p className="text-sm text-[var(--nav-text-muted)]">Loading revenue data…</p>
           ) : chartView.isEmpty ? (
-            <p className="text-sm text-slate-400">
-              No revenue recorded for{" "}
+            <p className="text-sm text-[var(--nav-text-muted)]">
+              No revenue recorded for {" "}
               {timeframe === "day"
                 ? resolvedMonth != null && resolvedYear != null
                   ? `${monthNames[resolvedMonth]} ${resolvedYear}`
@@ -1090,47 +1092,75 @@ export default function SellerDashboard({ auctions = [] }) {
               ]}
               series={chartView.series}
               margin={{ top: 16, right: 24, bottom: 40, left: 40 }}
-              slotProps={{
-                legend: {
-                  direction: "row",
-                  position: { vertical: "bottom", horizontal: "center" },
-                  labelStyle: { color: "var(--theme-muted)" },
-                  itemMarkWidth: 12,
-                  itemMarkHeight: 12,
-                  markGap: 6,
-                },
-              }}
+              slotProps={{ legend: { hidden: true } }}
               sx={{
                 "& .MuiChartsAxis-tickLabel": {
                   textOverflow: "initial",
                   overflow: "visible",
                   whiteSpace: "nowrap",
-                  fill: "var(--theme-muted)",
+                  fill: "#fff",
                 },
+                "& .MuiChartsAxis-label": {
+                  fill: "var(--theme-secondary)",
+                },
+                "& .MuiChartsLegend-label": {
+                  fill: "#fff",
+                },
+                "& .MuiChartsLegend-series text": {
+                  fill: "#fff",
+                },
+                "& .MuiChartsGrid-line": {
+                  stroke: "color-mix(in oklab, white 15%, transparent)",
+                },
+
+                /* >>> AXIS LINES & TICKS TO WHITE <<< */
+                "& .MuiChartsAxis-bottom .MuiChartsAxis-line": { stroke: "var(--theme-gold)" }, // x-axis line
+                "& .MuiChartsAxis-left .MuiChartsAxis-line": { stroke: "var(--theme-gold)" },   // y-axis line
+                "& .MuiChartsAxis-tick": { stroke: "var(--theme-gold)" },
               }}
             />
           )}
           {error && (
             <p className="mt-2 text-sm text-red-400">{error}</p>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="rounded-md border border-[var(--theme-primary)]/40 bg-slate-800/70 p-4 shadow-xl shadow-[var(--theme-primary)]/10">
-        <CategorySalesPieChart sellerId={sellerId} />
-      </div>
+      <Card variant='default'>
+        <CardHeader>
+          <CardTitle>Category & Sales Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CategorySalesPieChart sellerId={sellerId} />
+        </CardContent>
+      </Card>
 
-      <div className="rounded-md border border-[var(--theme-primary)]/40 bg-slate-800/70 p-4 shadow-xl shadow-[var(--theme-primary)]/10">
-        <BidHeatmap sellerId={sellerId} />
-      </div>
+      <Card variant='default'>
+        <CardHeader>
+          <CardTitle>Bid Heatmap</CardTitle>
+          <CardDescription>Concentration of bids by hour and weekday — schedule auctions when bidders are most active</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <BidHeatmap sellerId={sellerId} />
+        </CardContent>
+      </Card>
 
-      <div className="rounded-md border border-[var(--theme-primary)]/40 bg-slate-800/70 p-4 shadow-xl shadow-[var(--theme-primary)]/10">
-        <PriceUpliftWaterfall sellerId={sellerId} />
-      </div>
+      <Card variant='default'>
+        <CardHeader>
+          <CardTitle>
+            Price-Uplift Waterfall
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PriceUpliftWaterfall sellerId={sellerId} />
+        </CardContent>
+      </Card>
 
-      <div className="rounded-md border border-[var(--theme-primary)]/40 bg-slate-800/70 p-4 shadow-xl shadow-[var(--theme-primary)]/10">
-        <ReserveCalibration sellerId={sellerId} />
-      </div>
+      <Card variant='default'>
+        <CardContent>
+          <ReserveCalibration sellerId={sellerId} />
+        </CardContent>
+      </Card>
 
       <RecentSalesTable soldItems={soldRows} loading={loading} />
     </div>

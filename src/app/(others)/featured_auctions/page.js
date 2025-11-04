@@ -128,7 +128,7 @@ export default function FeaturedStorePage() {
         <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden">
           <BigAuctionCardSkeleton key="big-auction-skeleton" />
         </div>
-      </div>
+      )}
 
       {/* ===== Categories Section ===== */}
       <div className="px-4 sm:px-8 lg:px-16">

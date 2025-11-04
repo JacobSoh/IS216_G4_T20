@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 function formatDateTime(value) {
   if (!value) return "—";
@@ -148,147 +149,118 @@ export default function RecentSalesTable({ soldItems = [], loading = false }) {
   }
 
   return (
-    <div className="rounded-md border border-slate-700 bg-slate-800 p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-100">
+    <Card variant="default">
+      <CardHeader>
+        <CardTitle>
           Recent Sales
-        </h2>
-      </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex-1 min-w-0">
           <div className="relative">
             <CustomInput
-              placeholder="Search by item or auction…"
+              placeholder="Search auctions by title…"
               value={query}
-              onChange={(event) => {
+              onChange={(e) => {
                 setPage(1);
-                setQuery(event.target.value);
+                setQuery(e.target.value);
               }}
             />
-            <Search className="absolute right-2 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
           </div>
-        </div>
-      </div>
 
-      <div className="mt-4 overflow-hidden rounded-md border border-slate-700">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="min-w-[220px]">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleSort("itemTitle")}
-                >
-                  Item <ArrowUpDown className="ml-1" />
-                </Button>
-              </TableHead>
-              <TableHead className="min-w-[200px]">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleSort("auctionName")}
-                >
-                  Auction <ArrowUpDown className="ml-1" />
-                </Button>
-              </TableHead>
-              <TableHead className="min-w-[160px] text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleSort("finalPrice")}
-                >
-                  Sale Price <ArrowUpDown className="ml-1" />
-                </Button>
-              </TableHead>
-              <TableHead className="min-w-[140px] text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleSort("totalBids")}
-                >
-                  Total Bids <ArrowUpDown className="ml-1" />
-                </Button>
-              </TableHead>
-              <TableHead className="min-w-[200px]">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleSort("soldAt")}
-                >
-                  Sold At <ArrowUpDown className="ml-1" />
-                </Button>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  Loading…
-                </TableCell>
-              </TableRow>
-            ) : paged.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No recent sales found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              paged.map((item) => (
-                <TableRow key={item.row_id}>
-                  <TableCell className="font-medium text-slate-100">
-                    {item.itemTitle}
-                  </TableCell>
-                  <TableCell>{item.auctionName}</TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(item.final_price)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <BidCountCell
-                      totalBids={item.totalBids}
-                      bids={item.bids}
-                    />
-                  </TableCell>
-                  <TableCell>{formatDateTime(item.sold_at)}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 py-3">
-        <div className="text-sm text-slate-400">
-          {loading
-            ? "Loading…"
-            : `${sorted.length} sale${sorted.length === 1 ? "" : "s"} found`}
+          <Card>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[220px]">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSort("itemTitle")}
+                      >
+                        Item <ArrowUpDown className="ml-1" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="min-w-[200px]">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSort("auctionName")}
+                      >
+                        Auction <ArrowUpDown className="ml-1" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="min-w-[160px] text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSort("finalPrice")}
+                      >
+                        Sale Price <ArrowUpDown className="ml-1" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="min-w-[140px] text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSort("totalBids")}
+                      >
+                        Total Bids <ArrowUpDown className="ml-1" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="min-w-[200px]">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSort("soldAt")}
+                      >
+                        Sold At <ArrowUpDown className="ml-1" />
+                      </Button>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        Loading…
+                      </TableCell>
+                    </TableRow>
+                  ) : paged.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        No recent sales found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paged.map((item) => (
+                      <TableRow key={item.row_id}>
+                        <TableCell className="font-medium text-slate-100">
+                          {item.itemTitle}
+                        </TableCell>
+                        <TableCell>{item.auctionName}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.final_price)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <BidCountCell
+                            totalBids={item.totalBids}
+                            bids={item.bids}
+                          />
+                        </TableCell>
+                        <TableCell>{formatDateTime(item.sold_at)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-            disabled={currentPage <= 1 || loading}
-          >
-            <ChevronLeft className="mr-1" /> Previous
-          </Button>
-          <div className="text-sm text-slate-300">
-            Page {currentPage} of {totalPages}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              setPage((value) => Math.min(totalPages, value + 1))
-            }
-            disabled={currentPage >= totalPages || loading}
-          >
-            Next <ChevronRight className="ml-1" />
-          </Button>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

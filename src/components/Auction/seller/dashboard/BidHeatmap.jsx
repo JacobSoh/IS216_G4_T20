@@ -151,22 +151,6 @@ export default function BidHeatmap({ sellerId }) {
 
   return (
     <Box sx={{ width: "100%", textAlign: "center" }}>
-      <Typography
-        variant="h6"
-        gutterBottom
-        sx={{ fontWeight: 600, color: "inherit" }}
-      >
-        Bid Heatmap
-      </Typography>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{ mb: 2, fontSize: "0.875rem" }}
-      >
-        Concentration of bids by hour and weekday — schedule auctions when
-        bidders are most active
-      </Typography>
-
       <Box
         sx={{
           display: "flex",
@@ -179,32 +163,57 @@ export default function BidHeatmap({ sellerId }) {
           series={[
             {
               data: heatmapData.scatterData,
-              valueFormatter: ({ x, y, id }) => {
-                const item = heatmapData.scatterData.find((d) => d.id === id);
-                const hour = x;
-                const day = DAYS_OF_WEEK[y];
-                const hourLabel = formatHourLabel(hour);
-                return `${day} ${hourLabel}: ${item?.count || 0} bids`;
+              valueFormatter: (point) => {
+                try {
+                  if (point && typeof point === 'object') {
+                    const hour = typeof point.x === 'number' ? point.x : 0;
+                    const dowIdx = typeof point.y === 'number' ? point.y : 0;
+                    const day = typeof dowIdx === 'number' ? DAYS_OF_WEEK[dowIdx] : '';
+                    const hourLabel = typeof hour === 'number' ? formatHourLabel(hour) : '';
+                    const id = point.id;
+                    const found = id ? heatmapData.scatterData.find((d) => d.id === id) : undefined;
+                    const cnt = (found?.count ?? point?.count ?? 0);
+                    return `${day} ${hourLabel}: ${cnt} bids`;
+                  }
+                } catch { }
+                return '';
               },
             },
           ]}
           xAxis={[
             {
-              min: -1,
-              max: 23,
+              min: -0.5,
+              max: 23.5,
               label: "Hour of Day",
               valueFormatter: (value) => formatHourLabel(value),
             },
           ]}
           yAxis={[
             {
-              data: [0, 1, 2, 3, 4, 5, 6],
-              scaleType: "band",
+              min: -0.5,
+              max: 6.5,
               label: "Day of Week",
               valueFormatter: (value) => DAYS_OF_WEEK[value] || "",
             },
           ]}
           margin={{ top: 20, right: 20, bottom: 50, left: 40 }}
+          slotProps={{ legend: { hidden: true } }}
+          sx={{
+            "& .MuiChartsAxis-tickLabel": {
+              fill: '#fff',
+              whiteSpace: 'nowrap',
+            },
+            "& .MuiChartsAxis-label": {
+              fill: 'var(--theme-secondary)'
+            },
+            "& .MuiChartsGrid-line": {
+              stroke: 'color-mix(in oklab, white 15%, transparent)'
+            },
+            /* >>> AXIS LINES & TICKS TO WHITE <<< */
+            "& .MuiChartsAxis-bottom .MuiChartsAxis-line": { stroke: "var(--theme-gold)" }, // x-axis line
+            "& .MuiChartsAxis-left .MuiChartsAxis-line": { stroke: "var(--theme-gold)" },   // y-axis line
+            "& .MuiChartsAxis-tick": { stroke: "var(--theme-gold)" },
+          }}
         />
       </Box>
     </Box>
