@@ -12,8 +12,8 @@ export default function BubbleNav() {
   const imageItems = [
     { src: "/assets/kidshomedrawing.jpg", alt: "Home" },
     { src: "/assets/gavel.jpg", alt: "Auctions" },
-    { src: "/assets/categories.png", alt: "Categories" },
-    { src: "/assets/thinkingguy.jpg", alt: "Profile" },
+    { src: "/assets/stuff.jpg", alt: "Categories" },
+    { src: "/assets/profile.jpg", alt: "Profile" },
   ];
 
   const navLinks = [
