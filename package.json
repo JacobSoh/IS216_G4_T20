@@ -53,6 +53,7 @@
     "react-dom": "19.1.0",
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.65.0",
+    "react-responsive": "^10.0.1",
     "react-slick": "^0.31.0",
     "serpapi": "^2.2.1",
     "slick-carousel": "^1.8.1",

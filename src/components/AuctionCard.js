@@ -3,9 +3,9 @@ import React from 'react';
 
 export const AuctionHoverPicture = ({ name, picUrl }) => {
   return (
-    <div className="flex flex-col w-[29vw] max-w-[750px] group cursor-pointer mb-16 mx-auto">
+    <div className="flex flex-col w-[29vw] md:w-[26vw] sm:w-[22vw] max-w-[750px] group cursor-pointer mb-16 mx-auto">
       {/* Image container with black dotted skeleton background */}
-      <div className="relative w-full h-[500px] border-3 border-[var(--theme-secondary)] drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] rounded-sm">
+      <div className="relative w-full h-[500px] sm:h-[300px] md:h-[400px]  border-3 border-[var(--theme-secondary)] drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] rounded-sm">
         {/* Black background with corner dots */}
         <div className="absolute inset-0 bg-black rounded-sm">
           <div className="absolute top-2 left-2 w-2 h-2 bg-purple-500 rounded-full" />
@@ -51,9 +51,9 @@ export const AuctionHoverPicture = ({ name, picUrl }) => {
 
 export const AuctionHoverPictureSkeleton = () => {
   return (
-    <div className="flex flex-col w-[29vw] max-w-[750px] mb-16 mx-auto animate-pulse">
+    <div className="flex flex-col w-[29vw] md:w-[26vw] sm:w-[22vw] max-w-[750px] mb-16 mx-auto animate-pulse">
       {/* Skeleton only behind image area */}
-      <div className="relative w-full h-[500px] rounded-sm">
+      <div className="relative w-full h-[500px] sm:h-[300px] md:h-[400px] rounded-sm">
         <div className="absolute inset-0 bg-black rounded-sm">
           <div className="absolute top-2 left-2 w-2 h-2 bg-purple-400 rounded-full" />
           <div className="absolute top-2 right-2 w-2 h-2 bg-purple-400 rounded-full" />
@@ -73,9 +73,15 @@ export const AuctionHoverPictureSkeleton = () => {
 
 export const AuctionCard = ({ name, description, start_time, picUrl }) => {
   return (
-    <div className="w-[220px] border-2 border-[var(--theme-secondary)] bg-[var(--theme-primary)] rounded-sm drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] flex flex-col">
+    <div
+      className="w-[90vw] sm:w-[250px] md:w-[300px]  
+                 border-2 border-[var(--theme-secondary)] 
+                 bg-[var(--theme-primary)] 
+                 rounded-md shadow-[0_0_8px_rgba(168,85,247,0.9)] 
+                 flex flex-col transition-transform duration-300 hover:scale-[1.03]"
+    >
       {/* Image */}
-      <div className="w-full h-48 bg-gray-200">
+      <div className="w-full h-[40vw] sm:h-48 md:h-56 bg-gray-200 rounded-t-md overflow-hidden">
         {picUrl ? (
           <img
             src={picUrl}
@@ -83,22 +89,22 @@ export const AuctionCard = ({ name, description, start_time, picUrl }) => {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
+          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
             No Image
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div className="p-4 flex flex-col flex-1 min-h-[160px]">
-        <h3 className="text-lg text-[var(--theme-cream)] font-bold mb-2 truncate">
+      <div className="p-4 flex flex-col flex-1 min-h-[140px]">
+        <h3 className="text-base sm:text-lg md:text-xl text-[var(--theme-cream)] font-bold mb-2 truncate">
           {name}
         </h3>
-        <div className="text-sm text-[var(--theme-cream)] mb-2 line-clamp-4 overflow-hidden min-h-[5rem]">
+        <div className="text-xs sm:text-sm md:text-base text-[var(--theme-cream)] mb-2 line-clamp-4 overflow-hidden">
           {description}
         </div>
         {start_time && (
-          <p className="text-xs text-gray-500 mt-auto">
+          <p className="text-[10px] sm:text-xs text-gray-400 mt-auto">
             Start: {new Date(start_time).toLocaleDateString()}
           </p>
         )}
@@ -110,14 +116,20 @@ export const AuctionCard = ({ name, description, start_time, picUrl }) => {
 // Skeleton Card
 export const AuctionCardSkeleton = () => {
   return (
-    <div className="w-[220px] border-2 border-[var(--theme-secondary)] bg-[var(--theme-primary)] rounded-sm drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] animate-pulse flex flex-col">
+    <div
+      className="w-[90vw] sm:w-[250px] md:w-[300px] 
+                 border-2 border-[var(--theme-secondary)] 
+                 bg-[var(--theme-primary)] 
+                 rounded-md shadow-[0_0_8px_rgba(168,85,247,0.9)] 
+                 animate-pulse flex flex-col"
+    >
       {/* Image placeholder */}
-      <div className="w-full h-48 bg-gray-300" />
+      <div className="w-full h-[40vw] sm:h-48 md:h-56 bg-gray-300 rounded-t-md" />
 
       {/* Info placeholder */}
-      <div className="p-4 flex flex-col flex-1 min-h-[160px]">
+      <div className="p-4 flex flex-col flex-1 min-h-[140px]">
         <div className="h-6 bg-gray-400 rounded w-3/4 mb-2" /> {/* Name */}
-        <div className="h-20 bg-gray-400 rounded w-full mb-2" /> {/* Description placeholder longer */}
+        <div className="h-20 bg-gray-400 rounded w-full mb-2" /> {/* Description */}
         <div className="h-3 bg-gray-400 rounded w-1/2 mt-auto" /> {/* Start date */}
       </div>
     </div>
@@ -128,7 +140,7 @@ export const AuctionCardSkeleton = () => {
 // Category Card
 export const CategoryCard = ({ name, picUrl }) => {
   return (
-    <div className="flex flex-col w-[15vw] group cursor-pointer mb-16 mx-auto">
+    <div className="flex flex-col w-[15vw] h-[25vw] group cursor-pointer mb-16 mx-auto">
       <div className="relative w-full h-[300px] rounded-sm overflow-hidden">
         {picUrl ? (
           <img
@@ -157,7 +169,7 @@ export const CategoryCard = ({ name, picUrl }) => {
 
 export const BigAuctionCard = ({ name, description, picUrl, endTime, currentBid }) => {
   return (
-    <div className="relative w-full max-w-4xl mx-auto group rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.7)]">
+    <div className="relative  lg:w-3xl md:w-[24vh] sm:w-2xl mx-auto group rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.7)]">
       {/* Image */}
       <div className="relative w-full h-[500px] overflow-hidden rounded-2xl">
         {picUrl ? (
