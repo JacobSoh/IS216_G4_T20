@@ -13,6 +13,38 @@ export default function About() {
       transition: { duration: 0.6, delay: i * 0.05, ease: [0.25, 1, 0.5, 1] },
     }),
   };
+  const teamMembers = [
+    {
+      name: "Benedic",
+      title: "Auction Creation",
+      img: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/benedic.jpg",
+    },
+    {
+      name: "Jacob",
+      title: "Lead Coodinator",
+      img: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/jacob.jpg",
+    },
+    {
+      name: "Jared",
+      title: "Auction Event Handling",
+      img: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/jared.jpg",
+    },
+    {
+      name: "Javen",
+      title: "Landing Page UI",
+      img: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/javen.jpg",
+    },
+    {
+      name: "Joshua",
+      title: "Payment and Profile",
+      img: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/joshua.jpg",
+    },
+    {
+      name: "Kai Wen",
+      title: "Auction Design",
+      img: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/kaiwen.jpg",
+    },
+  ];
 
   return (
     <div className="relative min-h-screen text-[var(--theme-cream)] bg-[var(--theme-primary-darker)]">
@@ -116,15 +148,9 @@ export default function About() {
             <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-center">
               Meet the Team
             </h2>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {[
-                { name: "Benedic", title: "Founder & CEO", img: "/assets/team/benedic.jpg" },
-                { name: "Jacob", title: "Lead Designer", img: "/assets/team/jacob.jpg" },
-                { name: "Jared", title: "Developer", img: "/assets/team/jared.jpg" },
-                { name: "Javen", title: "Marketing Lead", img: "/assets/team/javen.jpg" },
-                { name: "Joshua", title: "Product Manager", img: "/assets/team/joshua.jpg" },
-                { name: "Kai Wen", title: "UX Researcher", img: "/assets/team/Kaiwen.jpg" },
-              ].map((person) => (
+              {teamMembers.map((person) => (
                 <motion.div
                   key={person.name}
                   className="bg-[var(--theme-primary-darker)]/70 border-2 border-[var(--theme-secondary)] rounded-2xl shadow-sm p-6 text-center hover:shadow-md transition-shadow backdrop-blur"

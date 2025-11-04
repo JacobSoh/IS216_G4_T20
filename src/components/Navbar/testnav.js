@@ -29,7 +29,10 @@ export default function BubbleNav() {
         const form = new FormData(e.currentTarget);
         const email = form.get("email")?.toString().trim();
         const password = form.get("password")?.toString().trim();
-        const { error } = await supabaseBrowser().auth.signInWithPassword({ email, password });
+        const { error } = await supabaseBrowser().auth.signInWithPassword({
+          email,
+          password,
+        });
         if (error) return toast.error(error.message);
         setModalState({ open: false });
         toast.success("Successfully logged in!");
@@ -54,14 +57,17 @@ export default function BubbleNav() {
         const username = form.get("username")?.toString().trim();
 
         if (!validateRegistration(email, username, password, cfmPassword))
-          return toast.error("Form field isn't accepted. Please recheck requirements.");
+          return toast.error(
+            "Form field isn't accepted. Please recheck requirements."
+          );
 
         try {
           const q = new URLSearchParams({ email, username }).toString();
           const res = await fetch(`${window.location.origin}/api/auth?${q}`);
           const data = await res.json();
           if (data.exists) return toast.error("Email already exists.");
-          if (data.usernameExists) return toast.error("Username already exists.");
+          if (data.usernameExists)
+            return toast.error("Username already exists.");
 
           const { error } = await supabaseBrowser().auth.signUp({
             email,
@@ -95,7 +101,11 @@ export default function BubbleNav() {
     { name: "Categories", href: "/categories" },
   ];
   const navLinks = isAuthed
-    ? [...baseLinks, { name: "Dashboard", href: "/auction/seller" }, { name: "Profile", href: "/profile" }]
+    ? [
+        ...baseLinks,
+        { name: "Dashboard", href: "/auction/seller" },
+        { name: "Profile", href: "/profile" },
+      ]
     : baseLinks; // Hide Profile when not logged in
 
   return (
@@ -141,7 +151,10 @@ export default function BubbleNav() {
               >
                 {isAuthed ? (
                   <motion.button
-                    onClick={() => { setMenuOpen(false); logout(); }}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      logout();
+                    }}
                     className="h-[44px] px-5 inline-flex items-center justify-center rounded-md bg-[var(--theme-gold)] text-[var(--nav-cta-text)] hover:bg-[var(--nav-cta-hover-bg)] shadow-xl transition-all duration-300"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.98 }}
@@ -190,7 +203,8 @@ export default function BubbleNav() {
                         src={item.src}
                         alt={item.alt}
                         className={`w-64 h-64 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
-                          transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"
+                          transition-all duration-500 ease-in-out ${
+                            isHovered ? "grayscale-0 scale-105" : "grayscale"
                           }`}
                         whileHover={{ y: 10 }}
                       />
@@ -218,7 +232,8 @@ export default function BubbleNav() {
                         src={item.src}
                         alt={item.alt}
                         className={`w-64 h-64 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
-                          transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"
+                          transition-all duration-500 ease-in-out ${
+                            isHovered ? "grayscale-0 scale-105" : "grayscale"
                           }`}
                         whileHover={{ y: 10 }}
                       />
@@ -254,8 +269,11 @@ export default function BubbleNav() {
                         {link.name.split("").map((char, idx) => (
                           <motion.span
                             key={idx}
-                            className={`inline-block transition-colors duration-300 ${isHovered ? "text-white" : "text-[var(--theme-primary)]"
-                              }`}
+                            className={`inline-block transition-colors duration-300 ${
+                              isHovered
+                                ? "text-white"
+                                : "text-[var(--theme-primary)]"
+                            }`}
                             animate={
                               isHovered
                                 ? { rotateX: [0, 360], y: [0, -5, 0] }
@@ -264,10 +282,10 @@ export default function BubbleNav() {
                             transition={
                               isHovered
                                 ? {
-                                  duration: 0.6,
-                                  delay: idx * 0.03,
-                                  ease: [0.25, 1, 0.5, 1],
-                                }
+                                    duration: 0.6,
+                                    delay: idx * 0.03,
+                                    ease: [0.25, 1, 0.5, 1],
+                                  }
                                 : {}
                             }
                           >
@@ -275,8 +293,9 @@ export default function BubbleNav() {
                           </motion.span>
                         ))}
                         <span
-                          className={`absolute left-0 -bottom-1 h-[4px] bg-white transition-all duration-300 ${isHovered ? "w-full" : "w-0"
-                            }`}
+                          className={`absolute left-0 -bottom-1 h-[4px] bg-white transition-all duration-300 ${
+                            isHovered ? "w-full" : "w-0"
+                          }`}
                         />
                       </a>
                     </motion.li>
@@ -286,58 +305,67 @@ export default function BubbleNav() {
 
               {/* BOTTOM-RIGHT BUTTONS (About/Contact) */}
               <motion.div
-                className="absolute bottom-8 right-23 flex flex-row space-x-5 items-end"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-              >
-                {["About", "Contact"].map((text, i) => (
-                  <motion.a
-                    key={text}
-                    href={`/${text.toLowerCase()}`}
-                    className="relative cursor-pointer lg:text-[3vh] md:text-[2vh] font-semibold text-[var(--theme-primary)]"
-                    whileHover="hover"
-                    initial="rest"
-                    animate="rest"
-                    variants={{
-                      rest: { opacity: 1 },
-                      hover: { opacity: 1 },
-                    }}
-                  >
-                    {/* Rolling letter animation */}
-                    {text.split("").map((char, idx) => (
-                      <motion.span
-                        key={idx}
-                        className="inline-block transition-colors duration-300"
-                        variants={{
-                          rest: { rotateX: 0, y: 0, color: "var(--theme-primary)" },
-                          hover: {
-                            rotateX: [0, 360],
-                            y: [0, -5, 0],
-                            color: "#fff",
-                            transition: {
-                              duration: 0.6,
-                              delay: idx * 0.05,
-                              ease: [0.25, 1, 0.5, 1],
-                            },
-                          },
-                        }}
-                      >
-                        {char}
-                      </motion.span>
-                    ))}
+  className="absolute bottom-8 right-23 flex flex-row space-x-5 items-end"
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.8 }}
+>
+  {["About", "How it works", "Contact"].map((text, i) => {
+    const href = `/${text.toLowerCase().replace(/\s+/g, "_")}`;
 
-                    {/* Underline effect */}
-                    <motion.span
-                      className="absolute left-0 -bottom-1 h-[3px] bg-white"
-                      variants={{
-                        rest: { width: 0 },
-                        hover: { width: "100%", transition: { duration: 0.3 } },
-                      }}
-                    />
-                  </motion.a>
-                ))}
-              </motion.div>
+    return (
+      <motion.a
+        key={text}
+        href={href}
+        className="relative cursor-pointer lg:text-[3vh] md:text-[2vh] font-semibold text-[var(--theme-primary)]"
+        whileHover="hover"
+        initial="rest"
+        animate="rest"
+        variants={{
+          rest: { opacity: 1, y: 0 },
+          hover: { opacity: 1, y: -2 },
+        }}
+      >
+        {/* Rolling letter animation */}
+        {text.split("").map((char, idx) => (
+          <motion.span
+            key={idx}
+            className="inline-block transition-colors duration-300"
+            variants={{
+              rest: {
+                rotateX: 0,
+                y: 0,
+                color: "var(--theme-primary)",
+              },
+              hover: {
+                rotateX: [0, 360],
+                y: [0, -5, 0],
+                color: "#fff",
+                transition: {
+                  duration: 0.6,
+                  delay: idx * 0.05,
+                  ease: [0.25, 1, 0.5, 1],
+                },
+              },
+            }}
+          >
+            {/* ✅ Preserve spaces visually */}
+            {char === " " ? "\u00A0" : char}
+          </motion.span>
+        ))}
+
+        {/* Underline effect */}
+        <motion.span
+          className="absolute left-0 -bottom-1 h-[3px] bg-white"
+          variants={{
+            rest: { width: 0 },
+            hover: { width: "100%", transition: { duration: 0.3 } },
+          }}
+        />
+      </motion.a>
+    );
+  })}
+</motion.div>
 
             </motion.div>
           </>
