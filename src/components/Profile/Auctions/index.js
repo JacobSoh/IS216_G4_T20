@@ -8,6 +8,16 @@ import { supabaseBrowser } from "@/utils/supabase/client";
 import Spinner from "@/components/SpinnerComponent";
 import { CustomSelect } from "@/components/Form";
 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+
+} from "@/components/ui/card";
+
 const STATUS_BADGES = {
   live: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40",
   scheduled: "bg-amber-500/15 text-amber-300 border-amber-500/40",
@@ -74,37 +84,31 @@ const AuctionCard = ({ auction }) => {
   const formattedStart = formatDateTime(auction.start_time);
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] transition-all duration-300 hover:scale-[1.02] hover:border-[var(--theme-primary)] hover:shadow-lg">
-      <div className="relative flex h-40 items-center justify-center bg-[var(--theme-surface)]">
-        {auction.thumbnailUrl ? (
-          <img
-            src={auction.thumbnailUrl}
-            alt={auction.name}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span className="text-sm font-medium text-[var(--theme-muted)]">
-            No Image
-          </span>
-        )}
-        <span
-          className={`absolute left-3 top-3 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${badgeClass}`}
-        >
-          {statusLabel}
-        </span>
-      </div>
-
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="mb-2 line-clamp-2 text-base font-semibold text-[var(--theme-surface-contrast)] transition-colors group-hover:text-[var(--theme-primary)]">
-          {auction.name || "\u00A0\u00A0"}
-        </h3>
-
-        <p className="mb-3 line-clamp-3 text-sm text-[var(--theme-muted)]">
-          {auction.description || "No description provided."}
-        </p>
-
-        <div className="mt-auto space-y-2 text-sm text-[var(--theme-muted)]">
-          <div className="flex items-center justify-between">
+    <>
+      <Card className='pt-0 min-h-115 transition-transform duration-300 hover:scale-[1.02]'>
+        <CardContent className='px-0'>
+          {auction.thumbnailUrl ? (
+            <img
+              src={auction.thumbnailUrl}
+              alt={auction.name}
+              className="h-full w-full min-h-50 max-h-50 object-cover rounded-t-xl"
+            />
+          ) : (
+            <span className="text-sm font-medium text-[var(--theme-muted)]">
+              No Image
+            </span>
+          )}
+        </CardContent>
+        <CardHeader>
+          <CardTitle>
+            {auction.name || "\u00A0\u00A0"}
+          </CardTitle>
+          <CardDescription className='line-clamp-4'>
+            {auction.description || "No description provided."}
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className='flex-col text-sm gap-4'>
+          <div className="flex items-center justify-between w-full">
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4 text-[var(--theme-primary)]" />
               Status
@@ -113,7 +117,7 @@ const AuctionCard = ({ auction }) => {
               {statusLabel}
             </span>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between w-full">
             <span className="flex items-center gap-1">
               <Calendar className="h-4 w-4 text-[var(--theme-primary)]" />
               Starts
@@ -122,9 +126,60 @@ const AuctionCard = ({ auction }) => {
               {formattedStart}
             </span>
           </div>
+        </CardFooter>
+      </Card>
+      {/* <div className="group flex h-full flex-col overflow-hidden rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] transition-all duration-300 hover:scale-[1.02] hover:border-[var(--theme-primary)] hover:shadow-lg">
+        <div className="relative flex h-40 items-center justify-center bg-[var(--theme-surface)]">
+          {auction.thumbnailUrl ? (
+            <img
+              src={auction.thumbnailUrl}
+              alt={auction.name}
+              className="object-cover rounded-xl"
+            />
+          ) : (
+            <span className="text-sm font-medium text-[var(--theme-muted)]">
+              No Image
+            </span>
+          )}
+          <span
+            className={`absolute left-3 top-3 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${badgeClass}`}
+          >
+            {statusLabel}
+          </span>
         </div>
-      </div>
-    </div>
+
+        <div className="flex flex-1 flex-col p-4">
+          <h3 className="mb-2 line-clamp-2 text-base font-semibold text-[var(--theme-surface-contrast)] transition-colors group-hover:text-[var(--theme-primary)]">
+            {auction.name || "\u00A0\u00A0"}
+          </h3>
+
+          <p className="mb-3 line-clamp-3 text-sm text-[var(--theme-muted)]">
+            {auction.description || "No description provided."}
+          </p>
+
+          <div className="mt-auto space-y-2 text-sm text-[var(--theme-muted)]">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Clock className="h-4 w-4 text-[var(--theme-primary)]" />
+                Status
+              </span>
+              <span className="font-semibold text-[var(--theme-surface-contrast)]">
+                {statusLabel}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-4 w-4 text-[var(--theme-primary)]" />
+                Starts
+              </span>
+              <span className="font-medium text-[var(--theme-surface-contrast)]">
+                {formattedStart}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div> */}
+    </>
   );
 };
 
@@ -277,13 +332,13 @@ export default function Auctions({ userId }) {
     statusFilter === "live"
       ? "No live or scheduled auctions at the moment."
       : statusFilter === "scheduled"
-      ? "No scheduled auctions at the moment."
-      : "No ended auctions yet.";
+        ? "No scheduled auctions at the moment."
+        : "No ended auctions yet.";
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:flex-row md:items-center md:justify-between">
-        <div className="max-w-xs w-full">
+      <Card>
+        <CardContent>
           <CustomSelect
             type="auctionStatusFilter"
             label="Status"
@@ -296,15 +351,15 @@ export default function Auctions({ userId }) {
               { value: "ended", label: "Ended" },
             ]}
           />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {noMatches ? (
         <div className="rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-[var(--theme-muted)]">
           {emptyMessage}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
           {filteredAuctions.map((auction) => (
             <Link
               key={auction.aid}

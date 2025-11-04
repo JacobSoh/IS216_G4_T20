@@ -33,7 +33,7 @@ export default function ReviewCard({ review, sb, avatarSize = 12 }) {
     return (
         <Card>
             <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-center sm:justify-start items-center gap-2">
+                <div className="flex flex-col sm:flex-row justify-center sm:justify-start items-center gap-4">
                     <Avatar avatar_url={reviewerAvatarUrl} username={reviewerName} size={avatarSize} />
                     <div className="flex flex-col">
                         <h1 className="text-white text-xl font-bold m-0">{reviewerName}</h1>
@@ -47,7 +47,7 @@ export default function ReviewCard({ review, sb, avatarSize = 12 }) {
                 </CardAction>
             </CardHeader>
             <CardContent>
-                <p className='sm:text-center'>{review.review || 'No review text provided'}</p>
+                <p className='text-center sm:text-start'>{review.review || 'No review text provided'}</p>
             </CardContent>
         </Card>
     );

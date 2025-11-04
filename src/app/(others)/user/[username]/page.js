@@ -204,9 +204,8 @@ export default function PublicProfilePage() {
       )}
 
       <h1
-        className={`text-4xl font-bold text-[var(--theme-gold)] ${
-          loading ? "hidden" : ""
-        }`}
+        className={`text-4xl font-bold text-[var(--theme-gold)] ${loading ? "hidden" : ""
+          }`}
       >
         Seller profile: @{profile?.username}
       </h1>
@@ -243,47 +242,39 @@ export default function PublicProfilePage() {
 
       <div className={loading ? "hidden" : ""}>
         <Tabs defaultValue="auctions" className="space-y-6">
-          <div>
-            <TabsList className="w-full">
-              <TabsTrigger
-                value="auctions"
-                className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]"
-              >
-                Auctions
-              </TabsTrigger>
-              <TabsTrigger
-                value="sold"
-                className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]"
-              >
-                Items Sold
-              </TabsTrigger>
-              <TabsTrigger
-                value="reviews"
-                className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]"
-              >
-                Reviews
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <div className="rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] shadow-xl">
-            <div>
+          <TabsList className="w-full">
+            <TabsTrigger
+              value="auctions"
+              className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]"
+            >
+              Auctions
+            </TabsTrigger>
+            <TabsTrigger
+              value="sold"
+              className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]"
+            >
+              Items Sold
+            </TabsTrigger>
+            <TabsTrigger
+              value="reviews"
+              className="data-[state=active]:bg-[var(--theme-primary)]/20 data-[state=active]:border-[var(--theme-primary)]"
+            >
+              Reviews
+            </TabsTrigger>
+          </TabsList>
+          <Card variant="default">
+            <CardContent>
               <TabsContent value="auctions">
-                <div className="p-6">
-                  <Auctions userId={profile?.id} />
-                </div>
+                <Auctions userId={profile?.id} />
               </TabsContent>
               <TabsContent value="sold">
-                <div className="p-6">
-                  <ItemsSold userId={profile?.id} />
-                </div>
+                <ItemsSold userId={profile?.id} />
               </TabsContent>
               <TabsContent value="reviews">
-                <div className="p-6">
-                  <ReviewWithComposer revieweeId={profile?.id} viewerId={viewerId} />
-                </div>
+                <ReviewWithComposer revieweeId={profile?.id} viewerId={viewerId} />
               </TabsContent>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </Tabs>
       </div>
     </div>

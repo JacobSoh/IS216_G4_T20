@@ -11,6 +11,16 @@ import { Label } from "@/components/ui/label";
 import { CustomSelect, CustomTextarea } from "@/components/Form";
 import { useModal } from "@/context/ModalContext";
 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+
+} from "@/components/ui/card";
+
 const MIN_REVIEW_LENGTH = 10;
 
 function ReviewFormFields({ initialStars, initialReview }) {
@@ -299,40 +309,44 @@ export default function ReviewWithComposer({ revieweeId, viewerId }) {
             {hasViewerReview ? "Update review" : "Leave a review"}
           </Button>
         ) : (
-          <div className="flex-1 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-sm text-[var(--theme-muted)]">
-            {viewerId === revieweeId
+          <Card className='w-full'>
+            <CardContent>
+              {viewerId === revieweeId
               ? "You cannot review your own seller profile."
               : viewerId
-              ? "Only verified buyers who have completed a purchase with this seller can leave a review."
-              : "Sign in and complete a purchase with this seller to leave a review."}
-          </div>
+                ? "Only verified buyers who have completed a purchase with this seller can leave a review."
+                : "Sign in and complete a purchase with this seller to leave a review."}
+            </CardContent>
+          </Card>
         )}
 
-        <div className="flex w-full flex-col gap-3 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-sm text-[var(--theme-muted)] md:w-auto md:flex-row md:items-center md:gap-4">
-          <CustomSelect
-            type="review-filter-rating"
-            label="Filter by rating"
-            value={starFilter}
-            onChange={(event) => setStarFilter(event.target.value)}
-            options={[
-              { value: "all", label: "All" },
-              ...[5, 4, 3, 2, 1].map((value) => ({
-                value: value.toString(),
-                label: `${value} star${value > 1 ? "s" : ""}`,
-              })),
-            ]}
-          />
-          <CustomSelect
-            type="review-sort-order"
-            label="Sort by date"
-            value={sortOrder}
-            onChange={(event) => setSortOrder(event.target.value)}
-            options={[
-              { value: "desc", label: "Newest first" },
-              { value: "asc", label: "Oldest first" },
-            ]}
-          />
-        </div>
+        <Card>
+          <CardContent className='flex gap-3'>
+            <CustomSelect
+              type="review-filter-rating"
+              label="Filter by rating"
+              value={starFilter}
+              onChange={(event) => setStarFilter(event.target.value)}
+              options={[
+                { value: "all", label: "All" },
+                ...[5, 4, 3, 2, 1].map((value) => ({
+                  value: value.toString(),
+                  label: `${value} star${value > 1 ? "s" : ""}`,
+                })),
+              ]}
+            />
+            <CustomSelect
+              type="review-sort-order"
+              label="Sort by date"
+              value={sortOrder}
+              onChange={(event) => setSortOrder(event.target.value)}
+              options={[
+                { value: "desc", label: "Newest first" },
+                { value: "asc", label: "Oldest first" },
+              ]}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {loading ? (

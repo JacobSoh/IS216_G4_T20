@@ -9,6 +9,18 @@ import ItemSoldCard from "@/components/ItemSoldCard";
 import { Slider } from "@/components/ui/slider";
 import { CustomSelect } from "@/components/Form";
 
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+
+} from "@/components/ui/card";
+
+
 function normalizePrice(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
@@ -186,57 +198,59 @@ export default function ItemsSold({ userId }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:flex-row md:items-center md:justify-between">
-        <div className="max-w-xs w-full">
-          <CustomSelect
-            type="soldCategoryFilter"
-            label="Category"
-            placeholder="All categories"
-            value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value)}
-            options={[
-              { value: "all", label: "All categories" },
-              ...uniqueCategories.map((category) => ({
-                value: category,
-                label: category,
-              })),
-            ]}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between text-sm text-[var(--theme-muted)]">
-            <span>Price range</span>
-            <span className="font-semibold text-[var(--theme-surface-contrast)]">
-              ${priceRange[0].toFixed(2)} - ${priceRange[1].toFixed(2)}
-            </span>
+      <Card>
+        <CardContent>
+          <div className="max-w-xs w-full">
+            <CustomSelect
+              type="soldCategoryFilter"
+              label="Category"
+              placeholder="All categories"
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+              options={[
+                { value: "all", label: "All categories" },
+                ...uniqueCategories.map((category) => ({
+                  value: category,
+                  label: category,
+                })),
+              ]}
+            />
           </div>
-          <Slider
-            min={priceBounds[0]}
-            max={priceBounds[0] === priceBounds[1] ? priceBounds[1] + 1 : priceBounds[1]}
-            step={1}
-            value={priceRange}
-            onValueChange={(value) => {
-              if (Array.isArray(value) && value.length === 2) {
-                const lower = Math.min(value[0], value[1]);
-                const upper = Math.max(value[0], value[1]);
-                setPriceRange([
-                  Math.max(priceBounds[0], lower),
-                  Math.min(priceBounds[1], upper),
-                ]);
-              }
-            }}
-            className="w-full"
-          />
-        </div>
-      </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between text-sm text-[var(--theme-muted)]">
+              <span>Price range</span>
+              <span className="font-semibold text-[var(--theme-surface-contrast)]">
+                ${priceRange[0].toFixed(2)} - ${priceRange[1].toFixed(2)}
+              </span>
+            </div>
+            <Slider
+              min={priceBounds[0]}
+              max={priceBounds[0] === priceBounds[1] ? priceBounds[1] + 1 : priceBounds[1]}
+              step={1}
+              value={priceRange}
+              onValueChange={(value) => {
+                if (Array.isArray(value) && value.length === 2) {
+                  const lower = Math.min(value[0], value[1]);
+                  const upper = Math.max(value[0], value[1]);
+                  setPriceRange([
+                    Math.max(priceBounds[0], lower),
+                    Math.min(priceBounds[1], upper),
+                  ]);
+                }
+              }}
+              className="w-full"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {filteredItems.length === 0 ? (
         <div className="rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-[var(--theme-muted)]">
           No sales match the selected filters.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
           {filteredItems.map((item) => (
             <Link
               key={item.sid}
