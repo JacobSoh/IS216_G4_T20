@@ -21,27 +21,56 @@ export default function VerifyButton({id, className}) {
   }, []);
 
   const launch = useCallback(() => {
-    if (!window.Persona?.Client) {
-      toast.info("Persona not yet up!");
-      return null;
+    const templateId = process.env.NEXT_PUBLIC_PERSONA_TEMPLATE_ID;
+    const environment = process.env.NEXT_PUBLIC_PERSONA_ENV || 'sandbox';
+
+    const openHostedFallback = () => {
+      try {
+        const url = new URL('https://withpersona.com/verify');
+        if (templateId) url.searchParams.set('templateId', templateId);
+        if (id) url.searchParams.set('referenceId', String(id));
+        if (environment) url.searchParams.set('environment', environment);
+        window.open(url.toString(), '_blank', 'noopener,noreferrer');
+      } catch (e) {
+        // As a last resort, navigate current tab
+        window.location.href = `https://withpersona.com/verify?templateId=${encodeURIComponent(templateId || '')}&referenceId=${encodeURIComponent(String(id || ''))}&environment=${encodeURIComponent(environment || '')}`;
+      }
     };
 
+    // If SDK not ready, fall back to hosted flow
+    if (!window.Persona?.Client) {
+      openHostedFallback();
+      return;
+    }
+
+    // If app is running inside an iframe, some browsers/extensions block embedding.
+    // Prefer opening hosted flow instead of modal iframe to avoid X-Frame-Options issues.
+    const isFramed = (() => { try { return window.self !== window.top; } catch { return true; } })();
+    if (isFramed) {
+      openHostedFallback();
+      return;
+    }
+
     const client = new window.Persona.Client({
-      templateId: process.env.NEXT_PUBLIC_PERSONA_TEMPLATE_ID, 
-      environmentId: process.env.NEXT_PUBLIC_PERSONA_ENV_ID,
+      templateId,
+      environment,
       referenceId: id,
       onReady: () => {
-        client.open()
+        try { client.open(); } catch { openHostedFallback(); }
       },
       onComplete: ({ inquiryId, status }) => {
-        client.close();
+        try { client.close(); } catch {}
         toast.success("Verification Completed! It takes 3 working days for verification to be completed.");
         router.refresh();
       },
       onCancel: () => {},
-      onError: (e) => console.error(e),
+      onError: (e) => {
+        console.error('[Persona] error', e);
+        // Fallback if iframe/modal is blocked by X-Frame-Options
+        openHostedFallback();
+      },
     });
-  }, [id]);
+  }, [id, router]);
 
   return (
     <Button
