@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 
-import AuctionHouse3D from '@/components/auction/AuctionHouse3D'
+import AuctionHouse3D from '@/components/Auction/AuctionHouse3D'
 import { getAuctionLiveState, getAuctionChatMessages } from '@/services/auctionService'
 import { getServerUser } from '@/utils/auth'
 
