@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 
 export default function VerifyButton({id, className}) {
   const [ready, setReady] = useState(false);
+  const router = useRouter();
 
   // when the CDN script has loaded, window.Persona will exist
   useEffect(() => {
@@ -35,7 +36,6 @@ export default function VerifyButton({id, className}) {
       onComplete: ({ inquiryId, status }) => {
         client.close();
         toast.success("Verification Completed! It takes 3 working days for verification to be completed.");
-        const router = useRouter();
         router.refresh();
       },
       onCancel: () => {},

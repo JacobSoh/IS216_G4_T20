@@ -1,9 +1,6 @@
 'use client';
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useMemo, useReducer } from 'react';
 import ToggleLR from '@/components/LR/Sub/ToggleLR';
-import { supabaseBrowser } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
-import { useModal } from '@/context/ModalContext';
 
 import {
   CustomInput

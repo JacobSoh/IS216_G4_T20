@@ -1,5 +1,5 @@
 import 'server-only'
-import { getProfileById, getProfileByUsername, updateProfileById } from '@/repositories/profileRepo';
+import { getProfileByUsername, updateProfileById } from '@/repositories/profileRepo';
 
 export async function updateProfileByID(data) {
     const { userId, username } = data

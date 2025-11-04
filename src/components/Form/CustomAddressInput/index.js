@@ -1,7 +1,7 @@
 // Address autocomplete with API parity similar to CustomInput
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useId, useRef, useState, useCallback } from 'react';
 // Avoid @googlemaps/js-api-loader; load script directly to keep compatibility
 import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';

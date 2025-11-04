@@ -21,7 +21,6 @@ import Slider from "react-slick";
 import BubbleNav from "@/components/Navbar/testnav";
 import TunnelSquares from "@/components/tunnelsquare";
 //import { motion } from "motion/react";
-import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
 import { useResponsive } from "@/components/responsive";
 
 // ---------- Main Component ----------
@@ -611,6 +610,7 @@ export default function FuturisticAuction() {
             {/* CENTER IMAGE */}
             <img
               src="assets/newdsword.jpg"
+              alt="auction item"
               className={`
     rounded-2xl border-4 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.6)]
     object-cover aspect-square
@@ -686,6 +686,7 @@ export default function FuturisticAuction() {
           {/* Large Placeholder Image */}
           <img
             src="assets/shophouse.jpg"
+            alt="shophouse"
             className={`
             ${isDesktop ? "w-[90vh] h-[65vh]" : "w-full max-w-md h-auto"}
             ${isTablet ? "w-full max-w-4xl h-auto mx-auto" : ""}
@@ -705,6 +706,7 @@ export default function FuturisticAuction() {
           {/* Small Placeholder */}
           <img
             src="assets/Artistguy.jpg"
+            alt="artist"
             className={`${
               isDesktop ? "w-60 h-60" : "w-48 h-48"
             } bg-purple-400/50 border-2 border-purple-500 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.7)] object-cover`}
@@ -756,7 +758,7 @@ export default function FuturisticAuction() {
                     {q}
                   </AccordionTrigger>
                   <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed">
-                    This is the answer to "{q}". Lorem ipsum dolor sit amet,
+                    This is the answer to &quot;{q}&quot;. Lorem ipsum dolor sit amet,
                     consectetur adipiscing elit. Vivamus luctus elit nec justo
                     tempor, sit amet ultricies magna posuere.
                   </AccordionContent>
@@ -775,6 +777,7 @@ export default function FuturisticAuction() {
           {/* Placeholder Image */}
           <img
             src="assets/Callcenter.jpg"
+            alt="call center"
             className={`${
               isDesktop
                 ? "w-65 h-70"

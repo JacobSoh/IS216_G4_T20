@@ -1,7 +1,7 @@
 'use client'
 
 import React from "react"
-import { DollarSign, Calendar } from "lucide-react"
+import { Calendar } from "lucide-react"
 
 const ItemWonCard = ({ iid, title, description, final_price, sold_at, picUrl }) => {
   const formatDate = (dateString) => {

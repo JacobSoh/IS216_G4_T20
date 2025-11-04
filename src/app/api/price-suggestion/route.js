@@ -45,7 +45,7 @@ export async function POST(request) {
     const results = await getJson({
       engine: "google_shopping",
       q: itemName,
-      api_key: process.env.SERPAPI_KEY,
+      api_key: process.env.NEXT_PUBLIC_SERPAPI_KEY,
       num: 100
     });
 

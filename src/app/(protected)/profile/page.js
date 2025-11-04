@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
 import {
 	Listing,
@@ -32,16 +32,12 @@ import getProfile from "@/hooks/getProfile";
 import { getAvatarPublicUrl } from '@/hooks/getStorage';
 import getTimeAgo from '@/utils/profile/getTimeAgo';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.jsx";
-import Auctions from "@/components/Profile/Auctions";
-import Overview from "@/components/Profile/Overview";
-import Analytics from "@/components/Profile/Analytics";
 import ItemsWon from "@/components/Profile/ItemsWon";
 import { Spinner as UISpinner } from '@/components/ui/spinner';
 import BlockingOverlay from '@/components/BlockingOverlay';
 import PersonaButton from '@/components/Persona'
 import { ShieldCheckIcon } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 
 import HammerLoader from '@/components/ui/hammer-loader';
 

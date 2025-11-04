@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ArrowUpDown, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ArrowUpDown, Search } from "lucide-react";
 import Tooltip from "@mui/material/Tooltip";
 import { LineChart } from "@mui/x-charts/LineChart";
 
@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function formatDateTime(value) {
   if (!value) return "—";

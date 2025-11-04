@@ -1,13 +1,12 @@
 ﻿'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { Suspense, useRef, useEffect, useState, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { useAuctionLive } from '@/hooks/useAuctionLive'
 import { useAuctionChat } from '@/hooks/useAuctionChat'
-import AuctionScreen, { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen'
+import { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen'
 // replaced axiosBrowserClient with fetch
 import { buildStoragePublicUrl } from '@/utils/storage'
 import { supabaseBrowser } from '@/utils/supabase/client'

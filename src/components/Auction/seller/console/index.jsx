@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.jsx";
 import SellerDatatable from "@/components/Auction/seller/datatable";

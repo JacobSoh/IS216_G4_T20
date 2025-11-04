@@ -24,7 +24,6 @@ import Spinner from "@/components/SpinnerComponent";
 
 import getProfile from "@/hooks/getProfile";
 import { getAvatarPublicUrl } from '@/hooks/getStorage';
-import Modal from "@/components/ModalComponent";
 import getTimeAgo from "@/utils/profile/getTimeAgo";
 
 import { toast } from "sonner";
@@ -111,7 +110,7 @@ export default function ProfilePage({ req, ctx }) {
             .then(() => {
                 setState({ type: 'FIELD', field: 'loading', value: false });
             }).catch((err) => console.error(err.message));
-    }, [params, supabase]);
+    }, [params, supabase, username]);
 
     const handleDisplay = (type) => (e) => {
         switch (type) {

@@ -1,6 +1,4 @@
 "use client";
-import Link from "next/link";
-import FooterLink from "./FooterLink";
 
 export default function FooterTop() {
     return (

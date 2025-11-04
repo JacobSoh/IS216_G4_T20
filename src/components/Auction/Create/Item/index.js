@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useReducer } from 'react';
+import { useState, useEffect, useReducer } from 'react';
 import { CustomInput } from '@/components/Form/CustomInput';
 import { CustomTextarea } from '@/components/Form/CustomTextarea';
 import { CustomSelect } from '@/components/Form/CustomSelect';
@@ -292,7 +292,7 @@ export default function AddItemModal({
         }}>
           <div style={{ fontWeight: '600', marginBottom: '4px' }}>⚠️ {priceError}</div>
           <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '6px' }}>
-            💡 Tip: Be specific (e.g., "iPhone 13 Pro 128GB", "Nike Air Max 1")
+            💡 Tip: Be specific (e.g., &quot;iPhone 13 Pro 128GB&quot;, &quot;Nike Air Max 1&quot;)
           </div>
         </div>
       )}

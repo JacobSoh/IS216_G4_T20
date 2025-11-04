@@ -1,5 +1,4 @@
 // components/FileOverlayCard.jsx
-import Image from "next/image";
 import { motion } from "motion/react";
 import { Trash } from "lucide-react";
 

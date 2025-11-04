@@ -1,12 +1,10 @@
 import { cn } from "@/lib/utils";
 import React, { useRef, useState } from "react";
 import { motion, useMotionTemplate, useMotionValue } from "motion/react";
-import { Upload, Trash } from "lucide-react";
+import { Upload } from "lucide-react";
 // import { IconUpload } from "@tabler/icons-react";
 import { useDropzone } from "react-dropzone";
-import { Button } from '@/components/ui/button';
 import { toast } from "sonner";
-import Image from 'next/image';
 import FileCard from '@/components/Auction/Sub/FileCard';
 
 const mainVariant = {

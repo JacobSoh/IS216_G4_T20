@@ -20,7 +20,6 @@ export default function Avatar({ avatar_url, username, size = 20 }) {
     );
   }
 
-  // eslint-disable-next-line @next/next/no-img-element
   return (
     <img
       src={avatar_url}

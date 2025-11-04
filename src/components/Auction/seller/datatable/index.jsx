@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
-import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Pencil, ChevronLeft, ChevronRight, Search, Trash } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, ChevronLeft, ChevronRight, Search, Trash } from "lucide-react";
 
 import { supabaseBrowser } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";

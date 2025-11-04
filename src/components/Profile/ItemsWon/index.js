@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { supabaseBrowser } from '@/utils/supabase/client';
-import Link from 'next/link';
 import Spinner from '@/components/SpinnerComponent';
 import { TrophyIcon } from '@heroicons/react/24/outline';
-import ItemWonCard from "@/components/ItemWonCard"; // We'll create this
-import { DollarSign, Calendar } from "lucide-react"
+import { Calendar } from "lucide-react"
 
 import {
     Card,

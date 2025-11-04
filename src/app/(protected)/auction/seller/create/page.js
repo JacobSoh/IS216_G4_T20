@@ -399,7 +399,7 @@ export default function AuctionCreatePage() {
           {/* Items List */}
           {items.length === 0 ? (
             <div className="text-center py-12 ring-2 ring-[var(--theme-primary)] border-gray-300 rounded-lg">
-              <p className="text-gray-500">Click "Add Item" to start adding items to your auction</p>
+              <p className="text-gray-500">Click &quot;Add Item&quot; to start adding items to your auction</p>
             </div>
           ) : (
             <div className="space-y-4">

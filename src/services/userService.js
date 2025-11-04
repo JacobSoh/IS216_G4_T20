@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { getProfileById, getProfileByUsername, insertProfile } from '@/repositories/profileRepo'
+import { getProfileByUsername } from '@/repositories/profileRepo'
 import { verifyEmailExists } from '@/repositories/userRepo';
 
 export async function userExists(email) {

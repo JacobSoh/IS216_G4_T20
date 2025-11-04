@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { CategoryCard } from "@/components/AuctionCard";
+import { CategoryCard, AuctionHoverPictureSkeleton } from "@/components/AuctionCard";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 // Utility: Convert category name → slug

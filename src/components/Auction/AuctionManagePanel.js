@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FieldGroup, FieldLabel } from '@/components/ui/field'
+import { FieldGroup } from '@/components/ui/field'
 import { CustomInput, CustomTextarea } from '@/components/Form'
 import { Badge } from '@/components/ui/badge'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid'
