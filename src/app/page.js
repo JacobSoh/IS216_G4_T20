@@ -34,14 +34,14 @@ export default function FuturisticAuction() {
 
   // Check if animation has been shown this session
   useEffect(() => {
-    const hasSeenAnimation = sessionStorage.getItem('hasSeenHomeAnimation');
-    if (hasSeenAnimation === 'true') {
+    const hasSeenAnimation = sessionStorage.getItem("hasSeenHomeAnimation");
+    if (hasSeenAnimation === "true") {
       // Skip animation, show landing immediately
       setShowTunnel(false);
       setShowLanding(true);
     } else {
       // Mark animation as seen for this session
-      sessionStorage.setItem('hasSeenHomeAnimation', 'true');
+      sessionStorage.setItem("hasSeenHomeAnimation", "true");
     }
   }, []);
 
@@ -58,27 +58,27 @@ export default function FuturisticAuction() {
   const [result, setResult] = useState("");
 
   const faqs = [
-  {
-    question: "How does bidding work?",
-    answer:
-      "You can browse live auctions, place your bid, and watch the countdown. Winning requires being the highest bidder when the timer ends.",
-  },
-  {
-    question: "Are items authenticated?",
-    answer:
-      "All items listed are verified by our team to ensure authenticity and quality before being auctioned.",
-  },
-  {
-    question: "What payment methods do you accept?",
-    answer:
-      "We accept major credit/debit cards, PayPal, and other secure online payment methods. All transactions are encrypted.",
-  },
-  {
-    question: "Do you ship internationally?",
-    answer:
-      "Yes, we ship to select countries. Shipping fees and estimated delivery times are calculated at checkout.",
-  },
-];
+    {
+      question: "How does bidding work?",
+      answer:
+        "You can browse live auctions, place your bid, and watch the countdown. Winning requires being the highest bidder when the timer ends.",
+    },
+    {
+      question: "Are items authenticated?",
+      answer:
+        "All items listed are verified by our team to ensure authenticity and quality before being auctioned.",
+    },
+    {
+      question: "What payment methods do you accept?",
+      answer:
+        "We accept major credit/debit cards, PayPal, and other secure online payment methods. All transactions are encrypted.",
+    },
+    {
+      question: "Do you ship internationally?",
+      answer:
+        "Yes, we ship to select countries. Shipping fees and estimated delivery times are calculated at checkout.",
+    },
+  ];
 
   useEffect(() => {
     if (timeLeft <= 0) return;
@@ -506,13 +506,13 @@ export default function FuturisticAuction() {
         >
           {/* Video */}
           <video
-            src="/assets/vidu-video-3006995670702686.mp4"
+            src="https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/vidu-video-3006995670702686.mp4"
             className={`
-            ${isDesktop ? "-mt-4 md:w-[40vw] md:h-[56vh]" : ""}
-            ${isTablet ? "w-full h-[40vh]" : ""}
-            ${isMobile ? "w-full h-[30vh]" : ""}
-            object-cover rounded-2xl z-20 transform transition-transform duration-500 ease-out hover:scale-110 shadow-[0_0_40px_rgba(168,85,247,0.6)]
-          `}
+    ${isDesktop ? "-mt-4 md:w-[40vw] md:h-[56vh]" : ""}
+    ${isTablet ? "w-full h-[40vh]" : ""}
+    ${isMobile ? "w-full h-[30vh]" : ""}
+    object-cover rounded-2xl z-20 transform transition-transform duration-500 ease-out hover:scale-110 shadow-[0_0_40px_rgba(168,85,247,0.6)]
+  `}
             autoPlay
             loop
             muted
@@ -575,7 +575,7 @@ export default function FuturisticAuction() {
                 : "grid-cols-1 gap-6"
             }`}
           >
-            {/* LEFT */}
+            {/* LEFT SECTION */}
             <div
               className={`flex flex-col items-center ${
                 isDesktop ? "md:items-start text-left" : "text-center"
@@ -587,22 +587,26 @@ export default function FuturisticAuction() {
               <p className="text-base text-purple-600 max-w-md leading-relaxed">
                 A rare collectible from the world of Minecraft.
               </p>
-              <div className="flex flex-col sm:flex-row sm:space-x-6 space-y-3 sm:space-y-0 mt-4">
-                <div>
-                  <h4 className="text-lg font-medium text-purple-500">
-                    Time Left
-                  </h4>
-                  <p className="text-3xl font-bold text-yellow-300 drop-shadow-[0_0_12px_rgba(250,204,21,0.6)]">
-                    120s
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-purple-500">
-                    Current Bid
-                  </h4>
-                  <p className="text-3xl font-semibold text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
-                    $100
-                  </p>
+
+              {/* Timer + Current Bid */}
+              <div className="p-6 text-center">
+                <div className="flex flex-col sm:flex-row sm:space-x-6 space-y-3 sm:space-y-0 mt-4 justify-center">
+                  <div>
+                    <h4 className="text-lg font-medium text-purple-500">
+                      Time Left
+                    </h4>
+                    <p className="text-3xl font-bold text-yellow-300 drop-shadow-[0_0_12px_rgba(250,204,21,0.6)]">
+                      {timeLeft}s
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-medium text-purple-500">
+                      Current Bid
+                    </h4>
+                    <p className="text-3xl font-semibold text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                      ${currentBid}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -610,17 +614,17 @@ export default function FuturisticAuction() {
             {/* CENTER IMAGE */}
             <img
               src="assets/newdsword.jpg"
-              alt="auction item"
+              alt="Minecraft Diamond Sword"
               className={`
-    rounded-2xl border-4 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.6)]
-    object-cover aspect-square
-    ${isDesktop ? "w-96" : ""}
-    ${isTablet ? "w-56" : ""}
-    ${isMobile ? "w-full max-w-xs" : ""}
-  `}
+            rounded-2xl border-4 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.6)]
+            object-cover aspect-square
+            ${isDesktop ? "w-96" : ""}
+            ${isTablet ? "w-56" : ""}
+            ${isMobile ? "w-full max-w-xs" : ""}
+          `}
             />
 
-            {/* RIGHT */}
+            {/* RIGHT SECTION */}
             <div
               className={`flex flex-col items-center ${
                 isDesktop ? "md:items-end" : ""
@@ -629,11 +633,23 @@ export default function FuturisticAuction() {
               <input
                 type="number"
                 placeholder="Enter your bid"
+                value={userBid}
+                onChange={(e) => setUserBid(e.target.value)}
                 className="w-64 px-6 py-3 rounded-lg bg-transparent border border-purple-600/60 text-center text-xl text-purple-100 placeholder-white focus:outline-none"
               />
-              <button className="px-12 py-4 text-2xl font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:scale-[1.03] transition-all duration-300">
+              <button
+                onClick={handleBid}
+                className="px-12 py-4 text-2xl font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:scale-[1.03] transition-all duration-300"
+              >
                 Place Bid
               </button>
+
+              {/* 🟣 Result Message */}
+              {result && (
+                <p className="text-xl font-semibold text-purple-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)] transition-all duration-300">
+                  {result}
+                </p>
+              )}
             </div>
           </div>
         </div>
