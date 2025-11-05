@@ -120,18 +120,11 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
   const ownerId = snapshot?.auction?.oid ?? null
 
   useEffect(() => {
-    const endTimeIso = snapshot?.auction?.end_time ?? null
-    if (!endTimeIso) {
-      return
-    }
-    const endTime = new Date(endTimeIso)
-    if (Number.isNaN(endTime.getTime())) {
-      return
-    }
-    if (Date.now() >= endTime.getTime()) {
+    const auctionEnded = snapshot?.auction?.auction_end ?? false
+    if (auctionEnded) {
       router.replace(`/auction/view/${aid}/ended`)
     }
-  }, [snapshot?.auction?.end_time, router, aid])
+  }, [snapshot?.auction?.auction_end, router, aid])
 
   useEffect(() => {
     if (!chatFeedback) return undefined

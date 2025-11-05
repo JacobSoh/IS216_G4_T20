@@ -1,11 +1,17 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 
-export const AuctionHoverPicture = ({ name, picUrl }) => {
+export const AuctionHoverPicture = ({ name, picUrl, ownerUsername, ownerAvatar }) => {
+  // Build avatar URL
+  const avatarUrl = ownerAvatar?.bucket && ownerAvatar?.objectPath
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${ownerAvatar.bucket}/${ownerAvatar.objectPath}`
+    : '/images/avatar-placeholder.png';
+
   return (
-    <div className="flex flex-col w-[29vw] md:w-[26vw] sm:w-[22vw] max-w-[750px] group cursor-pointer mb-16 mx-auto">
+    <div className="flex flex-col w-[29vw] md:w-[26vw] sm:w-[22vw] max-w-[750px] group mb-16 mx-auto">
       {/* Image container with black dotted skeleton background */}
-      <div className="relative w-full h-[500px] sm:h-[300px] md:h-[400px]  border-3 border-[var(--theme-secondary)] drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] rounded-sm">
+      <div className="relative w-full h-[500px] sm:h-[300px] md:h-[400px] border-3 border-[var(--theme-secondary)] drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] rounded-sm cursor-pointer">
         {/* Black background with corner dots */}
         <div className="absolute inset-0 bg-black rounded-sm">
           <div className="absolute top-2 left-2 w-2 h-2 bg-purple-500 rounded-full" />
@@ -37,7 +43,7 @@ export const AuctionHoverPicture = ({ name, picUrl }) => {
       <div className="h-6" />
 
       {/* Title + Arrow */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center cursor-pointer">
         <h3 className="text-[3vh] text-purple-700 font-extrabold tracking-wide transition-colors duration-300 group-hover:text-gray-100">
           {name || 'Untitled Auction'}
         </h3>
@@ -45,6 +51,27 @@ export const AuctionHoverPicture = ({ name, picUrl }) => {
           →
         </span>
       </div>
+
+      {/* Seller Profile Link */}
+      {ownerUsername && (
+        <Link
+          href={`/user/${ownerUsername}`}
+          onClick={(e) => e.stopPropagation()}
+          className="mt-3"
+        >
+          <div className="flex items-center gap-3 px-3 py-2 bg-black/60 border border-purple-500/50 rounded-md hover:bg-black/80 hover:border-purple-400 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all duration-300 cursor-pointer">
+            <img
+              src={avatarUrl}
+              alt={ownerUsername}
+              className="w-8 h-8 rounded-full object-cover border-2 border-purple-400/50"
+            />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-purple-300 uppercase tracking-wide">Hosted by</span>
+              <span className="text-sm text-white font-semibold">@{ownerUsername}</span>
+            </div>
+          </div>
+        </Link>
+      )}
     </div>
   );
 };

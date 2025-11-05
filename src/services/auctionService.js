@@ -58,7 +58,8 @@ function enhanceAuctionRecord(record) {
     // Include timer fields from the raw database record
     time_interval: record.time_interval ?? null,
     timer_started_at: record.timer_started_at ?? null,
-    timer_duration_seconds: record.timer_duration_seconds ?? null
+    timer_duration_seconds: record.timer_duration_seconds ?? null,
+    auction_end: record.auction_end ?? false
   }
 }
 
@@ -521,11 +522,10 @@ export async function closeAuction({ aid, actorId }) {
     throw new Error('Only the auction owner can close this auction')
   }
 
-  const closedAt = new Date().toISOString()
-  await closeAuctionRecord(aid, { end_time: closedAt })
+  await closeAuctionRecord(aid)
 
   return {
     success: true,
-    closedAt
+    closedAt: new Date().toISOString()
   }
 }

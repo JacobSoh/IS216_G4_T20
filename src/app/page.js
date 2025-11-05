@@ -134,10 +134,16 @@ export default function FuturisticAuction() {
   // Fetch auctions from Supabase
   useEffect(() => {
     const fetchAuctions = async () => {
-      const { data, error } = await supabaseBrowser()
+      const { data, error} = await supabaseBrowser()
         .from("auction")
         .select(
-          "aid, name, description, start_time, thumbnail_bucket, object_path"
+          `aid, name, description, start_time, thumbnail_bucket, object_path,
+          owner:profile!auction_oid_fkey (
+            id,
+            username,
+            avatar_bucket,
+            object_path
+          )`
         )
         .limit(5);
 
@@ -394,11 +400,17 @@ export default function FuturisticAuction() {
       {/* Info */}
       <section
         ref={sectionRef}
-        className="section min-h-screen bg-gradient-to-b from-purple-100 to-purple-300 text-purple-900 flex flex-col lg:flex-row justify-between px-24 relative"
+        className="section min-h-screen bg-gradient-to-b from-black to-gray-900 text-white flex flex-col lg:flex-row justify-between px-24 relative"
       >
         <div className="flex-1 flex flex-col justify-center py-24">
-          <div className="max-w-3xl -translate-y-16 -ml-10">
-            <h2 className="info-heading text-[7vw] font-bold leading-[0.9] text-purple-700">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="max-w-3xl -translate-y-16 -ml-10"
+          >
+            <h2 className="info-heading text-[7vw] font-bold leading-[0.9] text-purple-400">
               EXPLORE
               <br />
               CURATED
@@ -406,16 +418,16 @@ export default function FuturisticAuction() {
               COLLECTIONS
             </h2>
 
-            <p className="info-para text-xl text-purple-800 max-w-2xl mt-12">
+            <p className="info-para text-xl text-gray-300 max-w-2xl mt-12">
               Explore a world of pre-loved treasures — from timeless antiques to
               everyday essentials and trending gadgets.
               <br></br>
               <br></br>
-              Whether you’re a collector, a bargain hunter, or just browsing for
-              fun, there’s something here for you. Start bidding, connect with
+              Whether you&apos;re a collector, a bargain hunter, or just browsing for
+              fun, there&apos;s something here for you. Start bidding, connect with
               others, and make each find your own.
             </p>
-          </div>
+          </motion.div>
         </div>
         {/* Desktop Sticky Image */}
         {isDesktop && (
@@ -443,21 +455,29 @@ export default function FuturisticAuction() {
       </section>
 
       {/* Featured Auctions */}
-      <section className="section min-h-screen bg-gradient-to-b from-purple-300 to-purple-200 px-12 pt-4 pb-20">
+      <section
+        className="section min-h-screen bg-gray-900 px-12 pt-4 pb-20"
+      >
         {/* Header */}
-        <div className="text-center mb-20 mt-15">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mb-20 mt-15"
+        >
           <Link
             href="/featured_auctions"
-            className="inline-block md:text-5xl lg:text-6xl font-bold text-purple-700 leading-none hover:text-white transition-colors duration-300 relative group"
+            className="inline-block md:text-5xl lg:text-6xl font-bold text-purple-400 leading-none hover:text-white transition-colors duration-300 relative group"
           >
             Featured Auctions
-            <span className="absolute bottom-0 left-0 w-0 h-[4px] bg-white transition-all duration-300 group-hover:w-full" />
+            <span className="absolute bottom-0 left-0 w-0 h-[4px] bg-purple-500 transition-all duration-300 group-hover:w-full" />
           </Link>
 
-          <p className="md:text-2xl lg:text-3xl mx-auto text-purple-700 mt-4">
+          <p className="md:text-2xl lg:text-3xl mx-auto text-gray-300 mt-4">
             Browse through our carefully curated vintage collections
           </p>
-        </div>
+        </motion.div>
 
         <Slider {...settings}>
           {loading
@@ -480,6 +500,11 @@ export default function FuturisticAuction() {
                       <AuctionHoverPicture
                         name={auction.name}
                         picUrl={picUrl}
+                        ownerUsername={auction.owner?.username}
+                        ownerAvatar={{
+                          bucket: auction.owner?.avatar_bucket,
+                          objectPath: auction.owner?.object_path
+                        }}
                         hoverTextColor="white"
                       />
                     </div>
@@ -492,7 +517,7 @@ export default function FuturisticAuction() {
       {/* Live Auction */}
       <section
         id="auction"
-        className={`relative w-full flex flex-col items-center justify-start overflow-hidden bg-gradient-to-b from-purple-200 to-purple-300
+        className={`relative w-full flex flex-col items-center justify-start overflow-hidden bg-gray-900
         ${isDesktop ? "h-auto" : isTablet ? "min-h-[120vh]" : "min-h-[150vh]"}
       `}
       >
@@ -528,7 +553,7 @@ export default function FuturisticAuction() {
             }`}
           >
             <h2
-              className={`text-6xl font-bold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)] ${
+              className={`text-6xl font-bold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)] ${
                 isMobile ? "text-4xl" : ""
               }`}
             >
@@ -536,19 +561,19 @@ export default function FuturisticAuction() {
             </h2>
 
             <p
-              className={`text-lg text-purple-700/90 leading-relaxed whitespace-pre-line ${
+              className={`text-lg text-gray-300 leading-relaxed whitespace-pre-line ${
                 isMobile ? "text-base" : ""
               }`}
             >
               Joining an auction is simple and exciting. Start by{" "}
-              <span className="font-semibold text-purple-800">
+              <span className="font-semibold text-purple-300">
                 browsing the live listings
               </span>{" "}
               to discover unique items that catch your eye — from rare
               collectibles to everyday treasures.
               {"\n"}
               When you find something you love,{" "}
-              <span className="font-semibold text-purple-800">
+              <span className="font-semibold text-purple-300">
                 place your bid
               </span>{" "}
               and watch the timer count down.
@@ -562,7 +587,7 @@ export default function FuturisticAuction() {
             isTablet ? "space-y-6" : "space-y-10"
           }`}
         >
-          <h3 className="text-[6vh] font-semibold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+          <h3 className="text-[6vh] font-semibold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
             Try it out now
           </h3>
 
@@ -581,10 +606,10 @@ export default function FuturisticAuction() {
                 isDesktop ? "md:items-start text-left" : "text-center"
               } space-y-5`}
             >
-              <h3 className="text-3xl font-semibold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+              <h3 className="text-3xl font-semibold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
                 Minecraft Diamond Sword
               </h3>
-              <p className="text-base text-purple-600 max-w-md leading-relaxed">
+              <p className="text-base text-gray-300 max-w-md leading-relaxed">
                 A rare collectible from the world of Minecraft.
               </p>
 
@@ -635,7 +660,7 @@ export default function FuturisticAuction() {
                 placeholder="Enter your bid"
                 value={userBid}
                 onChange={(e) => setUserBid(e.target.value)}
-                className="w-64 px-6 py-3 rounded-lg bg-transparent border border-purple-600/60 text-center text-xl text-purple-100 placeholder-white focus:outline-none"
+                className="w-64 px-6 py-3 rounded-lg bg-gray-800/80 border border-purple-500/60 text-center text-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:bg-gray-800 transition-all"
               />
               <button
                 onClick={handleBid}
@@ -646,7 +671,7 @@ export default function FuturisticAuction() {
 
               {/* 🟣 Result Message */}
               {result && (
-                <p className="text-xl font-semibold text-purple-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)] transition-all duration-300">
+                <p className="text-xl font-semibold text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)] transition-all duration-300">
                   {result}
                 </p>
               )}
@@ -657,7 +682,7 @@ export default function FuturisticAuction() {
 
       {/* ABOUT SECTION */}
       <section
-        className={`section bg-purple-300 text-white w-full min-h-screen px-6 md:px-12 flex flex-col ${
+        className={`section bg-gray-900 text-white w-full min-h-screen px-6 md:px-12 flex flex-col ${
           isDesktop
             ? "lg:flex-row items-start justify-start gap-12 py-12"
             : "items-center justify-center gap-8 py-12"
@@ -676,20 +701,20 @@ export default function FuturisticAuction() {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className={`${isDesktop ? "" : "max-w-3xl mx-auto"}`}
           >
-            <h2 className="text-6xl md:text-5xl sm:text-4xl font-bold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+            <h2 className="text-6xl md:text-5xl sm:text-4xl font-bold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
               Why use BidHub?
             </h2>
 
-            <p className="mt-4 text-purple-700 leading-relaxed text-lg max-w-2xl md:max-w-full mx-auto">
+            <p className="mt-4 text-gray-300 leading-relaxed text-lg max-w-2xl md:max-w-full mx-auto">
               Our platform makes online auctions{" "}
-              <span className="font-semibold text-purple-600">
+              <span className="font-semibold text-purple-300">
                 fair, transparent, and effortless
               </span>
               . Track your bids in real time, compete confidently, and uncover
               unique items — from rare collectibles to cutting-edge tech.
               <br />
-              Bidding here is more than shopping — it’s an{" "}
-              <span className="font-semibold text-purple-600">
+              Bidding here is more than shopping — it&apos;s an{" "}
+              <span className="font-semibold text-purple-300">
                 experience of discovery and excitement
               </span>
               . Join a growing community of collectors, explore trending
@@ -742,7 +767,7 @@ export default function FuturisticAuction() {
 
       {/* FAQ SECTION + Contact*/}
       <section
-        className={`bg-gradient-to-b from-purple-300 to-purple-400 text-white w-full flex flex-col ${
+        className={`bg-gray-900 text-white w-full flex flex-col ${
           isDesktop
             ? "lg:flex-row items-start justify-start gap-12 px-12 py-20 h-[100vh]"
             : "items-center justify-start gap-12 px-6 py-12"
@@ -751,7 +776,7 @@ export default function FuturisticAuction() {
         {/* For Tablet: FAQ above contact */}
         {(isTablet || isMobile) && (
           <div className="w-full flex flex-col items-center lg:items-start mb-6">
-            <h2 className="text-4xl text-purple-700 font-bold mb-6 text-center lg:text-left">
+            <h2 className="text-4xl text-purple-400 font-bold mb-6 text-center lg:text-left">
               FAQ
             </h2>
             <Accordion
@@ -768,12 +793,12 @@ export default function FuturisticAuction() {
                 <AccordionItem
                   key={i}
                   value={`item-${i}`}
-                  className="border border-purple-700 rounded-lg overflow-hidden"
+                  className="border border-purple-500/40 rounded-lg overflow-hidden bg-gray-800/40"
                 >
-                  <AccordionTrigger className="px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all text-lg font-medium text-purple-900">
+                  <AccordionTrigger className="px-6 py-4 text-left bg-gray-800/60 hover:bg-gray-700/60 transition-all text-lg font-medium text-purple-300">
                     {q}
                   </AccordionTrigger>
-                  <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed">
+                  <AccordionContent className="px-6 py-4 text-gray-300 bg-gray-900/80 text-base leading-relaxed">
                     This is the answer to &quot;{q}&quot;. Lorem ipsum dolor sit amet,
                     consectetur adipiscing elit. Vivamus luctus elit nec justo
                     tempor, sit amet ultricies magna posuere.
@@ -804,11 +829,11 @@ export default function FuturisticAuction() {
           />
 
           {/* Caption */}
-          <p className="text-purple-800 text-lg leading-relaxed">
+          <p className="text-gray-300 text-lg leading-relaxed">
             Still got unanswered questions?
             <br />
             Or still wondering if{" "}
-            <span className="text-purple-700 font-semibold">BidHub</span> is
+            <span className="text-purple-400 font-semibold">BidHub</span> is
             right for you?
           </p>
 
@@ -826,7 +851,7 @@ export default function FuturisticAuction() {
         {/* Right Side — FAQ for Desktop */}
         {isDesktop && (
           <div className="lg:w-2/3 w-full flex flex-col overflow-visible">
-            <h2 className="text-4xl text-purple-700 font-bold mb-8 text-center lg:text-left">
+            <h2 className="text-4xl text-purple-400 font-bold mb-8 text-center lg:text-left">
               FAQ
             </h2>
             <Accordion
@@ -838,12 +863,12 @@ export default function FuturisticAuction() {
                 <AccordionItem
                   key={i}
                   value={`item-${i}`}
-                  className="border border-purple-700 rounded-lg overflow-hidden"
+                  className="border border-purple-500/40 rounded-lg overflow-hidden bg-gray-800/40"
                 >
-                  <AccordionTrigger className="px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all text-lg font-medium text-purple-900">
+                  <AccordionTrigger className="px-6 py-4 text-left bg-gray-800/60 hover:bg-gray-700/60 transition-all text-lg font-medium text-purple-300">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed">
+                  <AccordionContent className="px-6 py-4 text-gray-300 bg-gray-900/80 text-base leading-relaxed">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>

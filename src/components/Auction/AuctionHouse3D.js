@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Suspense, useRef, useEffect, useState, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
@@ -188,6 +189,7 @@ export default function AuctionHouse3D({
   currentUserId = null,
   pollingMs = 7000 // Deprecated - keeping for backwards compatibility
 }) {
+  const router = useRouter()
   const { snapshot, isFetching, refresh } = useAuctionLive(aid, initialLiveData)
   const ownerId = snapshot?.auction?.oid ?? null
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -247,6 +249,14 @@ export default function AuctionHouse3D({
   useEffect(() => {
     participantCountRef.current = participantCount
   }, [participantCount])
+
+  // Check if auction has ended and redirect
+  useEffect(() => {
+    const auctionEnded = snapshot?.auction?.auction_end ?? false
+    if (auctionEnded) {
+      router.replace(`/auction/view/${aid}/ended`)
+    }
+  }, [snapshot?.auction?.auction_end, router, aid])
 
   // Consolidated timer: auction end time + item timer + nowTs - all in ONE interval
   useEffect(() => {
@@ -768,6 +778,21 @@ useEffect(() => {
                 <span className="text-xs text-purple-300">{isMusicMuted ? '0%' : `${Math.round(musicVolume * 100)}%`}</span>
               </div>
             </div>
+
+            {/* Seller Profile Link */}
+            {snapshot?.auction?.owner?.username && (
+              <Link href={`/user/${snapshot.auction.owner.username}`}>
+                <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)] hover:border-[var(--theme-accent)] hover:shadow-[0_0_30px_rgba(176,38,255,0.5)] transition-all cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">👤</span>
+                    <div>
+                      <p className="text-xs text-purple-200 uppercase tracking-wide mb-1">Hosted by</p>
+                      <p className="text-sm text-[var(--theme-cream)] font-semibold">@{snapshot.auction.owner.username}</p>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            )}
           </div>
 
           {/* Floating Action Button - Bid (Bottom Left) */}
