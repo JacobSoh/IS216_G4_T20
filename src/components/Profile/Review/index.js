@@ -83,17 +83,8 @@ export default function PopulateReviews({ userId }) {
 
     if (!state.reviews || state.reviews.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 px-4">
-                <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full blur-2xl opacity-20 animate-pulse" />
-                    <div className="relative text-7xl animate-bounce">⭐</div>
-                </div>
-                <div className="text-2xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent mb-2">
-                    No reviews yet
-                </div>
-                <p className="text-gray-500 text-center max-w-md">
-                    Be the first to share your experience! Reviews from others will appear here.
-                </p>
+            <div className="flex flex-col items-center justify-center py-10 px-4">
+                    No reviews yet.
             </div>
         );
     }

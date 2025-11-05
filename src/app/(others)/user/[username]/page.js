@@ -173,6 +173,69 @@ export default function PublicProfilePage() {
     }
   }, [profile, viewerId, router]);
 
+  // Realtime subscription for review updates
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    console.log('[PublicProfile] Setting up review stats subscription for user:', profile.id);
+
+    const channel = sb
+      .channel(`review-stats-${profile.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "review",
+          filter: `reviewee_id=eq.${profile.id}`,
+        },
+        async (payload) => {
+          console.log('[PublicProfile] Review changed, refetching stats:', payload);
+          // Refetch review stats when a review changes
+          try {
+            const { data: reviewStats, error: rpcError } = await sb.rpc("review_stats", {
+              p_reviewee: profile.id,
+            });
+
+            if (rpcError) {
+              console.error('[PublicProfile] RPC error:', rpcError);
+              return;
+            }
+
+            console.log('[PublicProfile] Review stats received:', reviewStats);
+
+            if (Array.isArray(reviewStats) && reviewStats[0]) {
+              const totalReviews = reviewStats[0].total ?? 0;
+              const average = reviewStats[0].avg_rating ?? 0;
+              const avgRating = totalReviews > 0 ? Number(average).toFixed(1) : "0.0";
+
+              console.log('[PublicProfile] Updating profile with avg_rating:', avgRating);
+
+              setProfile((prev) => {
+                const updated = {
+                  ...prev,
+                  avg_rating: avgRating,
+                  total_reviews: totalReviews,
+                };
+                console.log('[PublicProfile] Profile updated:', { prev: prev.avg_rating, new: updated.avg_rating });
+                return updated;
+              });
+            }
+          } catch (err) {
+            console.error("[PublicProfile] Failed to update review stats:", err);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[PublicProfile] Subscription status:', status);
+      });
+
+    return () => {
+      console.log('[PublicProfile] Cleaning up review stats subscription');
+      sb.removeChannel(channel);
+    };
+  }, [profile?.id, sb]);
+
   const handleShareProfile = () => {
     if (!profile?.username) return;
     const origin = window?.location?.origin ?? "";
