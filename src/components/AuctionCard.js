@@ -74,10 +74,10 @@ export const AuctionHoverPictureSkeleton = () => {
 export const AuctionCard = ({ name, description, start_time, picUrl }) => {
   return (
     <div
-      className="w-[90vw] sm:w-[250px] md:w-[300px]  
-                 border-2 border-[var(--theme-secondary)] 
-                 bg-[var(--theme-primary)] 
-                 rounded-md shadow-[0_0_8px_rgba(168,85,247,0.9)] 
+      className="w-[90vw] sm:w-[250px] md:w-[300px]
+                 border-2 border-[var(--theme-secondary)]
+                 bg-[var(--theme-primary)]
+                 rounded-md shadow-[0_0_8px_rgba(168,85,247,0.9)]
                  flex flex-col transition-transform duration-300 hover:scale-[1.03]"
     >
       {/* Image */}
@@ -141,25 +141,48 @@ export const AuctionCardSkeleton = () => {
 export const CategoryCard = ({ name, picUrl }) => {
   return (
     <div className="flex flex-col w-[15vw] h-[25vw] group cursor-pointer mb-16 mx-auto">
-      <div className="relative w-full h-[300px] rounded-sm overflow-hidden">
+      {/* Image Container with border and decorative dots */}
+      <div className="relative w-full h-[300px] rounded-lg overflow-hidden border-2 border-[var(--theme-secondary)]
+                      shadow-[0_0_12px_rgba(176,38,255,0.5)] transition-all duration-500
+                      group-hover:border-[var(--theme-accent)] group-hover:shadow-[0_0_25px_rgba(176,38,255,0.8)]">
+        {/* Corner accent dots */}
+        <div className="absolute top-2 left-2 w-2 h-2 bg-[var(--theme-gold)] rounded-full opacity-60 transition-opacity duration-300 group-hover:opacity-100 z-10" />
+        <div className="absolute top-2 right-2 w-2 h-2 bg-[var(--theme-accent)] rounded-full opacity-60 transition-opacity duration-300 group-hover:opacity-100 z-10" />
+        <div className="absolute bottom-2 left-2 w-2 h-2 bg-[var(--theme-accent)] rounded-full opacity-60 transition-opacity duration-300 group-hover:opacity-100 z-10" />
+        <div className="absolute bottom-2 right-2 w-2 h-2 bg-[var(--theme-gold)] rounded-full opacity-60 transition-opacity duration-300 group-hover:opacity-100 z-10" />
+
         {picUrl ? (
-          <img
-            src={picUrl}
-            alt={name}
-            className="w-full h-full object-cover rounded-sm transition-transform duration-500 group-hover:scale-105"
-          />
+          <>
+            <img
+              src={picUrl}
+              alt={name}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+            {/* Purple gradient overlay on hover */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[var(--theme-secondary)]/50 via-[var(--theme-secondary)]/10 to-transparent
+                            opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+          </>
         ) : (
-          <div className="w-full h-full bg-purple-500/10 flex items-center justify-center text-purple-400 rounded-sm">
+          <div className="w-full h-full bg-[var(--theme-primary)] flex items-center justify-center text-[var(--theme-accent)] text-sm font-semibold">
             No Image
           </div>
         )}
-        <div className="absolute inset-0 bg-purple-600/0 group-hover:bg-purple-600/20 transition-colors duration-500 rounded-sm pointer-events-none" />
+
+        {/* Subtle top gradient */}
+        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/30 to-transparent pointer-events-none" />
       </div>
 
-      <div className="h-4" />
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg text-purple-300 font-bold group-hover:text-white">{name}</h3>
-        <span className="opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-white font-black text-2xl">
+      <div className="h-5" />
+
+      {/* Title and Arrow */}
+      <div className="flex justify-between items-center gap-2">
+        <h3 className="text-lg text-[var(--theme-accent)] font-bold tracking-wide
+                       transition-colors duration-300 group-hover:text-[var(--theme-cream)]">
+          {name}
+        </h3>
+        <span className="opacity-0 translate-x-3 transition-all duration-300
+                         group-hover:opacity-100 group-hover:translate-x-0
+                         text-[var(--theme-gold)] font-black text-2xl shrink-0">
           →
         </span>
       </div>

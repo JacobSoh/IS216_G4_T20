@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AuctionCard, AuctionCardSkeleton } from "@/components/AuctionCard";
 import { supabaseBrowser } from "@/utils/supabase/client";
+import { Button } from "@/components/ui/button";
+import { ArrowBigLeft } from "lucide-react";
 
 // Utility to generate clean slugs
 const slugify = (text) => {
@@ -20,6 +22,7 @@ const slugify = (text) => {
 
 export default function CategoryPage() {
   const { slug } = useParams();
+  const router = useRouter();
   const [categoryName, setCategoryName] = useState("");
   const [auctions, setAuctions] = useState([]);
   const [isLoadingCategory, setIsLoadingCategory] = useState(true);
@@ -150,6 +153,16 @@ export default function CategoryPage() {
   return (
     <section className="min-h-screen relative pt-10 bg-[var(--theme-primary-darker)]">
       <div className="max-w-7xl mx-auto pb-15 pt-15 px-6">
+        {/* Back Button */}
+        <div className="mb-8">
+          <Button
+            variant="brand"
+            onClick={() => router.push('/categories')}
+          >
+            <ArrowBigLeft /> Back to Categories
+          </Button>
+        </div>
+
         {/* Page Header */}
         <div className="text-center mb-16">
           <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[var(--theme-cream)] min-h-[1em]">
