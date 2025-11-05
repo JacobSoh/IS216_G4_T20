@@ -11,11 +11,11 @@ const slugify = (text) => {
   return text
     .toLowerCase()
     .trim()
-    .replace(/\s*&\s*/g, "-") // replace & with dash
-    .replace(/[\s/+]+/g, "-") // spaces or + -> dashes
-    .replace(/[^\w-]+/g, "") // remove other non-word chars
-    .replace(/--+/g, "-") // collapse multiple dashes
-    .replace(/^-+|-+$/g, ""); // trim leading/trailing dashes
+    .replace(/\s*&\s*/g, "-")
+    .replace(/[\s/+]+/g, "-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-+|-+$/g, "");
 };
 
 export default function CategoryPage() {
@@ -24,6 +24,7 @@ export default function CategoryPage() {
   const [auctions, setAuctions] = useState([]);
   const [isLoadingCategory, setIsLoadingCategory] = useState(true);
   const [isLoadingAuctions, setIsLoadingAuctions] = useState(true);
+  const [expectedCount, setExpectedCount] = useState(0); // ✅ Track how many skeletons to render
 
   useEffect(() => {
     const fetchCategory = async () => {
@@ -66,6 +67,7 @@ export default function CategoryPage() {
     const fetchAuctions = async () => {
       if (!categoryName || categoryName === "Unknown Category") {
         setAuctions([]);
+        setExpectedCount(0);
         setIsLoadingAuctions(false);
         return;
       }
@@ -82,11 +84,13 @@ export default function CategoryPage() {
 
         if (icErr) throw icErr;
         if (!itemCategories || itemCategories.length === 0) {
+          setExpectedCount(0);
           setAuctions([]);
           return;
         }
 
         const itemIds = itemCategories.map((ic) => ic.itemid);
+        setExpectedCount(itemIds.length); // ✅ Use number of matching items as skeleton count
 
         // 2️⃣ Get auctions for these items
         const { data: itemsData, error: itemErr } = await supabase
@@ -102,6 +106,7 @@ export default function CategoryPage() {
 
         const auctionIds = [...new Set(itemsData.map((i) => i.aid))];
 
+        // 3️⃣ Fetch auction details
         const { data: auctionData, error: auctionErr } = await supabase
           .from("auction")
           .select(
@@ -110,16 +115,17 @@ export default function CategoryPage() {
           .in("aid", auctionIds);
 
         if (auctionErr) throw auctionErr;
-
         if (!auctionData || auctionData.length === 0) {
           setAuctions([]);
           return;
         }
 
+        // 4️⃣ Map storage URLs
         const mapped = auctionData.map((a) => {
           const { data: publicData } = supabase.storage
             .from(a.thumbnail_bucket)
             .getPublicUrl(a.object_path);
+
           return {
             aid: a.aid,
             name: a.name,
@@ -146,8 +152,12 @@ export default function CategoryPage() {
       <div className="max-w-7xl mx-auto pb-15 pt-15 px-6">
         {/* Page Header */}
         <div className="text-center mb-16">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[var(--theme-cream)]">
-            {isLoadingCategory ? "Loading..." : categoryName}
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[var(--theme-cream)] min-h-[1em]">
+            {isLoadingCategory
+              ? "Loading..."
+              : categoryName && categoryName !== "Unknown Category"
+              ? categoryName
+              : "Unknown Category"}
           </h2>
           <p className="text-lg text-[var(--theme-cream)]">
             Browse auctions for items in this category
@@ -155,9 +165,10 @@ export default function CategoryPage() {
         </div>
 
         {/* Auctions Section */}
-        {isLoadingAuctions ? (
-          <div className="flex flex-wrap justify-center gap-10">
-            {Array.from({ length: 5 }).map((_, i) => (
+        {isLoadingCategory || isLoadingAuctions ? (
+          // ✅ One stable row of 3 skeletons — no flicker, no wrap
+          <div className="flex justify-center gap-10 py-10">
+            {Array.from({ length: 3 }).map((_, i) => (
               <AuctionCardSkeleton key={i} />
             ))}
           </div>
@@ -175,8 +186,8 @@ export default function CategoryPage() {
               >
                 <AuctionCard
                   name={a.name}
-                  description={a.description} // ✅ Pass description here
-                  start_time={a.start_time} // ✅ Pass start date if you have it
+                  description={a.description}
+                  start_time={a.start_time}
                   picUrl={a.picUrl}
                 />
               </Link>
