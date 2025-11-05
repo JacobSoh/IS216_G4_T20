@@ -103,8 +103,8 @@ export default function BubbleNav() {
   const navLinks = isAuthed
     ? [
         ...baseLinks,
-        { name: "Dashboard", href: "/auction/seller" },
         { name: "Profile", href: "/profile" },
+        { name: "Dashboard", href: "/auction/seller" },
       ]
     : baseLinks; // Hide Profile when not logged in
 
@@ -183,68 +183,61 @@ export default function BubbleNav() {
                 )}
               </motion.div>
               {/* LEFT SIDE — Floating Image Grid */}
-              <div className="hidden md:grid grid-cols-2 gap-y-8 ml-5 md:w-1/2 justify-items-center items-center">
-                {/* Left Column */}
-                <motion.div
-                  onMouseEnter={() => setHoveredCol(0)}
-                  onMouseLeave={() => setHoveredCol(null)}
-                  className="flex flex-col space-y-8"
-                  initial={{ y: -50 }}
-                  animate={{
-                    y: hoveredCol === 0 ? 30 : -50,
-                  }}
-                  transition={{ type: "spring", stiffness: 100, damping: 14 }}
-                >
-                  {imageItems.slice(0, 2).map((item, i) => {
-                    const isHovered = hoveredLink === i;
-                    return (
-                      <motion.img
-                        key={i}
-                        src={item.src}
-                        alt={item.alt}
-                        className={`w-64 h-64 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
-                          transition-all duration-500 ease-in-out ${
-                            isHovered ? "grayscale-0 scale-105" : "grayscale"
-                          }`}
-                        whileHover={{ y: 10 }}
-                      />
-                    );
-                  })}
-                </motion.div>
+             <div className="hidden md:grid grid-cols-2 gap-x-8 gap-y-8 md:w-full lg:w-5/12 justify-items-center items-center px-4 sm:px-6 lg:px-0">
+  {/* Left Column */}
+  <motion.div
+    onMouseEnter={() => setHoveredCol(0)}
+    onMouseLeave={() => setHoveredCol(null)}
+    className="flex flex-col gap-4 sm:gap-6 lg:gap-8 w-full items-center"
+    initial={{ y: -50 }}
+    animate={{ y: hoveredCol === 0 ? 30 : -50 }}
+    transition={{ type: "spring", stiffness: 100, damping: 14 }}
+  >
+    {imageItems.slice(0, 2).map((item, i) => {
+      const isHovered = hoveredLink === i;
+      return (
+        <motion.img
+          key={i}
+          src={item.src}
+          alt={item.alt}
+          className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
+            transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
+          whileHover={{ y: 10 }}
+        />
+      );
+    })}
+  </motion.div>
 
-                {/* Right Column */}
-                <motion.div
-                  onMouseEnter={() => setHoveredCol(1)}
-                  onMouseLeave={() => setHoveredCol(null)}
-                  className="flex flex-col space-y-8"
-                  initial={{ y: 60 }}
-                  animate={{
-                    y: hoveredCol === 1 ? 30 : 60,
-                  }}
-                  transition={{ type: "spring", stiffness: 100, damping: 14 }}
-                >
-                  {imageItems.slice(2, 4).map((item, i) => {
-                    const index = i + 2;
-                    const isHovered = hoveredLink === index;
-                    return (
-                      <motion.img
-                        key={index}
-                        src={item.src}
-                        alt={item.alt}
-                        className={`w-64 h-64 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
-                          transition-all duration-500 ease-in-out ${
-                            isHovered ? "grayscale-0 scale-105" : "grayscale"
-                          }`}
-                        whileHover={{ y: 10 }}
-                      />
-                    );
-                  })}
-                </motion.div>
-              </div>
+  {/* Right Column */}
+  <motion.div
+    onMouseEnter={() => setHoveredCol(1)}
+    onMouseLeave={() => setHoveredCol(null)}
+    className="flex flex-col gap-4 sm:gap-6 lg:gap-8 w-full items-center"
+    initial={{ y: 60 }}
+    animate={{ y: hoveredCol === 1 ? 30 : 60 }}
+    transition={{ type: "spring", stiffness: 100, damping: 14 }}
+  >
+    {imageItems.slice(2, 4).map((item, i) => {
+      const index = i + 2;
+      const isHovered = hoveredLink === index;
+      return (
+        <motion.img
+          key={index}
+          src={item.src}
+          alt={item.alt}
+          className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
+            transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
+          whileHover={{ y: 10 }}
+        />
+      );
+    })}
+  </motion.div>
+</div>
+
 
               {/* RIGHT SIDE — Nav Links */}
               <motion.ul
-                className="flex flex-col items-center md:items-end space-y-4 lg:text-8xl md:text-3xl sm:text-3xl font-semibold text-[var(--theme-primary)] md:w-1/2"
+                className="flex flex-col items-center md:items-end space-y-4 lg:text-7xl md:text-3xl sm:text-4xl font-semibold text-[var(--theme-primary)] md:w-1/2"
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
@@ -305,68 +298,70 @@ export default function BubbleNav() {
 
               {/* BOTTOM-RIGHT BUTTONS (About/Contact) */}
               <motion.div
-  className="absolute bottom-8 right-23 flex flex-row space-x-5 items-end"
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ delay: 0.8 }}
->
-  {["About", "How it works", "Contact"].map((text, i) => {
-    const href = `/${text.toLowerCase().replace(/\s+/g, "_")}`;
+                className="absolute bottom-8 right-23 flex flex-row space-x-5 items-end"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+              >
+                {["About", "How it works", "Contact"].map((text, i) => {
+                  const href = `/${text.toLowerCase().replace(/\s+/g, "_")}`;
 
-    return (
-      <motion.a
-        key={text}
-        href={href}
-        className="relative cursor-pointer lg:text-[3vh] md:text-[2vh] font-semibold text-[var(--theme-primary)]"
-        whileHover="hover"
-        initial="rest"
-        animate="rest"
-        variants={{
-          rest: { opacity: 1, y: 0 },
-          hover: { opacity: 1, y: -2 },
-        }}
-      >
-        {/* Rolling letter animation */}
-        {text.split("").map((char, idx) => (
-          <motion.span
-            key={idx}
-            className="inline-block transition-colors duration-300"
-            variants={{
-              rest: {
-                rotateX: 0,
-                y: 0,
-                color: "var(--theme-primary)",
-              },
-              hover: {
-                rotateX: [0, 360],
-                y: [0, -5, 0],
-                color: "#fff",
-                transition: {
-                  duration: 0.6,
-                  delay: idx * 0.05,
-                  ease: [0.25, 1, 0.5, 1],
-                },
-              },
-            }}
-          >
-            {/* ✅ Preserve spaces visually */}
-            {char === " " ? "\u00A0" : char}
-          </motion.span>
-        ))}
+                  return (
+                    <motion.a
+                      key={text}
+                      href={href}
+                      className="relative cursor-pointer lg:text-12px sm:text-8px font-semibold text-[var(--theme-primary)]"
+                      whileHover="hover"
+                      initial="rest"
+                      animate="rest"
+                      variants={{
+                        rest: { opacity: 1, y: 0 },
+                        hover: { opacity: 1, y: -2 },
+                      }}
+                    >
+                      {/* Rolling letter animation */}
+                      {text.split("").map((char, idx) => (
+                        <motion.span
+                          key={idx}
+                          className="inline-block transition-colors duration-300"
+                          variants={{
+                            rest: {
+                              rotateX: 0,
+                              y: 0,
+                              color: "var(--theme-primary)",
+                            },
+                            hover: {
+                              rotateX: [0, 360],
+                              y: [0, -5, 0],
+                              color: "#fff",
+                              transition: {
+                                duration: 0.6,
+                                delay: idx * 0.05,
+                                ease: [0.25, 1, 0.5, 1],
+                              },
+                            },
+                          }}
+                        >
+                          {/* ✅ Preserve spaces visually */}
+                          {char === " " ? "\u00A0" : char}
+                        </motion.span>
+                      ))}
 
-        {/* Underline effect */}
-        <motion.span
-          className="absolute left-0 -bottom-1 h-[3px] bg-white"
-          variants={{
-            rest: { width: 0 },
-            hover: { width: "100%", transition: { duration: 0.3 } },
-          }}
-        />
-      </motion.a>
-    );
-  })}
-</motion.div>
-
+                      {/* Underline effect */}
+                      <motion.span
+                        className="absolute left-0 -bottom-1 h-[3px] bg-white"
+                        variants={{
+                          rest: { width: 0 },
+                          hover: {
+                            width: "100%",
+                            transition: { duration: 0.3 },
+                          },
+                        }}
+                      />
+                    </motion.a>
+                  );
+                })}
+              </motion.div>
             </motion.div>
           </>
         )}
