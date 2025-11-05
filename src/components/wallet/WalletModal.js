@@ -219,13 +219,13 @@ export default function WalletModal({
 
             {/* Content */}
             <div className="p-6">
-                {error && (
+                {tab !== 'withdraw' && error && (
                     <div className="mb-4 p-4 bg-[var(--custom-accent-red)]/20 border border-[var(--custom-accent-red)] rounded-md text-[var(--theme-cream)]">
                         {error}
                     </div>
                 )}
 
-                {success && (
+                {tab !== 'withdraw' && success && (
                     <div className="mb-4 p-4 bg-[var(--theme-gold)]/20 border border-[var(--theme-gold)] rounded-md text-[var(--theme-gold)]">
                         {success}
                     </div>
@@ -368,6 +368,19 @@ export default function WalletModal({
                                 autoGrow
                                 className="bg-[var(--custom-bg-tertiary)] border border-[var(--custom-border-color)] text-[var(--custom-text-primary)]"
                             />
+
+                            {error && (
+                                <div className="p-4 bg-[var(--custom-accent-red)]/20 border border-[var(--custom-accent-red)] rounded-md text-[var(--theme-cream)]">
+                                    {error}
+                                </div>
+                            )}
+
+                            {success && (
+                                <div className="p-4 bg-[var(--theme-gold)]/20 border border-[var(--theme-gold)] rounded-md text-[var(--theme-gold)]">
+                                    {success}
+                                </div>
+                            )}
+
                             <button
                                 onClick={handleWithdraw}
                                 disabled={withdrawLoading}
