@@ -146,7 +146,7 @@ export default function WalletModal({
                 throw new Error('Please fill in all bank details');
             }
 
-            const { error: txError } = await supabase
+            const { error: txError } = await sb
                 .from('wallet_transaction')
                 .insert({
                     uid: session.user.id,
@@ -159,7 +159,7 @@ export default function WalletModal({
 
             if (txError) throw txError;
 
-            const { error: deductError } = await supabase
+            const { error: deductError } = await sb
                 .from('profile')
                 .update({
                     wallet_balance: profile?.wallet_balance - amount
