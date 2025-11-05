@@ -137,6 +137,7 @@ export default function WalletModal({
     const handleWithdraw = async () => {
         setWithdrawLoading(true);
         setSuccess(null);
+        const sb = supabaseBrowser();
 
         try {
             const amount = parseFloat(withdrawAmount);
@@ -157,10 +158,10 @@ export default function WalletModal({
                 throw new Error('Please fill in all bank details');
             }
 
-            const { error: txError } = await supabase
+            const { error: txError } = await sb
                 .from('wallet_transaction')
                 .insert({
-                    uid: session.user.id,
+                    uid: profile.id,
                     transaction_type: 'withdraw',
                     amount: amount,
                     status: 'pending',
@@ -170,12 +171,12 @@ export default function WalletModal({
 
             if (txError) throw txError;
 
-            const { error: deductError } = await supabase
+            const { error: deductError } = await sb
                 .from('profile')
                 .update({
                     wallet_balance: profile?.wallet_balance - amount
                 })
-                .eq('id', session.user.id);
+                .eq('id', profile.id);
 
             if (deductError) throw deductError;
 

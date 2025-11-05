@@ -48,7 +48,7 @@ const reducer = (s, a) => {
 };
 
 export default function ProfilePage({ req, ctx }) {
-    const { openModal, closeModal } = useModal();
+    const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal();
     
     const params = useParams();
     const supabase = supabaseBrowser();
@@ -116,10 +116,10 @@ export default function ProfilePage({ req, ctx }) {
         switch (type) {
             // Handling settings open
             case 1: {
-                openModal({
-                    content: <WalletModal profile={profile} />,
-                    title: 'My Wallet'
-                });
+                setModalHeader({ title: 'My Wallet' });
+                setModalForm({ isForm: false });
+                setModalFooter({ showCancel: false, showSubmit: false });
+                setModalState({ open: true, content: <WalletModal profile={profile} /> });
                 break;
             };
             case 2: {
@@ -134,10 +134,9 @@ export default function ProfilePage({ req, ctx }) {
                 break;
             };
             case 3: {
-                openModal({
-                    title: 'Settings',
-                    content: <Settings user={profile?.user} onClose={closeModal} />
-                });
+                setModalHeader({ title: 'Settings' });
+                setModalForm({ isForm: false });
+                setModalState({ open: true, content: <Settings user={profile?.user} onClose={() => setModalState({ open: false })} /> });
                 break;
             };
             default: return;
