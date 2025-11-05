@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { AuctionCard, AuctionCardSkeleton } from "@/components/AuctionCard";
+import { AuctionCard } from "@/components/AuctionCard";
 import { supabaseBrowser } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowBigLeft } from "lucide-react";
@@ -27,8 +27,9 @@ export default function CategoryPage() {
   const [auctions, setAuctions] = useState([]);
   const [isLoadingCategory, setIsLoadingCategory] = useState(true);
   const [isLoadingAuctions, setIsLoadingAuctions] = useState(true);
-  const [expectedCount, setExpectedCount] = useState(0); // ✅ Track how many skeletons to render
+  const [fetchError, setFetchError] = useState(null);
 
+  // Fetch category name
   useEffect(() => {
     const fetchCategory = async () => {
       setIsLoadingCategory(true);
@@ -38,23 +39,12 @@ export default function CategoryPage() {
         const { data: categories, error } = await supabase
           .from("category")
           .select("category_name");
-
         if (error) throw error;
-        if (!categories || categories.length === 0) {
-          setCategoryName("Unknown Category");
-          return;
-        }
 
-        const matched = categories.find(
+        const matched = categories?.find(
           (c) => slugify(c.category_name) === slug.toLowerCase()
         );
-
-        if (!matched) {
-          setCategoryName("Unknown Category");
-          return;
-        }
-
-        setCategoryName(matched.category_name);
+        setCategoryName(matched?.category_name || "Unknown Category");
       } catch (err) {
         console.error("Category fetch error:", err);
         setCategoryName("Unknown Category");
@@ -66,48 +56,55 @@ export default function CategoryPage() {
     fetchCategory();
   }, [slug]);
 
+  // Fetch auctions for this category
   useEffect(() => {
     const fetchAuctions = async () => {
       if (!categoryName || categoryName === "Unknown Category") {
         setAuctions([]);
-        setExpectedCount(0);
         setIsLoadingAuctions(false);
         return;
       }
 
       setIsLoadingAuctions(true);
+      setFetchError(null);
       const supabase = supabaseBrowser();
 
       try {
+        console.log("Fetching auctions for category:", categoryName);
+
         // 1️⃣ Get item IDs for this category
         const { data: itemCategories, error: icErr } = await supabase
           .from("item_category")
           .select("itemid")
           .eq("category_name", categoryName);
-
         if (icErr) throw icErr;
-        if (!itemCategories || itemCategories.length === 0) {
-          setExpectedCount(0);
+        const itemIds = itemCategories?.map((ic) => ic.itemid) || [];
+        console.log("Item IDs:", itemIds);
+
+        if (!itemIds.length) {
+          console.warn("No items found for this category.");
           setAuctions([]);
           return;
         }
 
-        const itemIds = itemCategories.map((ic) => ic.itemid);
-        setExpectedCount(itemIds.length); // ✅ Use number of matching items as skeleton count
-
-        // 2️⃣ Get auctions for these items
+        // 2️⃣ Get auction IDs for these items
         const { data: itemsData, error: itemErr } = await supabase
           .from("item")
           .select("iid, aid")
           .in("iid", itemIds);
-
         if (itemErr) throw itemErr;
-        if (!itemsData || itemsData.length === 0) {
+
+        // Filter out null aids
+        const auctionIds = [
+          ...new Set(itemsData?.map((i) => i.aid).filter(Boolean)),
+        ];
+        console.log("Auction IDs (non-null):", auctionIds);
+
+        if (!auctionIds.length) {
+          console.warn("No valid auctions found for these items.");
           setAuctions([]);
           return;
         }
-
-        const auctionIds = [...new Set(itemsData.map((i) => i.aid))];
 
         // 3️⃣ Fetch auction details
         const { data: auctionData, error: auctionErr } = await supabase
@@ -117,30 +114,46 @@ export default function CategoryPage() {
           )
           .in("aid", auctionIds);
 
-        if (auctionErr) throw auctionErr;
-        if (!auctionData || auctionData.length === 0) {
+        if (auctionErr) {
+          console.error("Supabase auction fetch error:", auctionErr);
+          setFetchError(
+            "Unable to fetch auctions. Please check permissions or RLS policies."
+          );
           setAuctions([]);
           return;
         }
 
-        // 4️⃣ Map storage URLs
+        if (!auctionData?.length) {
+          console.warn("No auction data returned.");
+          setAuctions([]);
+          return;
+        }
+
+        console.log("Fetched auction data:", auctionData);
+
+        // 4️⃣ Map storage URLs safely
         const mapped = auctionData.map((a) => {
-          const { data: publicData } = supabase.storage
-            .from(a.thumbnail_bucket)
-            .getPublicUrl(a.object_path);
+          let picUrl = null;
+          if (a.thumbnail_bucket && a.object_path) {
+            const { data: publicData } = supabase.storage
+              .from(a.thumbnail_bucket)
+              .getPublicUrl(a.object_path);
+            picUrl = publicData?.publicUrl || null;
+          }
 
           return {
             aid: a.aid,
             name: a.name,
             description: a.description,
             start_time: new Date(a.start_time).toLocaleString(),
-            picUrl: publicData?.publicUrl || null,
+            picUrl,
           };
         });
 
         setAuctions(mapped);
       } catch (err) {
-        console.error("Auctions fetch error:", err);
+        console.error("Unexpected auction fetch error:", err);
+        setFetchError("An unexpected error occurred while fetching auctions.");
         setAuctions([]);
       } finally {
         setIsLoadingAuctions(false);
@@ -154,14 +167,14 @@ export default function CategoryPage() {
     <section className="min-h-screen relative pt-10 bg-[var(--theme-primary-darker)]">
       <div className="max-w-7xl mx-auto pb-15 pt-15 px-6">
         {/* Back Button */}
-        <div className="mb-8">
-          <Button
-            variant="brand"
-            onClick={() => router.push('/categories')}
-          >
-            <ArrowBigLeft /> Back to Categories
-          </Button>
-        </div>
+        <Button
+          variant="brand"
+          className="absolute top-6 left-6 " // horizontal: 4, vertical: 2 (Tailwind)
+          onClick={() => router.push("/categories")}
+        >
+          <ArrowBigLeft className="w-12 h-12" />{" "}
+          {/* adjust icon size separately */}
+        </Button>
 
         {/* Page Header */}
         <div className="text-center mb-16">
@@ -179,11 +192,12 @@ export default function CategoryPage() {
 
         {/* Auctions Section */}
         {isLoadingCategory || isLoadingAuctions ? (
-          // ✅ One stable row of 3 skeletons — no flicker, no wrap
-          <div className="flex justify-center gap-10 py-10">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <AuctionCardSkeleton key={i} />
-            ))}
+          <div className="flex justify-center items-center py-32">
+            <div className="w-16 h-16 border-4 border-t-transparent border-[var(--theme-cream)] rounded-full animate-spin"></div>
+          </div>
+        ) : fetchError ? (
+          <div className="text-center py-32 text-xl font-medium text-red-500">
+            {fetchError}
           </div>
         ) : auctions.length === 0 ? (
           <div className="text-center py-32 text-xl font-medium text-gray-500">

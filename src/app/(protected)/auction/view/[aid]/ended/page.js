@@ -11,6 +11,8 @@ export default async function AuctionEndedPage({ params }) {
     getServerUser()
   ])
 
+  const isOwner = user && auction?.oid === user.id
+
   return (
     <div className="min-h-screen w-full bg-[var(--custom-bg-primary)] text-white flex items-center justify-center px-6">
       <div className="max-w-xl w-full text-center space-y-6">
@@ -19,14 +21,18 @@ export default async function AuctionEndedPage({ params }) {
             Auction Closed
           </span>
           <h1 className="text-3xl md:text-4xl font-bold text-[#F8E2D4]">
-            Your auction has ended
+            {isOwner ? 'Your auction has ended' : 'This auction has ended'}
           </h1>
           <p className="text-sm md:text-base text-[#B984DB]">
-            {auction?.name
-              ? `“${auction.name}” is now closed. Thanks for hosting a great event!`
-              : 'This auction is closed. Thanks for hosting a great event!'}
+            {isOwner
+              ? auction?.name
+                ? `"${auction.name}" is now closed. Thanks for hosting a great event!`
+                : 'This auction is closed. Thanks for hosting a great event!'
+              : auction?.name
+              ? `"${auction.name}" has ended. Thanks for participating!`
+              : 'This auction has ended. Thanks for participating!'}
           </p>
-          {user && auction?.oid === user.id && (
+          {isOwner && (
             <p className="text-xs md:text-sm text-[#B984DB]">
               You can review results from your seller dashboard or create a new auction anytime.
             </p>
