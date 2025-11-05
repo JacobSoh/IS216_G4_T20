@@ -58,6 +58,54 @@ export default function ProfilePage() {
 				setProfile(profile);
 				setLoading(false);
 				console.log(profile);
+
+				// Check for payment redirect parameters
+				const urlParams = new URLSearchParams(window.location.search);
+				const paymentRef = urlParams.get('payment_ref');
+				const amount = urlParams.get('amount');
+
+				if (paymentRef && amount && profile?.id) {
+					console.log('Processing payment redirect:', { paymentRef, amount });
+					toast.loading('Processing your payment...');
+
+					try {
+						const response = await fetch('/api/hitpay/verify-payment', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({
+								payment_ref: paymentRef,
+								amount: parseFloat(amount),
+								userId: profile.id
+							})
+						});
+
+						const result = await response.json();
+
+						// Clean up URL
+						window.history.replaceState({}, '', '/profile');
+
+						if (response.ok) {
+							if (result.alreadyProcessed) {
+								toast.dismiss();
+								toast.info('Payment already processed');
+							} else {
+								toast.dismiss();
+								toast.success(`Successfully topped up $${parseFloat(amount).toFixed(2)}!`);
+								// Refresh profile to get updated balance
+								const refreshed = await getProfile();
+								await getAvatarPublicUrl(refreshed);
+								setProfile(refreshed);
+							}
+						} else {
+							toast.dismiss();
+							toast.error('Failed to process payment. Please contact support.');
+						}
+					} catch (error) {
+						toast.dismiss();
+						console.error('Payment verification error:', error);
+						toast.error('Failed to verify payment. Please contact support.');
+					}
+				}
 			} catch (error) {
 				console.error('Failed to load profile:', error);
 				setLoading(false);

@@ -259,10 +259,15 @@ export default function ReserveCalibration({ sellerId }) {
               whiteSpace: 'nowrap',
             },
             "& .MuiChartsAxis-label": {
-              fill: 'var(--theme-secondary)'
+              fill: '#fff'
             },
             "& .MuiChartsGrid-line": {
               stroke: 'color-mix(in oklab, white 15%, transparent)'
+            },
+            "& .MuiChartsTooltip-root": {
+              "& .MuiChartsTooltip-table": {
+                color: '#fff'
+              }
             },
             /* >>> AXIS LINES & TICKS TO WHITE <<< */
             "& .MuiChartsAxis-bottom .MuiChartsAxis-line": { stroke: "var(--theme-gold)" }, // x-axis line

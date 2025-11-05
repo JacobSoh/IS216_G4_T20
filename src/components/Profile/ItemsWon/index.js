@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabaseBrowser } from '@/utils/supabase/client';
 import Spinner from '@/components/SpinnerComponent';
 import { TrophyIcon } from '@heroicons/react/24/outline';
-import { Calendar } from "lucide-react"
 import { toast } from "sonner";
 
 import {
@@ -310,39 +309,40 @@ export default function ItemsWon({ userId }) {
     }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6 mt-2">
             {state.wonItems.map((item) => (
-                <Card key={item.iid} className="flex flex-col h-full">
-                    <CardHeader>
+                <Card key={item.iid} className="flex flex-col h-full pt-0 min-h-115">
+                    <div>
                         {item?.picUrl ? (
                             <img
                                 src={item?.picUrl}
                                 alt={item?.title}
-                                className="object-cover w-full max-h-40 bg-white rounded-md"
+                                className="h-full w-full min-h-50 max-h-50 object-cover rounded-t-xl"
                             />
                         ) : (
-                            <div className="flex items-center justify-center w-full min-h-40 max-h-40 bg-[var(--theme-primary-darker)] rounded-md font-bold">
-                                NO IMAGE
+                            <div className="flex items-center justify-center w-full h-40 bg-[var(--theme-primary-darker)] rounded-t-xl font-bold text-sm">
+                                No image
                             </div>
                         )}
-                        <CardTitle className='mt-4'>
+                    </div>
+                    <CardHeader className="pt-0 !flex flex-1 flex-col items-start gap-2">
+                        <CardTitle className="w-full">
                             {item?.title}
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="line-clamp-3">
                             {item?.description}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="mt-auto space-y-3">
                         <div className="flex justify-between items-center">
                             <span className="text-white text-xs">Final Price</span>
-                            <span className="text-[var(--theme-gold)] text-sm font-bold flex items-center gap-1">
-                                ${item?.final_price.toFixed(2)}
+                            <span className="text-[var(--theme-gold)] text-sm font-bold">
+                                {item?.final_price.toFixed(2)}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-white text-xs">Won On</span>
-                            <span className="text-gray-400 text-sm font-medium flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
+                            <span className="text-gray-400 text-sm font-medium">
                                 {formatDate(item?.sold_at)}
                             </span>
                         </div>

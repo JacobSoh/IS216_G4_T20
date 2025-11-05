@@ -10,7 +10,7 @@ const CONFIG = {
 };
 
 // Helper to build form data
-function buildPaymentFormData({ amount, email, userId, redirectOrigin }) {
+function buildPaymentFormData({ amount, email, userId, redirectOrigin, referenceNumber }) {
     const formData = new URLSearchParams();
 
     // Use provided redirectOrigin or fallback to CONFIG.baseUrl
@@ -20,8 +20,8 @@ function buildPaymentFormData({ amount, email, userId, redirectOrigin }) {
     formData.append('currency', CONFIG.currency);
     formData.append('email', email);
     formData.append('purpose', 'Wallet Top-Up');
-    formData.append('reference_number', `TOPUP_${userId}_${Date.now()}`);
-    formData.append('redirect_url', `${baseUrl}/profile`);
+    formData.append('reference_number', referenceNumber);
+    formData.append('redirect_url', `${baseUrl}/profile?payment_ref=${referenceNumber}&amount=${amount}`);
     formData.append('webhook', `${CONFIG.baseUrl}/api/hitpay/webhook`);
 
     CONFIG.paymentMethods.forEach(method => {
@@ -57,13 +57,14 @@ export async function createTopUpPayment(amount, userId, email, redirectOrigin =
     }
 
     try {
-        const formData = buildPaymentFormData({ amount, email, userId, redirectOrigin });
+        const referenceNumber = `TOPUP_${userId}_${Date.now()}`;
+        const formData = buildPaymentFormData({ amount, email, userId, redirectOrigin, referenceNumber });
 
         console.log('Creating HitPay payment:', {
             amount,
             userId,
             email,
-            reference: `TOPUP_${userId}_${Date.now()}`
+            reference: referenceNumber
         });
 
         const response = await fetch(`${CONFIG.apiUrl}/payment-requests`, {
@@ -92,7 +93,7 @@ export async function createTopUpPayment(amount, userId, email, redirectOrigin =
             success: true,
             paymentRequestId: data.id,
             checkoutUrl: data.url,
-            reference: formData.get('reference_number')
+            reference: referenceNumber
         };
     } catch (error) {
         console.error('HitPay payment creation error:', error);

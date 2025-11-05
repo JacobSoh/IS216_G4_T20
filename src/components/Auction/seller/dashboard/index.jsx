@@ -8,7 +8,7 @@ import { supabaseBrowser } from "@/utils/supabase/client";
 import RecentSalesTable from "@/components/Auction/seller/recentlySold";
 import CategorySalesPieChart from "@/components/Auction/seller/dashboard/CategorySalesPieChart";
 import BidHeatmap from "@/components/Auction/seller/dashboard/BidHeatmap";
-import PriceUpliftWaterfall from "@/components/Auction/seller/dashboard/PriceUpliftWaterfall";
+// import PriceUpliftWaterfall from "@/components/Auction/seller/dashboard/PriceUpliftWaterfall";
 import ReserveCalibration from "@/components/Auction/seller/dashboard/ReserveCalibration";
 import { CustomSelect } from "@/components/Form";
 import { Card, CardAction, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -893,6 +893,20 @@ export default function SellerDashboard({ auctions = [] }) {
     []
   );
 
+  // Check if there are any auctions
+  if (!auctions || auctions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="space-y-4">
+          <h3 className="text-2xl font-semibold text-white">No Auctions Yet</h3>
+          <p className="text-[var(--nav-text-muted)] max-w-md">
+            Create your first auction to start tracking sales performance, revenue analytics, and bidding insights.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-12">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -919,7 +933,7 @@ export default function SellerDashboard({ auctions = [] }) {
               <p className="text-2xl font-semibold text-white">
                 {formatPercentage(sellThrough.rate)}
               </p>
-              <span className="text-xs text-[var(--nav-text-muted)]">
+              <span className="text-xs text-white">
                 {sellThrough.totalItems > 0
                   ? `${sellThrough.soldCount}/${sellThrough.totalItems} sold`
                   : "No listings"}
@@ -935,14 +949,7 @@ export default function SellerDashboard({ auctions = [] }) {
                   ) : (
                     <span className="inline-flex h-2 w-2 rounded-full bg-slate-500" />
                   )}
-                  <span
-                    className={`font-medium ${sellThrough.trend === "up"
-                      ? "text-emerald-400"
-                      : sellThrough.trend === "down"
-                        ? "text-red-400"
-                        : "text-[var(--nav-text-muted)]"
-                      }`}
-                  >
+                  <span className="font-medium text-white">
                     {formattedSellThroughDelta}
                   </span>
                   <span className="text-[var(--nav-text-muted)]">vs prior</span>
@@ -960,7 +967,7 @@ export default function SellerDashboard({ auctions = [] }) {
               <p className="text-2xl font-semibold text-white">
                 {formatCurrency(priceMetrics.average)}
               </p>
-              <span className="text-xs text-[var(--nav-text-muted)]">
+              <span className="text-xs text-white">
                 Median {formatCurrency(priceMetrics.median)}
               </span>
             </div>
@@ -974,14 +981,7 @@ export default function SellerDashboard({ auctions = [] }) {
                   ) : (
                     <span className="inline-flex h-2 w-2 rounded-full bg-slate-500" />
                   )}
-                  <span
-                    className={`font-medium ${priceMetrics.trend === "up"
-                      ? "text-emerald-400"
-                      : priceMetrics.trend === "down"
-                        ? "text-red-400"
-                        : "text-[var(--nav-text-muted)]"
-                      }`}
-                  >
+                  <span className="font-medium text-white">
                     {formattedPriceDelta}
                   </span>
                   <span className="text-[var(--nav-text-muted)]">vs prior</span>
@@ -1101,7 +1101,7 @@ export default function SellerDashboard({ auctions = [] }) {
                   fill: "#fff",
                 },
                 "& .MuiChartsAxis-label": {
-                  fill: "var(--theme-secondary)",
+                  fill: "#fff",
                 },
                 "& .MuiChartsLegend-label": {
                   fill: "#fff",
@@ -1111,6 +1111,11 @@ export default function SellerDashboard({ auctions = [] }) {
                 },
                 "& .MuiChartsGrid-line": {
                   stroke: "color-mix(in oklab, white 15%, transparent)",
+                },
+                "& .MuiChartsTooltip-root": {
+                  "& .MuiChartsTooltip-table": {
+                    color: '#fff'
+                  }
                 },
 
                 /* >>> AXIS LINES & TICKS TO WHITE <<< */
@@ -1145,7 +1150,7 @@ export default function SellerDashboard({ auctions = [] }) {
         </CardContent>
       </Card>
 
-      <Card variant='default'>
+      {/* <Card variant='default'>
         <CardHeader>
           <CardTitle>
             Price-Uplift Waterfall
@@ -1154,7 +1159,7 @@ export default function SellerDashboard({ auctions = [] }) {
         <CardContent>
           <PriceUpliftWaterfall sellerId={sellerId} />
         </CardContent>
-      </Card>
+      </Card> */}
 
       <Card variant='default'>
         <CardContent>

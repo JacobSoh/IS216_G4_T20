@@ -26,7 +26,7 @@ const formatDate = (value) => {
 
 const ItemSoldCard = ({ iid, title, description, final_price, sold_at, picUrl }) => {
   return (
-    <Card className='pt-0 min-h-115 transition-transform duration-300 hover:scale-[1.02]'>
+    <Card className='pt-0 min-h-115 transition-transform duration-300 hover:scale-[1.02] flex flex-col h-full'>
       <CardContent className='px-0'>
         {picUrl ? (
           <img
@@ -40,15 +40,15 @@ const ItemSoldCard = ({ iid, title, description, final_price, sold_at, picUrl })
           </span>
         )}
       </CardContent>
-      <CardHeader>
+      <CardHeader className='!flex flex-1 flex-col items-start justify-start gap-2'>
         <CardTitle>
           {title || "\u00A0\u00A0"}
         </CardTitle>
-        <CardDescription className='line-clamp-4'>
+        <CardDescription className='line-clamp-4 text-left w-full'>
           {description || "No description provided."}
         </CardDescription>
       </CardHeader>
-      <CardFooter className='flex-col text-sm gap-4'>
+      <CardFooter className='flex-col text-sm gap-4 mt-auto'>
         <div className="flex items-center justify-between w-full">
           <span className="flex items-center gap-1">
             <DollarSign className="h-4 w-4 text-[var(--theme-primary)]" />

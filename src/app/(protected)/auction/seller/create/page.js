@@ -369,7 +369,7 @@ export default function AuctionCreatePage() {
         Create Auction
       </h1>
       </div>
-      
+
       <form id="auctionCreate" onSubmit={handleCreateAuction}>
         {/* Auction Details Section */}
         <CreateEvent />

@@ -228,6 +228,20 @@ export default function SellerDatatable({ auctions = [] }) {
 
   const loading = itemsLoading;
 
+  // Check if there are any auctions
+  if (!auctions || auctions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="space-y-4">
+          <h3 className="text-2xl font-semibold text-white">No Auctions Yet</h3>
+          <p className="text-[var(--nav-text-muted)] max-w-md">
+            Create your first auction to start managing your listings and tracking their performance.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -246,7 +260,7 @@ export default function SellerDatatable({ auctions = [] }) {
           loading ? (
             <span>loading</span>
           ) : paged.length === 0 ? (
-            <span>Null</span>
+            <span className="text-[var(--custom-text-muted)] col-span-full text-center py-8">No auctions match your search</span>
           ) : paged.map(v => {
             const sb = supabaseBrowser();
             const picUrl = sb.storage
