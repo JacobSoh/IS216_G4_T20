@@ -114,7 +114,7 @@ export default function FeaturedStorePage() {
       {/* Top Big Auction Carousel */}
       {!isLoading && auctions.length > 0 ? (
         <Link href={`/auction/view/${auctions[currentIndex].aid}`}>
-          <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden cursor-pointer">
+          <div className="relative w-full max-w-4xl mx-auto rounded-2xl cursor-pointer">
             <BigAuctionCard
               key={auctions[currentIndex].aid}
               name={auctions[currentIndex].name}
