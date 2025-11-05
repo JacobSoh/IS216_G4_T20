@@ -201,7 +201,7 @@ export default function ReserveCalibration({ sellerId }) {
   if (ratioData.length === 0) {
     return (
       <Box sx={{ width: "100%", textAlign: "center", py: 4 }}>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{ color: 'var(--nav-text-muted)' }}>
           No pricing data available. Reserve calibration will appear here once
           items are sold.
         </Typography>
@@ -255,11 +255,17 @@ export default function ReserveCalibration({ sellerId }) {
           slotProps={{ legend: { hidden: true } }}
           sx={{
             "& .MuiChartsAxis-tickLabel": {
-              fill: '#fff',
+              fill: '#fff !important',
               whiteSpace: 'nowrap',
             },
+            "& .MuiChartsAxis-bottom .MuiChartsAxis-tickLabel": {
+              fill: '#fff !important',
+            },
+            "& .MuiChartsAxis-left .MuiChartsAxis-tickLabel": {
+              fill: '#fff !important',
+            },
             "& .MuiChartsAxis-label": {
-              fill: '#fff'
+              fill: '#fff !important'
             },
             "& .MuiChartsGrid-line": {
               stroke: 'color-mix(in oklab, white 15%, transparent)'
