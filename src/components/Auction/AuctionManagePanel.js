@@ -43,6 +43,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
   const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal();
   const { snapshot, isFetching, refresh, setSnapshot: setLiveSnapshot } = useAuctionLive(aid, initialLiveData)
   const [busyItem, setBusyItem] = useState(null)
+  const [isClosingItem, setIsClosingItem] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [isClosingAuction, setIsClosingAuction] = useState(false)
   const [error, setError] = useState(null)
@@ -290,6 +291,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
     }
 
     setBusyItem(iid)
+    setIsClosingItem(true)
     setError(null)
 
     const itemsInSequence = items ?? []
@@ -341,6 +343,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
       setError(err.message)
     } finally {
       setBusyItem(null)
+      setIsClosingItem(false)
     }
   }, [aid, refresh, items, activateItemInternal])
 
@@ -742,13 +745,18 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                   ) : (
                     <CardFooter>
                       <Button
-                        onClick={() => activateItem(item.iid, currentPrice)}
-                        variant={isActive ? "secondary" : "brand"}
-                        disabled={busyItem === item.iid || isActive || isSold || !canActivate}
+                        onClick={() => {
+                          if (busyItem !== item.iid) {
+                            activateItem(item.iid, currentPrice)
+                          }
+                        }}
+                        variant={(isActive && busyItem !== item.iid) ? "secondary" : "brand"}
+                        disabled={isActive || isSold || !canActivate}
                         className="w-full"
                       >
                         {
-                          busyItem === item.iid ? 'Activating...'
+                          busyItem === item.iid
+                            ? (isClosingItem ? 'Closing...' : 'Activating...')
                             : isSold ? (itemHasBids ? 'Sold' : 'Closed')
                               : isActive ? 'Active Now'
                                 : canActivate ? 'Make Active' : 'Locked'
@@ -885,12 +893,16 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
                     )}
 
                     <Button
-                      onClick={() => activateItem(item.iid, currentPrice)}
-                      variant={isActive ? "secondary" : "brand"}
-                      disabled={busyItem === item.iid || isActive || isSold || !canActivate}
+                      onClick={() => {
+                        if (busyItem !== item.iid) {
+                          activateItem(item.iid, currentPrice)
+                        }
+                      }}
+                      variant={(isActive && busyItem !== item.iid) ? "secondary" : "brand"}
+                      disabled={isActive || isSold || !canActivate}
                       className="w-full"
                     >
-                      {busyItem === item.iid ? 'Activating...' : isSold ? (itemHasBids ? 'Sold' : 'Closed') : isActive ? 'Active Now' : canActivate ? 'Make Active' : 'Locked'}
+                      {busyItem === item.iid ? (isClosingItem ? 'Closing...' : 'Activating...') : isSold ? (itemHasBids ? 'Sold' : 'Closed') : isActive ? 'Active Now' : canActivate ? 'Make Active' : 'Locked'}
                     </Button>
                   </div>
                 </div>
