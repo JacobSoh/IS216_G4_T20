@@ -24,16 +24,14 @@ export default function BubbleNav() {
   ];
 
   return (
-    <nav className="fixed top-0 right-0 w-full flex justify-end items-start p-6 z-[9999]">
+    <>
       {/* Hamburger / Close button */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="relative z-[10000] h-[44px] w-[44px] flex items-center justify-center bg-purple-900 rounded-md text-white hover:bg-purple-700 shadow-xl transition-all duration-300"
-        >
-          {menuOpen ? <X size={26} /> : <Menu size={26} />}
-        </button>
-      </div>
+      <button
+        onClick={() => setMenuOpen(!menuOpen)}
+        className="fixed top-6 right-6 z-[10000] h-[44px] w-[44px] flex items-center justify-center bg-purple-900 rounded-md text-white hover:bg-purple-700 shadow-xl transition-all duration-300"
+      >
+        {menuOpen ? <X size={26} /> : <Menu size={26} />}
+      </button>
 
       <AnimatePresence>
         {menuOpen && (
@@ -45,7 +43,7 @@ export default function BubbleNav() {
               animate={{ scale: 60 }}
               exit={{ scale: 0 }}
               transition={{ type: "spring", stiffness: 70, damping: 15 }}
-              className="absolute top-6 right-6 w-12 h-12 rounded-full bg-purple-300 origin-center z-[9998]"
+              className="absolute top-6 right-6 w-12 h-12 rounded-full bg-purple-300 origin-center z-[9998] pointer-events-auto"
             />
 
             {/* Full Menu Overlay */}
@@ -55,7 +53,7 @@ export default function BubbleNav() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ delay: 0.25 }}
-              className="fixed inset-0 bg-purple-300 flex flex-col md:flex-row items-center justify-between px-10 py-20 z-[9999]"
+              className="fixed inset-0 bg-purple-300 flex flex-col md:flex-row items-center justify-between px-10 py-20 z-[9999] pointer-events-auto"
             >
               {/* LEFT SIDE — Floating Image Grid */}
               <div className="grid grid-cols-2 gap-y-8 ml-5 md:w-1/2 justify-items-center items-center">
@@ -231,6 +229,6 @@ export default function BubbleNav() {
           </>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 }

@@ -109,7 +109,7 @@ export default function BubbleNav() {
     : baseLinks; // Hide Profile when not logged in
 
   return (
-    <nav className="fixed top-0 right-0 w-full flex justify-end items-start p-6 z-[9999]">
+    <nav className="fixed top-0 right-0 w-auto flex justify-end items-start p-6 z-[9999]">
       {/* Hamburger / Close button */}
       <div className="flex items-center gap-3">
         <button
