@@ -103,7 +103,7 @@ export default function AuctionCreatePage() {
     setModalHeader({ title: 'Edit Auction Item' });
     setModalState({
       open: true,
-      content: <CreateItem maxLength={5} initialData={item} />
+      content: <CreateItem maxLength={1} initialData={item} />
     });
     setModalFooter({ submitText: "Update Item" });
   };
@@ -130,7 +130,7 @@ export default function AuctionCreatePage() {
     setModalHeader({ title: 'Add Auction Item' });
     setModalState({
       open: true,
-      content: <CreateItem maxLength={5} />
+      content: <CreateItem maxLength={1} /> 
     });
     setModalFooter({ submitText: "Add Item" });
   };
