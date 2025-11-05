@@ -2,8 +2,7 @@
 
 ---
 
-## Section & Group Number
-**Example:** G3 Group 10  
+## G4 Group 20
 
 ---
 
@@ -11,10 +10,12 @@
 
 | Photo | Full Name | Role / Features Responsible For |
 |:--:|:--|:--|
-| <img src="photos/member1.jpg" width="80"> | Alice Tan | Frontend Developer - Search & Filter UI |
-| <img src="photos/member2.jpg" width="80"> | Ben Lee | Backend Developer - API endpoints |
-| <img src="photos/member3.jpg" width="80"> | Chloe Lim | UI/UX Designer - Layout & Color Themes |
-| <img src="photos/member4.jpg" width="80"> | David Ong | Database & Auth - Firebase Integration |
+| <img src="photos/member1.jpg" width="80"> | Benedic Tan | Frontend Developer - Search & Filter UI |
+| <img src="photos/member2.jpg" width="80"> | Jared Chan | Backend Developer - API endpoints |
+| <img src="photos/member3.jpg" width="80"> | Jacob Soh | UI/UX Designer - Layout & Color Themes |
+| <img src="photos/member4.jpg" width="80"> | Javen Tan | Database & Auth - Firebase Integration |
+| <img src="photos/member4.jpg" width="80"> | Joshua Lim | Database & Auth - Firebase Integration |
+| <img src="photos/member4.jpg" width="80"> | Kai Wen | Database & Auth - Firebase Integration |
 
 > Place all headshot thumbnails in the `/photos` folder (JPEG or PNG).
 
@@ -25,16 +26,18 @@
 Describe the **real-world business or community problem** your project addresses.
 
 > *Example:*  
-> Small local businesses struggle to maintain an online presence, limiting visibility to customers.  
-> Our web application helps them list menus, accept feedback, and attract more customers.
+> Current options for marketplaces lack transparency for both buyers and sellers
+> Management of buyers and payments from different buyers can also hurt sellers
+> Current Auction sites also do not provide QOL features for both sides
+> Our web application helps them better manage their listings and payment methods.
 
 ---
 
 ## Web Solution Overview
 
 ### 🎯 Intended Users
-Identify your target user groups.  
-Examples: small-business owners, caregivers, students, pet adopters, etc.
+Youths around 16-22 years old, Majority Female,
+Who are looking for affordable and reliable used/preloved items
 
 ### 💡 What Users Can Do & Benefits
 Explain the core features and the benefit each provides.  
@@ -55,9 +58,8 @@ Explain the core features and the benefit each provides.
 | <img src="https://raw.githubusercontent.com/github/explore/main/topics/html/html.png" width="40"> | **HTML5** | Structure and content |
 | <img src="https://raw.githubusercontent.com/github/explore/main/topics/css/css.png" width="40"> | **CSS3 / Bootstrap** | Styling and responsiveness |
 | <img src="https://raw.githubusercontent.com/github/explore/main/topics/javascript/javascript.png" width="40"> | **JavaScript (ES6)** | Client-side logic and interactivity |
-| <img src="https://vitejs.dev/logo.svg" width="40"> | **Vite** | Development server and build tool |
-| <img src="https://vuejs.org/images/logo.png" width="40"> | **Vue.js 3** | Component-based frontend framework |
-| <img src="https://firebase.google.com/downloads/brand-guidelines/PNG/logo-logomark.png" width="40"> | **Firebase** | Authentication and database services |
+| <img src="https://vuejs.org/images/logo.png" width="40"> | **React JS** | Component-based frontend framework |
+| <img src="https://firebase.google.com/downloads/brand-guidelines/PNG/logo-logomark.png" width="40"> | **Supabase** | Authentication and database services |
 
 > Add or remove technologies depending on your project stack (e.g., Express.js, Supabase, MongoDB Atlas, AWS S3).
 
