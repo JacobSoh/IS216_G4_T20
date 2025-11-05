@@ -75,7 +75,9 @@ export const AuctionHoverPicture = ({
               alt={ownerUsername}
               className="w-4 h-4 sm:w-7 sm:h-7 rounded-full object-cover border border-purple-500"
             />
-            <span className="truncate text-sm sm:text-base">@{ownerUsername}</span>
+            <span className="truncate text-sm sm:text-base">
+              @{ownerUsername}
+            </span>
           </Link>
         )}
       </div>
@@ -110,9 +112,9 @@ export const AuctionHoverPicture = ({
 
 export const AuctionHoverPictureSkeleton = () => {
   return (
-    <div className="flex flex-col w-[29vw] md:w-[26vw] sm:w-[22vw] max-w-[750px] mb-16 mx-auto animate-pulse">
+    <div className="flex flex-col w-[85%] sm:w-[85%] md:w-[80%] lg:w-[90%] xl:w-[85%] max-w-[750px] group mb-16 mx-auto animate-pulse">
       {/* Skeleton only behind image area */}
-      <div className="relative w-full h-[500px] sm:h-[300px] md:h-[400px] rounded-sm">
+      <div className="relative w-full h-[50vw] sm:h-[40vw] md:h-[35vw] lg:h-[30vw] xl:h-[25vw] border-3 border-[var(--theme-secondary)] drop-shadow-[0_0_5px_rgba(168,85,247,0.9)] rounded-sm cursor-pointer">
         <div className="absolute inset-0 bg-black rounded-sm">
           <div className="absolute top-2 left-2 w-2 h-2 bg-purple-400 rounded-full" />
           <div className="absolute top-2 right-2 w-2 h-2 bg-purple-400 rounded-full" />
@@ -129,6 +131,7 @@ export const AuctionHoverPictureSkeleton = () => {
     </div>
   );
 };
+
 
 export const AuctionCard = ({
   name,
@@ -307,10 +310,23 @@ export const CategoryCard = ({ name, picUrl }) => {
   );
 };
 
-export const BigAuctionCard = ({ name, description, picUrl, start_time }) => {
+export const BigAuctionCard = ({
+  aid,
+  name,
+  description,
+  picUrl,
+  start_time,
+  ownerUsername,
+  ownerAvatar,
+}) => {
+  const avatarUrl =
+    ownerAvatar?.bucket && ownerAvatar?.objectPath
+      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${ownerAvatar.bucket}/${ownerAvatar.objectPath}`
+      : "/images/avatar-placeholder.png";
+
   return (
-    <div className="relative  lg:w-3xl md:w-[24vh] sm:w-2xl mx-auto group rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.7)]">
-      {/* Image */}
+    <Link href={`/auction/view/${aid}`} className="block relative w-full max-w-3xl mx-auto group rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.7)]">
+      {/* Auction Image */}
       <div className="relative w-full h-[500px] overflow-hidden rounded-2xl">
         {picUrl ? (
           <img
@@ -323,28 +339,40 @@ export const BigAuctionCard = ({ name, description, picUrl, start_time }) => {
             No Image
           </div>
         )}
-        {/* Overlay */}
         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-500 rounded-2xl" />
       </div>
 
       {/* Info Panel */}
       <div className="absolute bottom-6 left-6 bg-purple-200/ backdrop-blur-none rounded-xl p-6 text-white w-[90%] max-w-[600px]">
-        <h2 className="text-4xl font-extrabold">{name}</h2>
-        <p className="mt-2 text-lg text-purple-200 line-clamp-2">
-          {description}
-        </p>
-        <div className="mt-4 flex justify-between items-center text-xl">
-          <span>Starts: {start_time}</span>
-        </div>
+        <h2 className="text-4xl font-extrabold truncate">{name}</h2>
+        <p className="mt-2 text-lg text-purple-200 line-clamp-2">{description}</p>
+
+        {/* Owner info */}
+        {ownerUsername && (
+          <Link
+            href={`/user/${ownerUsername}`}
+            onClick={(e) => e.stopPropagation()} // prevents triggering the parent auction link
+            className="mt-4 flex items-center gap-2 text-white hover:text-purple-300 transition-colors duration-300"
+          >
+            <img
+              src={avatarUrl}
+              alt={ownerUsername}
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-purple-500"
+            />
+            <span className="truncate">@{ownerUsername}</span>
+          </Link>
+        )}
+
+        <div className="mt-4 text-xl">Starts: {start_time}</div>
       </div>
-    </div>
+    </Link>
   );
 };
 
 //Big Auction Card (featured_auction page)
 export const BigAuctionCardSkeleton = () => {
   return (
-    <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.3)] animate-pulse">
+    <div className="relative lg:w-[50vw] md:w-[60vw] sm:w-[78vw] mx-auto group rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.7)] animate-pulse">
       {/* Image Placeholder */}
       <div className="w-full h-[500px] bg-purple-900/20" />
 

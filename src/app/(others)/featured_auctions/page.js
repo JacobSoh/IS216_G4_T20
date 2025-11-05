@@ -28,41 +28,35 @@ export default function FeaturedStorePage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ✅ Fetch featured auctions
   useEffect(() => {
     const fetchAuctions = async () => {
-      setIsLoading(true);
       const supabase = supabaseBrowser();
+
       try {
         const { data, error } = await supabase
           .from("auction")
-          .select("aid, name, description, start_time, thumbnail_bucket, object_path")
-          .limit(5);
-        if (error) throw error;
+          .select(
+            `aid, name, description, start_time, thumbnail_bucket, object_path,
+             owner:profile!auction_oid_fkey (
+               id, username, avatar_bucket, object_path
+             )`
+          )
+          .limit(6);
 
-        const mapped = await Promise.all(
-          (data || []).map(async (a) => {
-            const { data: publicData } = supabase.storage
-              .from(a.thumbnail_bucket)
-              .getPublicUrl(a.object_path);
-            return {
-              aid: a.aid,
-              name: a.name,
-              description: a.description,
-              start_time: a.start_time,
-              picUrl: publicData?.publicUrl || null,
-            };
-          })
-        );
-
-        setAuctions(mapped);
+        if (error) {
+          console.error("Error retrieving auction data:", error);
+          setAuctions([]);
+        } else {
+          setAuctions(data);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Unexpected fetch error:", err);
         setAuctions([]);
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchAuctions();
   }, []);
 
@@ -108,27 +102,31 @@ export default function FeaturedStorePage() {
 
   return (
     <div className="space-y-12 px-6 lg:px-8 py-12 bg-gray-900 min-h-screen text-white">
-
       {/* Popular Right Now Header */}
-      <h2 className="text-4xl font-extrabold text-white mb-8 -mt-5">Popular Right Now</h2>
+      <h2 className="text-4xl font-extrabold text-white mb-8 -mt-5">
+        Popular Right Now
+      </h2>
 
       {/* Top Big Auction Carousel */}
       {!isLoading && auctions.length > 0 ? (
-        <Link href={`/auction/view/${auctions[currentIndex].aid}`}>
-          <div className="relative w-full max-w-4xl mx-auto rounded-2xl cursor-pointer">
-            <BigAuctionCard
-              key={auctions[currentIndex].aid}
-              name={auctions[currentIndex].name}
-              description={auctions[currentIndex].description}
-              picUrl={auctions[currentIndex].picUrl}
-              start_time={auctions[currentIndex].start_timeTime}
-            />
-          </div>
-        </Link>
+        <BigAuctionCard
+          aid={auctions[0].aid}
+          name={auctions[0].name}
+          description={auctions[0].description}
+          picUrl={
+            auctions[0].thumbnail_bucket && auctions[0].object_path
+              ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${auctions[0].thumbnail_bucket}/${auctions[0].object_path}`
+              : null
+          }
+          start_time={new Date(auctions[0].start_time).toLocaleString()}
+          ownerUsername={auctions[0].owner?.username}
+          ownerAvatar={{
+            bucket: auctions[0].owner?.avatar_bucket,
+            objectPath: auctions[0].owner?.object_path,
+          }}
+        />
       ) : (
-        <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden">
-          <BigAuctionCardSkeleton key="big-auction-skeleton" />
-        </div>
+        <BigAuctionCardSkeleton key="big-auction-skeleton" />
       )}
 
       {/* ===== Categories Section ===== */}
@@ -177,18 +175,36 @@ export default function FeaturedStorePage() {
 
       {/* Auctions Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {isLoading
+         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => (
-            <AuctionHoverPictureSkeleton key={`skeleton-grid-${i}`} />
-          ))
-          : auctions.slice(0, 6).map((a) => (
-            <Link key={a.aid} href={`/auction/view/${a.aid}`} className="block">
-              <AuctionHoverPicture
-                name={a.name}
-                picUrl={a.picUrl}
-              />
-            </Link>
-          ))}
+              <AuctionHoverPictureSkeleton key={i} />
+            ))
+          : auctions.slice(1, 6).map((auction) => {
+              const picUrl =
+                auction.thumbnail_bucket && auction.object_path
+                  ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${auction.thumbnail_bucket}/${auction.object_path}`
+                  : null;
+
+              return (
+                <Link
+                  key={auction.aid}
+                  href={`/auction/view/${auction.aid}`}
+                  passHref
+                >
+                  <div className="cursor-pointer">
+                    <AuctionHoverPicture
+                      name={auction.name}
+                      picUrl={picUrl}
+                      ownerUsername={auction.owner?.username}
+                      ownerAvatar={{
+                        bucket: auction.owner?.avatar_bucket,
+                        objectPath: auction.owner?.object_path,
+                      }}
+                    />
+                  </div>
+                </Link>
+              );
+            })}
       </div>
     </div>
   );
