@@ -222,13 +222,13 @@ export default function WalletModal({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-center">
                             <div className="bg-gray-700 rounded-md p-4">
                                 <p className="text-gray-400 text-sm mb-1">Available Balance</p>
-                                <p className="text-2xl font-bold text-green-400">
+                                <p className="text-2xl font-bold text-[var(--theme-gold)]">
                                     ${profile?.wallet_balance}
                                 </p>
                             </div>
                             <div className="bg-gray-700 rounded-md p-4">
                                 <p className="text-gray-400 text-sm mb-1">Held (Active Bids)</p>
-                                <p className="text-2xl font-bold text-yellow-400">
+                                <p className="text-2xl font-bold text-[var(--theme-accent)]">
                                     ${profile?.wallet_held}
                                 </p>
                             </div>
