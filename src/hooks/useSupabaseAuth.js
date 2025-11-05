@@ -2,7 +2,6 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/utils/supabase/client';
 import { useInitialAuthed } from '@/app/providers';
 
@@ -18,16 +17,17 @@ export function useSupabaseAuth(initialAuthedProp) {
     const lastAuth = useRef(!!initialAuthed);
     const lastRefreshAt = useRef(0);
 
-    const router = useRouter();
     if (!sbRef.current) sbRef.current = supabaseBrowser();
 
     const safeRefresh = useCallback(() => {
         const now = Date.now();
         if (now - lastRefreshAt.current > 800) {
             lastRefreshAt.current = now;
-            router.refresh();
+            if (typeof window !== 'undefined') {
+                window.location.reload();
+            }
         }
-    }, [router]);
+    }, []);
 
     const LOGOUT_FLAG = 'app:isLoggingOut';
 
@@ -50,10 +50,7 @@ export function useSupabaseAuth(initialAuthedProp) {
         try {
             if (redirectTo) {
                 if (typeof window !== 'undefined') {
-                    window.location.replace(redirectTo);
-                    // After replace, code continues until navigation commits; no need to await
-                } else {
-                    router.replace(redirectTo);
+                    window.location.href = redirectTo;
                 }
             } else {
                 // Just refresh to update UI without changing page
@@ -66,7 +63,7 @@ export function useSupabaseAuth(initialAuthedProp) {
 
         // Do not await signOut; return promise in case caller wants to
         return signOutPromise;
-    }, [router, safeRefresh]);
+    }, [safeRefresh]);
 
     useEffect(() => {
         let mounted = true;

@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import Link from "next/link";
 
 export const AuctionHoverPicture = ({
   name,
@@ -54,12 +53,15 @@ export const AuctionHoverPicture = ({
         </span>
       </div>
 
-      {/* Seller Profile */}
+      {/* Seller Profile (avoid nested <a>) */}
       {ownerUsername && (
-        <Link
-          href={`/user/${ownerUsername}`}
-          onClick={(e) => e.stopPropagation()}
-          className="mt-3"
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            window.location.href = `/user/${ownerUsername}`;
+          }}
+          className="mt-3 text-left w-full"
         >
           <div className="flex items-center gap-3 px-3 py-2 sm:px-4 sm:py-3 bg-black/60 border border-purple-500/50 rounded-md hover:bg-black/80 hover:border-purple-400 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all duration-300 cursor-pointer">
             <img
@@ -76,7 +78,7 @@ export const AuctionHoverPicture = ({
               </span>
             </div>
           </div>
-        </Link>
+        </button>
       )}
     </div>
   );

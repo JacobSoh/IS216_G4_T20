@@ -1,7 +1,6 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Suspense, useRef, useEffect, useState, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
@@ -189,7 +188,6 @@ export default function AuctionHouse3D({
   currentUserId = null,
   pollingMs = 7000 // Deprecated - keeping for backwards compatibility
 }) {
-  const router = useRouter()
   const { snapshot, isFetching, refresh } = useAuctionLive(aid, initialLiveData)
   const ownerId = snapshot?.auction?.oid ?? null
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -226,7 +224,7 @@ export default function AuctionHouse3D({
   const participantCountRef = useRef(0)
 
   useEffect(() => {
-    console.log('🎯 AuctionHouse3D: Snapshot changed, rebuilding lot', {
+    console.log('?? AuctionHouse3D: Snapshot changed, rebuilding lot', {
       activeItemId: snapshot?.activeItem?.iid,
       activeItemTitle: snapshot?.activeItem?.title
     })
@@ -236,7 +234,7 @@ export default function AuctionHouse3D({
       bidders: participantCountRef.current
     })
     setLotItems(snapshot?.items ?? [])
-    console.log('🎯 AuctionHouse3D: New lot built', {
+    console.log('?? AuctionHouse3D: New lot built', {
       newLotId: newLot?.id,
       newLotName: newLot?.name
     })
@@ -254,9 +252,10 @@ export default function AuctionHouse3D({
   useEffect(() => {
     const auctionEnded = snapshot?.auction?.auction_end ?? false
     if (auctionEnded) {
-      router.replace(`/auction/view/${aid}/ended`)
+      window.location.href = `/auction/view/${aid}/ended`
     }
-  }, [snapshot?.auction?.auction_end, router, aid])
+  }, [snapshot?.auction?.auction_end , aid])
+  
 
   // Consolidated timer: auction end time + item timer + nowTs - all in ONE interval
   useEffect(() => {
@@ -723,7 +722,7 @@ useEffect(() => {
           <div className="absolute top-6 left-6 z-10 pointer-events-auto">
             <Link href="/">
               <button className="bg-black/70 hover:bg-[var(--theme-secondary)]/30 text-white px-6 py-3 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm font-semibold transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(176,38,255,0.3)]">
-                <span>←</span> Home
+                <span>?</span> Home
               </button>
             </Link>
           </div>
@@ -742,7 +741,7 @@ useEffect(() => {
                   </p>
                 )}
                 <p className="text-purple-200 text-xs">
-                  {currentLot.auctionName || 'Live Lot'} · {currentLot.bidders} active bidders
+                  {currentLot.auctionName || 'Live Lot'} - {currentLot.bidders} active bidders
                 </p>
               </div>
             </div>
@@ -755,12 +754,12 @@ useEffect(() => {
                   className="text-2xl hover:scale-110 transition-transform"
                   title={isMusicMuted ? 'Unmute Music' : 'Mute Music'}
                 >
-                  {isMusicMuted ? '🔇' : '🔊'}
+                  {isMusicMuted ? '??' : '??'}
                 </button>
                 <span className="text-xs text-purple-200 uppercase tracking-wide">Music</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-purple-300">🔉</span>
+                <span className="text-xs text-purple-300">??</span>
                 <input
                   type="range"
                   min="0"
@@ -784,7 +783,7 @@ useEffect(() => {
               <Link href={`/user/${snapshot.auction.owner.username}`}>
                 <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)] hover:border-[var(--theme-accent)] hover:shadow-[0_0_30px_rgba(176,38,255,0.5)] transition-all cursor-pointer">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">👤</span>
+                    <span className="text-2xl">??</span>
                     <div>
                       <p className="text-xs text-purple-200 uppercase tracking-wide mb-1">Hosted by</p>
                       <p className="text-sm text-[var(--theme-cream)] font-semibold">@{snapshot.auction.owner.username}</p>
@@ -802,7 +801,7 @@ useEffect(() => {
               className="w-12 h-12 md:w-14 md:h-14 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center text-xl md:text-2xl transition-all"
               title="Place Bid"
             >
-              🔨
+              ??
             </button>
           </div>
 

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { useRouter, redirect, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Navbar02 } from '@/components/ui/shadcn-io/navbar-02';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useModal } from '@/context/ModalContext';
@@ -14,7 +14,6 @@ import { validateRegistration } from '@/lib/validators';
 // Navigation items are defined in the Navbar02 component
 
 export default function Navbar({ isAuthed: initialAuthed } = {}) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const autoOpenedRef = useRef(false);
   const { isAuthed, logout } = useSupabaseAuth(initialAuthed);
@@ -38,7 +37,7 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
         toast.success('Successfully logged in!');
         try {
           const next = typeof window !== 'undefined' ? new URL(window.location.href).searchParams.get('next') : null;
-          if (next) router.replace(next);
+          if (next) window.location.href = next;
         } catch { }
       },
     });
@@ -105,14 +104,14 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
 
   const onCtaClick = () => {
     if (isAuthed) {
-      redirect('/profile');
+      if (typeof window !== 'undefined') window.location.href = '/profile';
     } else {
       openRegister();
     }
   };
   const onSecondaryCtaClick = () => {
     if (isAuthed) {
-      redirect('/auction/seller');
+      if (typeof window !== 'undefined') window.location.href = '/auction/seller';
     }
   };
 
@@ -130,7 +129,7 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
           const url = new URL(window.location.href);
           url.searchParams.delete('login');
           if (nextPath) url.searchParams.set('next', nextPath); else url.searchParams.delete('next');
-          router.replace(url.pathname + (url.search ? url.search : ''));
+          window.location.href = url.pathname + (url.search ? url.search : '');
         }
       }
     } catch {}

@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 const CONTROL_PRESETS = {
   auctionDescription: { label: "Auction Description", placeholder: "Briefly describe your auction..." },
   manageChatbox: { label: "Send Message", placeholder: "Share updates or engage with bidders..." },
+  reviewText: { label: "Comment", placeholder: "Tell other buyers about this seller..." },
 };
 
 function resolveControl(type) {
@@ -99,11 +100,9 @@ export function CustomTextarea({
 
   return (
     <Field className={containerClassName}>
-      {finalLabel !== '' && (
-        <FieldLabel htmlFor={id}>
-          {finalLabel}:
-        </FieldLabel>
-      )}
+      <FieldLabel htmlFor={id}>
+        {finalLabel}
+      </FieldLabel>
       <Textarea
         id={id}
         name={finalName}

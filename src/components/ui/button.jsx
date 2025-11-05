@@ -14,7 +14,7 @@ const buttonVariants = cva(
         brand:
           "bg-[var(--theme-primary)] text-white hover:bg-[var(--theme-secondary)] focus-visible:ring-[color:var(--theme-secondary)]/40",
         brand_darker:
-          "bg-background text-white ring-1 ring-[var(--theme-primary)]",
+          "bg-background text-white ring-1 ring-[var(--theme-primary)] hover:bg-[var(--theme-primary)] focus-visible:ring-[color:var(--theme-secondary)]/40",
         gold_white:
           "bg-[var(--theme-gold)] text-foreground hover:bg-[var(--theme-gold)] hover:bg-[#F0E68C]",
         gold:

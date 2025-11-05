@@ -82,7 +82,7 @@ import { toast } from "sonner";
 import { createContext, useContext, useEffect } from "react";
 import { ModalProvider } from "@/context/index";
 import { Navbar, Footer, GlobalAlert } from "@/components";
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useModal } from "@/context/ModalContext";
 import Login from "@/components/LR/Login";
 
@@ -159,7 +159,6 @@ export default function Providers({ initialAuthed, children }) {
 
 function AutoOpenLogin() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { setModalHeader, setModalState, setModalForm } = useModal();
   useEffect(() => {
     try {
@@ -181,7 +180,7 @@ function AutoOpenLogin() {
             if (error) return toast.error(error.message);
             setModalState({ open: false });
             toast.success("Successfully logged in!");
-            if (nextPath) router.replace(nextPath);
+            if (nextPath) window.location.href = nextPath;
           },
         });
         setModalState({ open: true, content: <Login /> });
@@ -191,7 +190,7 @@ function AutoOpenLogin() {
           url.searchParams.delete("login");
           if (nextPath) url.searchParams.set("next", nextPath);
           else url.searchParams.delete("next");
-          router.replace(url.pathname + (url.search ? url.search : ""));
+          window.location.href = url.pathname + (url.search ? url.search : "");
         }
       }
     } catch {}

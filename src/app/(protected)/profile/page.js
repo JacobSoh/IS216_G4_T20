@@ -3,7 +3,6 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useRouter } from 'next/navigation';
 import {
 	Listing,
 	Reviews,
@@ -45,8 +44,7 @@ export default function ProfilePage() {
 	const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal();
 	const [profile, setProfile] = useState(null);
 	const [loading, setLoading] = useState(true);
-	const router = useRouter();
-	const [blocking, setBlocking] = useState(false);
+    const [blocking, setBlocking] = useState(false);
 	const [activeTab, setActiveTab] = useState('won');
 
 	useEffect(() => {
@@ -230,7 +228,7 @@ export default function ProfilePage() {
 								} catch { }
 								await new Promise(r => setTimeout(r, 500));
 							}
-							if (!updated) router.refresh();
+                        if (!updated && typeof window !== 'undefined') window.location.reload();
 							setBlocking(false);
 						} catch (err) {
 							toast.error(err?.message || 'Failed to update profile');
@@ -253,10 +251,9 @@ export default function ProfilePage() {
 				Welcome back, {profile?.full_name}!
 			</h1>
 			{loading && (
-				// <div className="flex items-center justify-center h-[400px] text-6xl">
-				// 	<UISpinner className="size-40" /> Fetching your informtion!
-				// </div>
-				<HammerLoader />
+				<div className="flex items-center justify-center h-[400px] text-6xl text-[var(--theme-gold)]">
+					<UISpinner className="size-40" /> Fetching your informtion!
+				</div>
 			)}
 
 			<div className={loading ? 'hidden' : 'space-y-8'}>

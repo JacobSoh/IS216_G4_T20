@@ -38,21 +38,11 @@ function ReviewFormFields({ initialStars, initialReview }) {
                     }).reverse()}
                 />
             </div>
-
-            <div>
-                <Label htmlFor="review-text" className="text-[var(--theme-muted)]">
-                    Share your experience
-                </Label>
-                <CustomTextarea
-                    type="reviewText"
-                    id="review-text"
-                    name="review-text"
-                    defaultValue={initialReview}
-                    placeholder="Tell other buyers about this seller..."
-                    autoGrow
-                    className="mt-1 border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-surface-contrast)] focus-visible:ring-[var(--theme-primary)]"
-                />
-            </div>
+            <CustomTextarea
+                type="reviewText"
+                defaultValue={initialReview}
+                autoGrow
+            />
         </div>
     );
 }
