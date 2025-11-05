@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
 import {
@@ -122,7 +122,7 @@ async function fetchPublicProfile(sb, username) {
 
 export default function PublicProfilePage() {
   const params = useParams();
-  const router = useRouter();
+  
   const sb = supabaseBrowser();
 
   const [profile, setProfile] = useState(null);
@@ -169,9 +169,9 @@ export default function PublicProfilePage() {
   useEffect(() => {
     if (!profile || !viewerId) return;
     if (profile.id === viewerId) {
-      router.replace("/profile");
+      window.location.href = "/profile";
     }
-  }, [profile, viewerId, router]);
+  }, [profile, viewerId]);
 
   const handleShareProfile = () => {
     if (!profile?.username) return;
@@ -187,7 +187,7 @@ export default function PublicProfilePage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 text-center text-slate-300">
         <p className="text-xl">{error ?? "Profile not found."}</p>
-        <Button onClick={() => router.push("/profile")}>Back to my profile</Button>
+        <Button onClick={() => { window.location.href = "/profile"; }}>Back to my profile</Button>
       </div>
     );
   }

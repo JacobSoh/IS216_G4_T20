@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 
 import { useAuctionLive } from '@/hooks/useAuctionLive'
 import { useAuctionChat } from '@/hooks/useAuctionChat'
@@ -39,7 +38,6 @@ const COLORS = {
 }
 
 export default function AuctionManagePanel({ aid, initialLiveData, initialChatMessages = [] }) {
-  const router = useRouter()
   const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal();
   const { snapshot, isFetching, refresh, setSnapshot: setLiveSnapshot } = useAuctionLive(aid, initialLiveData)
   const [busyItem, setBusyItem] = useState(null)
@@ -122,9 +120,9 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
   useEffect(() => {
     const auctionEnded = snapshot?.auction?.auction_end ?? false
     if (auctionEnded) {
-      router.replace(`/auction/view/${aid}/ended`)
+      window.location.href = `/auction/view/${aid}/ended`
     }
-  }, [snapshot?.auction?.auction_end, router, aid])
+  }, [snapshot?.auction?.auction_end, aid])
 
   useEffect(() => {
     if (!chatFeedback) return undefined
@@ -530,7 +528,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
             throw new Error(payload.error ?? 'Unable to close auction')
           }
           setActiveTimer(null)
-          router.replace(`/auction/view/${aid}/ended`)
+          window.location.href = `/auction/view/${aid}/ended`
           refresh().catch(() => { })
         } catch (err) {
           setError(err.message)

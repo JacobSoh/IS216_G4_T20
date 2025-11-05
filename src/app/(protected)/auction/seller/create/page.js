@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useModal } from '@/context/ModalContext';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 import CreateEvent from '@/components/Auction/Create/Event';
 import CreateItem from '@/components/Auction/Create/Item';
 import ItemCard from '@/components/Auction/Create/ItemCard';
@@ -12,7 +11,6 @@ import { ArrowBigLeft, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AuctionCreatePage() {
-  const router = useRouter();
   const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal();
   const [items, setItems] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);

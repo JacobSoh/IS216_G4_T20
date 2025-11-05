@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useModal } from '@/context/ModalContext';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import CreateEvent from '@/components/Auction/Create/Event';
 import CreateItem from '@/components/Auction/Create/Item';
 import ItemCard from '@/components/Auction/Create/ItemCard';
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 export default function AuctionEditPage() {
   const { aid } = useParams();
 
-  const router = useRouter();
+  
   const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal();
   const [items, setItems] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -257,7 +257,7 @@ export default function AuctionEditPage() {
       }
 
       toast.success('Auction updated successfully!');
-      router.replace('/auction/seller');
+      window.location.href = '/auction/seller';
 
     } catch (error) {
       console.error('❌ Unexpected error updating auction:', error);

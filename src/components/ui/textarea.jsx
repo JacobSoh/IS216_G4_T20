@@ -43,7 +43,7 @@ const Textarea = React.forwardRef(({ className, type, hoverVariant = 'border', .
         <textarea
           type={type}
           className={cn(
-            `shadow-input flex min-h-10 w-full rounded-md bg-transparent px-3 py-2 text-sm text-[var(--theme-surface-contrast)] transition duration-400 group-hover/input:shadow-none placeholder:text-[var(--theme-placeholder)] focus-visible:ring-[2px] focus-visible:ring-[color:var(--theme-secondary)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50`,
+            `shadow-input flex min-h-10 w-full rounded-md bg-background px-3 py-2 text-sm text-[var(--theme-surface-contrast)] transition duration-400 group-hover/input:shadow-none placeholder:text-[var(--theme-placeholder)] focus-visible:ring-[2px] focus-visible:ring-[color:var(--theme-secondary)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50`,
             className
           )}
           ref={ref}

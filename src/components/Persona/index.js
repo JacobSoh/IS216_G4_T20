@@ -3,11 +3,9 @@ import { toast } from 'sonner';
 import { useCallback, useEffect, useState } from "react";
 import { ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
 
 export default function VerifyButton({id, className}) {
   const [ready, setReady] = useState(false);
-  const router = useRouter();
 
   // when the CDN script has loaded, window.Persona will exist
   useEffect(() => {
@@ -61,7 +59,7 @@ export default function VerifyButton({id, className}) {
       onComplete: ({ inquiryId, status }) => {
         try { client.close(); } catch {}
         toast.success("Verification Completed! It takes 3 working days for verification to be completed.");
-        router.refresh();
+        if (typeof window !== 'undefined') window.location.reload();
       },
       onCancel: () => {},
       onError: (e) => {
@@ -70,7 +68,7 @@ export default function VerifyButton({id, className}) {
         openHostedFallback();
       },
     });
-  }, [id, router]);
+  }, [id]);
 
   return (
     <Button

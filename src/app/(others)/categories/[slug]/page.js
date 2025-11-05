@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { AuctionCard } from "@/components/AuctionCard";
 import { supabaseBrowser } from "@/utils/supabase/client";
@@ -22,7 +22,6 @@ const slugify = (text) => {
 
 export default function CategoryPage() {
   const { slug } = useParams();
-  const router = useRouter();
   const [categoryName, setCategoryName] = useState("");
   const [auctions, setAuctions] = useState([]);
   const [isLoadingCategory, setIsLoadingCategory] = useState(true);
@@ -170,7 +169,7 @@ export default function CategoryPage() {
         <Button
           variant="brand"
           className="absolute top-6 left-6 " // horizontal: 4, vertical: 2 (Tailwind)
-          onClick={() => router.push("/categories")}
+          onClick={() => { window.location.href = "/categories"; }}
         >
           <ArrowBigLeft className="w-12 h-12" />{" "}
           {/* adjust icon size separately */}
