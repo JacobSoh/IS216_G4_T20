@@ -42,7 +42,7 @@ import { ShieldCheckIcon } from "lucide-react";
 import HammerLoader from '@/components/ui/hammer-loader';
 
 export default function ProfilePage() {
-	const { setModalHeader, setModalState, setModalForm } = useModal();
+	const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal();
 	const [profile, setProfile] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const router = useRouter();
@@ -152,6 +152,7 @@ export default function ProfilePage() {
 			case 1: {
 				setModalHeader({ title: 'My Wallet' });
 				setModalForm({ isForm: false });
+				setModalFooter({ showCancel: false, showSubmit: false });
 				setModalState({ open: true, content: <WalletModal profile={profile} /> });
 				break;
 			};

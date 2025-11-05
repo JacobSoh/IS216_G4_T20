@@ -150,7 +150,7 @@ export default function WalletModal({
             const { error: txError } = await sb
                 .from('wallet_transaction')
                 .insert({
-                    uid: session.user.id,
+                    uid: profile.id,
                     transaction_type: 'withdraw',
                     amount: amount,
                     status: 'pending',
@@ -165,7 +165,7 @@ export default function WalletModal({
                 .update({
                     wallet_balance: profile?.wallet_balance - amount
                 })
-                .eq('id', session.user.id);
+                .eq('id', profile.id);
 
             if (deductError) throw deductError;
 
