@@ -137,7 +137,7 @@ export default function Providers({ initialAuthed, children }) {
             <Navbar />
             <div className="min-h-screen flex flex-col">
               <main
-                className={`${
+                className={`flex-1 ${
                   disablePadding
                     ? ""
                     : "container max-w-7xl px-4 md:px-6 lg:px-8 my-8 mx-auto"

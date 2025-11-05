@@ -36,7 +36,7 @@ export default function FeaturedStorePage() {
       try {
         const { data, error } = await supabase
           .from("auction")
-          .select("aid, name, description, thumbnail_bucket, object_path")
+          .select("aid, name, description, start_time, thumbnail_bucket, object_path")
           .limit(5);
         if (error) throw error;
 
@@ -49,6 +49,7 @@ export default function FeaturedStorePage() {
               aid: a.aid,
               name: a.name,
               description: a.description,
+              start_time: a.start_time,
               picUrl: publicData?.publicUrl || null,
             };
           })
@@ -120,7 +121,7 @@ export default function FeaturedStorePage() {
               name={auctions[currentIndex].name}
               description={auctions[currentIndex].description}
               picUrl={auctions[currentIndex].picUrl}
-              endTime={auctions[currentIndex].endTime}
+              start_time={auctions[currentIndex].start_timeTime}
             />
           </div>
         </Link>
@@ -188,21 +189,6 @@ export default function FeaturedStorePage() {
               />
             </Link>
           ))}
-      </div>
-
-      {/* ===== Pagination ===== */}
-      <div className="flex justify-center flex-wrap gap-4 sm:gap-6 py-12">
-        {[1, 2, 3, 4].map((page) => (
-          <Link key={page} href={`/auctions/page/${page}`}>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg bg-purple-600/30 text-white font-semibold text-sm sm:text-base hover:bg-purple-600 transition-shadow shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-            >
-              {page}
-            </motion.button>
-          </Link>
-        ))}
       </div>
     </div>
   );
