@@ -255,7 +255,11 @@ export default function CategorySalesPieChart({ sellerId }) {
             }}
             sx={{
               "& .MuiChartsLegend-label": { fill: '#fff' },
-              "& .MuiChartsTooltip-root": { color: '#111' },
+              "& .MuiChartsTooltip-root": {
+                "& .MuiChartsTooltip-table": {
+                  color: '#fff'
+                }
+              },
             }}
           />
       </Box>

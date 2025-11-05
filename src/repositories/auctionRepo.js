@@ -12,6 +12,7 @@ const baseAuctionSelect = `
   time_interval,
   timer_started_at,
   timer_duration_seconds,
+  auction_end,
   owner:profile!auction_oid_fkey (
     id,
     username,
@@ -116,9 +117,10 @@ export async function updateAuctionTimer(aid, timerData) {
   return data ?? null
 }
 
-export async function closeAuctionRecord(aid, { end_time }) {
+export async function closeAuctionRecord(aid) {
   const sb = supabaseServer()
   const payload = {
+    auction_end: true,
     timer_started_at: null,
     timer_duration_seconds: null
   }

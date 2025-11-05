@@ -25,6 +25,15 @@ export default function WalletModal({
     const [wallet, setWallet] = useReducer(reducer, initialWallet);
 
     const { isAuthed } = useSupabaseAuth();
+
+    // Format large numbers - show in millions if >= 1,000,000
+    const formatBalance = (amount) => {
+        const num = parseFloat(amount) || 0;
+        if (num >= 1000000) {
+            return `${(num / 1000000).toFixed(2)} million`;
+        }
+        return num.toFixed(2);
+    };
     // const [session, setSession] = useState(null);
     const [tab, setTab] = useState('balance');
 
@@ -91,10 +100,14 @@ export default function WalletModal({
         setSuccess(null);
 
         try {
+            // Get current origin for redirect after payment
+            const currentOrigin = typeof window !== 'undefined' ? window.location.origin : null;
+
             const result = await createTopUpPayment(
                 amount,
                 profile.id,
-                profile.email
+                profile.email,
+                currentOrigin
             );
 
             if (result.success) {
@@ -171,14 +184,14 @@ export default function WalletModal({
     };
 
     return (
-        <div className="bg-gray-800 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="bg-[var(--custom-bg-secondary)] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             {/* Tabs */}
-            <div className="flex border-b border-gray-700">
+            <div className="flex border-b border-[var(--custom-border-color)]">
                 <button
                     onClick={() => setTab('balance')}
                     className={`flex-1 px-6 py-3 font-semibold transition ${tab === 'balance'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            ? 'bg-[var(--theme-primary)] text-[var(--theme-cream)]'
+                            : 'bg-[var(--custom-bg-secondary)] text-[var(--custom-text-muted)] hover:bg-[var(--custom-bg-tertiary)]'
                         }`}
                 >
                     Balance
@@ -186,8 +199,8 @@ export default function WalletModal({
                 <button
                     onClick={() => setTab('topup')}
                     className={`flex-1 px-6 py-3 font-semibold transition ${tab === 'topup'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            ? 'bg-[var(--theme-primary)] text-[var(--theme-cream)]'
+                            : 'bg-[var(--custom-bg-secondary)] text-[var(--custom-text-muted)] hover:bg-[var(--custom-bg-tertiary)]'
                         }`}
                 >
                     Top Up
@@ -195,8 +208,8 @@ export default function WalletModal({
                 <button
                     onClick={() => setTab('withdraw')}
                     className={`flex-1 px-6 py-3 font-semibold transition ${tab === 'withdraw'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            ? 'bg-[var(--theme-primary)] text-[var(--theme-cream)]'
+                            : 'bg-[var(--custom-bg-secondary)] text-[var(--custom-text-muted)] hover:bg-[var(--custom-bg-tertiary)]'
                         }`}
                 >
                     Withdraw
@@ -206,13 +219,13 @@ export default function WalletModal({
             {/* Content */}
             <div className="p-6">
                 {error && (
-                    <div className="mb-4 p-4 bg-red-500/20 border border-red-500 rounded-md text-red-400">
+                    <div className="mb-4 p-4 bg-[var(--custom-accent-red)]/20 border border-[var(--custom-accent-red)] rounded-md text-[var(--theme-cream)]">
                         {error}
                     </div>
                 )}
 
                 {success && (
-                    <div className="mb-4 p-4 bg-green-500/20 border border-green-500 rounded-md text-green-400">
+                    <div className="mb-4 p-4 bg-[var(--theme-gold)]/20 border border-[var(--theme-gold)] rounded-md text-[var(--theme-gold)]">
                         {success}
                     </div>
                 )}
@@ -220,45 +233,45 @@ export default function WalletModal({
                 {tab === 'balance' && (
                     <div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-center">
-                            <div className="bg-gray-700 rounded-md p-4">
-                                <p className="text-gray-400 text-sm mb-1">Available Balance</p>
-                                <p className="text-2xl font-bold text-green-400">
-                                    ${profile?.wallet_balance}
+                            <div className="bg-[var(--custom-bg-tertiary)] rounded-md p-4 border border-[var(--custom-border-color)]">
+                                <p className="text-[var(--custom-text-muted)] text-sm mb-1">Available Balance</p>
+                                <p className="text-2xl font-bold text-[var(--theme-gold)]">
+                                    ${formatBalance(profile?.wallet_balance)}
                                 </p>
                             </div>
-                            <div className="bg-gray-700 rounded-md p-4">
-                                <p className="text-gray-400 text-sm mb-1">Held (Active Bids)</p>
-                                <p className="text-2xl font-bold text-yellow-400">
-                                    ${profile?.wallet_held}
+                            <div className="bg-[var(--custom-bg-tertiary)] rounded-md p-4 border border-[var(--custom-border-color)]">
+                                <p className="text-[var(--custom-text-muted)] text-sm mb-1">Held (Active Bids)</p>
+                                <p className="text-2xl font-bold text-[var(--theme-accent)]">
+                                    ${formatBalance(profile?.wallet_held)}
                                 </p>
                             </div>
                         </div>
 
-                        <h3 className="text-lg font-semibold mb-3">Recent Transactions</h3>
+                        <h3 className="text-lg font-semibold mb-3 text-[var(--custom-text-primary)]">Recent Transactions</h3>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
                             {transactions.length === 0 ? (
-                                <p className="text-gray-400 text-center py-4">No transactions yet</p>
+                                <p className="text-[var(--custom-text-muted)] text-center py-4">No transactions yet</p>
                             ) : (
                                 transactions.map((tx) => (
                                     <div
                                         key={tx.tid}
-                                        className="bg-gray-700 rounded-md p-3 flex justify-between items-center"
+                                        className="bg-[var(--custom-bg-tertiary)] border border-[var(--custom-border-color)] rounded-md p-3 flex justify-between items-center"
                                     >
                                         <div>
-                                            <p className="font-semibold">{tx.description}</p>
-                                            <p className="text-xs text-gray-400">
+                                            <p className="font-semibold text-[var(--custom-text-primary)]">{tx.description}</p>
+                                            <p className="text-xs text-[var(--custom-text-muted)]">
                                                 {new Date(tx.created_at).toLocaleDateString()}
                                             </p>
                                         </div>
                                         <div className="text-right">
                                             <p className={`font-bold ${tx.transaction_type === 'topup' || tx.transaction_type === 'release'
-                                                    ? 'text-green-400'
-                                                    : 'text-red-400'
+                                                    ? 'text-[var(--theme-gold)]'
+                                                    : 'text-[var(--theme-accent)]'
                                                 }`}>
                                                 {tx.transaction_type === 'topup' || tx.transaction_type === 'release' ? '+' : '-'}
                                                 ${parseFloat(tx.amount).toFixed(2)}
                                             </p>
-                                            <p className="text-xs text-gray-400 capitalize">{tx.status}</p>
+                                            <p className="text-xs text-[var(--custom-text-muted)] capitalize">{tx.status}</p>
                                         </div>
                                     </div>
                                 ))
@@ -269,14 +282,14 @@ export default function WalletModal({
 
                 {tab === 'topup' && (
                     <div>
-                        <h3 className="text-lg font-semibold mb-4">Top Up Your Wallet</h3>
+                        <h3 className="text-lg font-semibold mb-4 text-[var(--custom-text-primary)]">Top Up Your Wallet</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
                             {quickAmounts.map((amt) => (
                                 <button
                                     key={amt}
                                     onClick={() => handleTopUp(amt)}
                                     disabled={topUpLoading}
-                                    className="px-6 py-4 bg-gray-700 hover:bg-gray-600 rounded-md font-semibold transition disabled:opacity-50"
+                                    className="px-6 py-4 bg-[var(--custom-bg-tertiary)] hover:bg-[var(--theme-primary)] hover:text-[var(--theme-cream)] border border-[var(--custom-border-color)] rounded-md font-semibold transition disabled:opacity-50 text-[var(--custom-text-primary)]"
                                 >
                                     ${amt}
                                 </button>
@@ -289,12 +302,12 @@ export default function WalletModal({
                                 placeholder="Custom amount"
                                 value={topUpAmount}
                                 onChange={(e) => setTopUpAmount(e.target.value)}
-                                className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500"
+                                className="flex-1 px-4 py-2 bg-[var(--custom-bg-tertiary)] border border-[var(--custom-border-color)] rounded-md text-[var(--custom-text-primary)] placeholder:text-[var(--custom-text-muted)] focus:outline-none focus:border-[var(--theme-secondary)]"
                             />
                             <button
                                 onClick={() => handleTopUp(parseFloat(topUpAmount))}
                                 disabled={topUpLoading || !topUpAmount || parseFloat(topUpAmount) <= 0}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-md font-semibold transition disabled:opacity-50"
+                                className="px-6 py-2 bg-[var(--theme-gold)] hover:bg-[var(--nav-cta-hover-bg)] text-[var(--theme-primary)] rounded-md font-semibold transition disabled:opacity-50"
                             >
                                 {topUpLoading ? 'Processing...' : 'Top Up'}
                             </button>
@@ -304,9 +317,9 @@ export default function WalletModal({
 
                 {tab === 'withdraw' && (
                     <div>
-                        <h3 className="text-lg font-semibold mb-4">Withdraw Funds</h3>
-                        <p className="text-gray-400 mb-4">
-                            Available: ${profile?.wallet_balance}
+                        <h3 className="text-lg font-semibold mb-4 text-[var(--custom-text-primary)]">Withdraw Funds</h3>
+                        <p className="text-[var(--custom-text-muted)] mb-4">
+                            Available: <span className="text-[var(--theme-gold)] font-semibold">${formatBalance(profile?.wallet_balance)}</span>
                         </p>
 
                         <div className="space-y-4">
@@ -323,21 +336,21 @@ export default function WalletModal({
                                 placeholder="Account Number"
                                 value={bankDetails.accountNumber}
                                 onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
-                                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500"
+                                className="w-full px-4 py-2 bg-[var(--custom-bg-tertiary)] border border-[var(--custom-border-color)] rounded-md text-[var(--custom-text-primary)] placeholder:text-[var(--custom-text-muted)] focus:outline-none focus:border-[var(--theme-secondary)]"
                             />
                             <input
                                 type="text"
                                 placeholder="Account Name"
                                 value={bankDetails.accountName}
                                 onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })}
-                                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500"
+                                className="w-full px-4 py-2 bg-[var(--custom-bg-tertiary)] border border-[var(--custom-border-color)] rounded-md text-[var(--custom-text-primary)] placeholder:text-[var(--custom-text-muted)] focus:outline-none focus:border-[var(--theme-secondary)]"
                             />
                             <input
                                 type="number"
                                 placeholder="Withdrawal Amount (Min $10)"
                                 value={withdrawAmount}
                                 onChange={(e) => setWithdrawAmount(e.target.value)}
-                                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500"
+                                className="w-full px-4 py-2 bg-[var(--custom-bg-tertiary)] border border-[var(--custom-border-color)] rounded-md text-[var(--custom-text-primary)] placeholder:text-[var(--custom-text-muted)] focus:outline-none focus:border-[var(--theme-secondary)]"
                             />
                             <CustomTextarea
                                 type="withdrawNote"
@@ -346,18 +359,18 @@ export default function WalletModal({
                                 value={withdrawNote}
                                 onChange={(event) => setWithdrawNote(event.target.value)}
                                 autoGrow
-                                className="bg-gray-700 border border-gray-600 text-white"
+                                className="bg-[var(--custom-bg-tertiary)] border border-[var(--custom-border-color)] text-[var(--custom-text-primary)]"
                             />
                             <button
                                 onClick={handleWithdraw}
                                 disabled={withdrawLoading}
-                                className="w-full px-6 py-3 bg-red-600 hover:bg-red-500 rounded-md font-semibold transition disabled:opacity-50"
+                                className="w-full px-6 py-3 bg-[var(--theme-accent)] hover:bg-[var(--theme-secondary)] text-[var(--theme-cream)] rounded-md font-semibold transition disabled:opacity-50"
                             >
                                 {withdrawLoading ? 'Processing...' : 'Request Withdrawal'}
                             </button>
                         </div>
 
-                        <p className="text-xs text-gray-400 mt-4">
+                        <p className="text-xs text-[var(--custom-text-muted)] mt-4">
                             * Withdrawals are processed within 1-3 business days
                         </p>
                     </div>

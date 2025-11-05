@@ -255,7 +255,7 @@ export default function ItemsSold({ userId }) {
             <Link
               key={item.sid}
               href={item.aid ? `/auction/view/${item.aid}` : "#"}
-              className="block focus:outline-none focus:ring-4 focus:ring-[var(--theme-primary)]/40"
+              className="block h-full focus:outline-none focus:ring-4 focus:ring-[var(--theme-primary)]/40"
             >
               <ItemSoldCard {...item} />
             </Link>

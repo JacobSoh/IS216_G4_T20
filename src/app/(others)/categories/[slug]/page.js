@@ -1,30 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { AuctionCard, AuctionCardSkeleton } from "@/components/AuctionCard";
+import { AuctionCard } from "@/components/AuctionCard";
 import { supabaseBrowser } from "@/utils/supabase/client";
+import { Button } from "@/components/ui/button";
+import { ArrowBigLeft } from "lucide-react";
 
 // Utility to generate clean slugs
 const slugify = (text) => {
   return text
     .toLowerCase()
     .trim()
-    .replace(/\s*&\s*/g, "-") // replace & with dash
-    .replace(/[\s/+]+/g, "-") // spaces or + -> dashes
-    .replace(/[^\w-]+/g, "") // remove other non-word chars
-    .replace(/--+/g, "-") // collapse multiple dashes
-    .replace(/^-+|-+$/g, ""); // trim leading/trailing dashes
+    .replace(/\s*&\s*/g, "-")
+    .replace(/[\s/+]+/g, "-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-+|-+$/g, "");
 };
 
 export default function CategoryPage() {
   const { slug } = useParams();
+  const router = useRouter();
   const [categoryName, setCategoryName] = useState("");
   const [auctions, setAuctions] = useState([]);
   const [isLoadingCategory, setIsLoadingCategory] = useState(true);
   const [isLoadingAuctions, setIsLoadingAuctions] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
+  // Fetch category name
   useEffect(() => {
     const fetchCategory = async () => {
       setIsLoadingCategory(true);
@@ -34,23 +39,12 @@ export default function CategoryPage() {
         const { data: categories, error } = await supabase
           .from("category")
           .select("category_name");
-
         if (error) throw error;
-        if (!categories || categories.length === 0) {
-          setCategoryName("Unknown Category");
-          return;
-        }
 
-        const matched = categories.find(
+        const matched = categories?.find(
           (c) => slugify(c.category_name) === slug.toLowerCase()
         );
-
-        if (!matched) {
-          setCategoryName("Unknown Category");
-          return;
-        }
-
-        setCategoryName(matched.category_name);
+        setCategoryName(matched?.category_name || "Unknown Category");
       } catch (err) {
         console.error("Category fetch error:", err);
         setCategoryName("Unknown Category");
@@ -62,6 +56,7 @@ export default function CategoryPage() {
     fetchCategory();
   }, [slug]);
 
+  // Fetch auctions for this category
   useEffect(() => {
     const fetchAuctions = async () => {
       if (!categoryName || categoryName === "Unknown Category") {
@@ -71,37 +66,47 @@ export default function CategoryPage() {
       }
 
       setIsLoadingAuctions(true);
+      setFetchError(null);
       const supabase = supabaseBrowser();
 
       try {
+        console.log("Fetching auctions for category:", categoryName);
+
         // 1️⃣ Get item IDs for this category
         const { data: itemCategories, error: icErr } = await supabase
           .from("item_category")
           .select("itemid")
           .eq("category_name", categoryName);
-
         if (icErr) throw icErr;
-        if (!itemCategories || itemCategories.length === 0) {
+        const itemIds = itemCategories?.map((ic) => ic.itemid) || [];
+        console.log("Item IDs:", itemIds);
+
+        if (!itemIds.length) {
+          console.warn("No items found for this category.");
           setAuctions([]);
           return;
         }
 
-        const itemIds = itemCategories.map((ic) => ic.itemid);
-
-        // 2️⃣ Get auctions for these items
+        // 2️⃣ Get auction IDs for these items
         const { data: itemsData, error: itemErr } = await supabase
           .from("item")
           .select("iid, aid")
           .in("iid", itemIds);
-
         if (itemErr) throw itemErr;
-        if (!itemsData || itemsData.length === 0) {
+
+        // Filter out null aids
+        const auctionIds = [
+          ...new Set(itemsData?.map((i) => i.aid).filter(Boolean)),
+        ];
+        console.log("Auction IDs (non-null):", auctionIds);
+
+        if (!auctionIds.length) {
+          console.warn("No valid auctions found for these items.");
           setAuctions([]);
           return;
         }
 
-        const auctionIds = [...new Set(itemsData.map((i) => i.aid))];
-
+        // 3️⃣ Fetch auction details
         const { data: auctionData, error: auctionErr } = await supabase
           .from("auction")
           .select(
@@ -109,29 +114,46 @@ export default function CategoryPage() {
           )
           .in("aid", auctionIds);
 
-        if (auctionErr) throw auctionErr;
-
-        if (!auctionData || auctionData.length === 0) {
+        if (auctionErr) {
+          console.error("Supabase auction fetch error:", auctionErr);
+          setFetchError(
+            "Unable to fetch auctions. Please check permissions or RLS policies."
+          );
           setAuctions([]);
           return;
         }
 
+        if (!auctionData?.length) {
+          console.warn("No auction data returned.");
+          setAuctions([]);
+          return;
+        }
+
+        console.log("Fetched auction data:", auctionData);
+
+        // 4️⃣ Map storage URLs safely
         const mapped = auctionData.map((a) => {
-          const { data: publicData } = supabase.storage
-            .from(a.thumbnail_bucket)
-            .getPublicUrl(a.object_path);
+          let picUrl = null;
+          if (a.thumbnail_bucket && a.object_path) {
+            const { data: publicData } = supabase.storage
+              .from(a.thumbnail_bucket)
+              .getPublicUrl(a.object_path);
+            picUrl = publicData?.publicUrl || null;
+          }
+
           return {
             aid: a.aid,
             name: a.name,
             description: a.description,
             start_time: new Date(a.start_time).toLocaleString(),
-            picUrl: publicData?.publicUrl || null,
+            picUrl,
           };
         });
 
         setAuctions(mapped);
       } catch (err) {
-        console.error("Auctions fetch error:", err);
+        console.error("Unexpected auction fetch error:", err);
+        setFetchError("An unexpected error occurred while fetching auctions.");
         setAuctions([]);
       } finally {
         setIsLoadingAuctions(false);
@@ -144,10 +166,24 @@ export default function CategoryPage() {
   return (
     <section className="min-h-screen relative pt-10 bg-[var(--theme-primary-darker)]">
       <div className="max-w-7xl mx-auto pb-15 pt-15 px-6">
+        {/* Back Button */}
+        <Button
+          variant="brand"
+          className="absolute top-6 left-6 " // horizontal: 4, vertical: 2 (Tailwind)
+          onClick={() => router.push("/categories")}
+        >
+          <ArrowBigLeft className="w-12 h-12" />{" "}
+          {/* adjust icon size separately */}
+        </Button>
+
         {/* Page Header */}
         <div className="text-center mb-16">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[var(--theme-cream)]">
-            {isLoadingCategory ? "Loading..." : categoryName}
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-[var(--theme-cream)] min-h-[1em]">
+            {isLoadingCategory
+              ? "Loading..."
+              : categoryName && categoryName !== "Unknown Category"
+              ? categoryName
+              : "Unknown Category"}
           </h2>
           <p className="text-lg text-[var(--theme-cream)]">
             Browse auctions for items in this category
@@ -155,11 +191,13 @@ export default function CategoryPage() {
         </div>
 
         {/* Auctions Section */}
-        {isLoadingAuctions ? (
-          <div className="flex flex-wrap justify-center gap-10">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <AuctionCardSkeleton key={i} />
-            ))}
+        {isLoadingCategory || isLoadingAuctions ? (
+          <div className="flex justify-center items-center py-32">
+            <div className="w-16 h-16 border-4 border-t-transparent border-[var(--theme-cream)] rounded-full animate-spin"></div>
+          </div>
+        ) : fetchError ? (
+          <div className="text-center py-32 text-xl font-medium text-red-500">
+            {fetchError}
           </div>
         ) : auctions.length === 0 ? (
           <div className="text-center py-32 text-xl font-medium text-gray-500">
@@ -175,8 +213,8 @@ export default function CategoryPage() {
               >
                 <AuctionCard
                   name={a.name}
-                  description={a.description} // ✅ Pass description here
-                  start_time={a.start_time} // ✅ Pass start date if you have it
+                  description={a.description}
+                  start_time={a.start_time}
                   picUrl={a.picUrl}
                 />
               </Link>

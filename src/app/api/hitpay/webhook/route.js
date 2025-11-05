@@ -59,18 +59,33 @@ export async function POST(request) {
 
         console.log('Transaction record created');
 
+        // Get current wallet balance
+        const { data: profileData, error: profileError } = await supabase
+            .from('profile')
+            .select('wallet_balance')
+            .eq('id', userId)
+            .single();
+
+        if (profileError) {
+            console.error('Profile fetch error:', profileError);
+            return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
+        }
+
+        const currentBalance = Number(profileData?.wallet_balance ?? 0);
+        const newBalance = currentBalance + topupAmount;
+
         // Update user wallet balance
-        const { error: updateError } = await supabase.rpc('add_to_wallet', {
-            user_id: userId,
-            add_amount: topupAmount
-        });
+        const { error: updateError } = await supabase
+            .from('profile')
+            .update({ wallet_balance: newBalance })
+            .eq('id', userId);
 
         if (updateError) {
             console.error('Wallet update error:', updateError);
             return NextResponse.json({ error: 'Failed to update wallet' }, { status: 500 });
         }
 
-        console.log(`✅ Wallet topped up: User ${userId}, Amount ${topupAmount}`);
+        console.log(`✅ Wallet topped up: User ${userId}, Amount ${topupAmount}, New Balance: ${newBalance}`);
 
         return NextResponse.json({ message: 'Wallet updated successfully' }, { status: 200 });
 

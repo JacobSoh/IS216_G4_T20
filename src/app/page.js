@@ -137,7 +137,13 @@ export default function FuturisticAuction() {
       const { data, error } = await supabaseBrowser()
         .from("auction")
         .select(
-          "aid, name, description, start_time, thumbnail_bucket, object_path"
+          `aid, name, description, start_time, thumbnail_bucket, object_path,
+          owner:profile!auction_oid_fkey (
+            id,
+            username,
+            avatar_bucket,
+            object_path
+          )`
         )
         .limit(5);
 
@@ -383,7 +389,21 @@ export default function FuturisticAuction() {
             {/* Scroll Button */}
             <button
               onClick={() => scrollToSection(1)}
-              className="absolute bottom-20 left-1/2 -translate-x-1/2 border-2 border-purple-500 text-white px-12 py-4 rounded-md shadow-[0_0_30px_rgba(168,85,247,0.5),inset_0_0_15px_rgba(168,85,247,0.2)] hover:bg-purple-500/20 hover:shadow-[0_0_100px_rgba(168,85,247,0.9),inset_0_0_100px_rgba(168,85,247,0.4)] transition-all duration-500"
+              className="
+    absolute
+    bottom-10 sm:bottom-16 md:bottom-20
+    left-1/2 -translate-x-1/2
+    border-2 border-purple-500
+    text-white
+    px-6 sm:px-10 md:px-12
+    py-2 sm:py-3 md:py-4
+    text-sm sm:text-base md:text-lg
+    rounded-md
+    shadow-[0_0_20px_rgba(168,85,247,0.5),inset_0_0_10px_rgba(168,85,247,0.2)]
+    hover:bg-purple-500/20
+    hover:shadow-[0_0_80px_rgba(168,85,247,0.9),inset_0_0_80px_rgba(168,85,247,0.4)]
+    transition-all duration-500
+  "
             >
               DISCOVER →
             </button>
@@ -392,72 +412,75 @@ export default function FuturisticAuction() {
       </section>
 
       {/* Info */}
-      <section
-        ref={sectionRef}
-        className="section min-h-screen bg-gradient-to-b from-purple-100 to-purple-300 text-purple-900 flex flex-col lg:flex-row justify-between px-24 relative"
-      >
-        <div className="flex-1 flex flex-col justify-center py-24">
-          <div className="max-w-3xl -translate-y-16 -ml-10">
-            <h2 className="info-heading text-[7vw] font-bold leading-[0.9] text-purple-700">
-              EXPLORE
-              <br />
-              CURATED
-              <br />
-              COLLECTIONS
-            </h2>
+<section
+  ref={sectionRef}
+  className="section min-h-screen bg-gradient-to-b from-black to-gray-900 text-white flex flex-col md:flex-row justify-between items-center px-6 md:px-12 lg:px-24 relative"
+>
+  {/* TEXT COLUMN */}
+  <div className="flex-1 flex flex-col justify-center py-12 md:py-20 lg:py-24 md:pr-10">
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+      viewport={{ once: true }}
+      className="max-w-full md:max-w-lg lg:max-w-3xl"
+    >
+      <h2 className="info-heading text-[10vw] md:text-[5vw] lg:text-[4vw] font-bold leading-[0.9] text-purple-400">
+        EXPLORE
+        <br />
+        CURATED
+        <br />
+        COLLECTIONS
+      </h2>
 
-            <p className="info-para text-xl text-purple-800 max-w-2xl mt-12">
-              Explore a world of pre-loved treasures — from timeless antiques to
-              everyday essentials and trending gadgets.
-              <br></br>
-              <br></br>
-              Whether you’re a collector, a bargain hunter, or just browsing for
-              fun, there’s something here for you. Start bidding, connect with
-              others, and make each find your own.
-            </p>
-          </div>
-        </div>
-        {/* Desktop Sticky Image */}
-        {isDesktop && (
-          <div className="flex flex-col h-[80vh] my-auto -mr-10">
-            <div className="sticky top-20 w-[400px] h-[300px] mr-8 flex items-center justify-center text-purple-700/60 rounded-2xl">
-              <img
-                className="shadow-lg w-full h-full object-cover rounded-sm"
-                src="/assets/thrift.jpg"
-                alt="thrift store"
-              />
-            </div>
-          </div>
-        )}
+      <p className="info-para text-base md:text-lg lg:text-xl text-gray-300 mt-6 md:mt-10 lg:mt-12">
+        Explore a world of pre-loved treasures — from timeless antiques to
+        everyday essentials and trending gadgets.
+        <br />
+        <br />
+        Whether you&apos;re a collector, a bargain hunter, or just browsing
+        for fun, there&apos;s something here for you. Start bidding, connect
+        with others, and make each find your own.
+      </p>
+    </motion.div>
+  </div>
 
-        {/* Small/Tablet Image below text */}
-        {(isTablet || isMobile) && (
-          <div className="flex justify-center -mt-20 mb-20">
-            <img
-              className="shadow-lg w-[90%] max-w-md h-auto object-cover rounded-sm"
-              src="/assets/thrift.jpg"
-              alt="thrift store"
-            />
-          </div>
-        )}
-      </section>
+  {/* IMAGE COLUMN */}
+  <div className="flex-[1.1] flex justify-center md:justify-end items-center mt-10 md:mt-0">
+    <div className="w-[85%] md:w-[70%] lg:w-[55%] xl:w-[45%] max-w-[600px]">
+      <img
+        className="shadow-lg w-full h-auto object-cover rounded-lg"
+        src="/assets/thrift.jpg"
+        alt="thrift store"
+      />
+    </div>
+  </div>
+</section>
+
+
 
       {/* Featured Auctions */}
-      <section className="section min-h-screen bg-gradient-to-b from-purple-300 to-purple-200 px-12 pt-4 pb-20">
+      <section className="section min-h-screen bg-gray-900 px-12 pt-4 pb-20">
         {/* Header */}
-        <div className="text-center mb-20 mt-15">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mb-20 mt-15"
+        >
           <Link
             href="/featured_auctions"
-            className="inline-block md:text-5xl lg:text-6xl font-bold text-purple-700 leading-none hover:text-white transition-colors duration-300 relative group"
+            className="inline-block md:text-5xl lg:text-6xl font-bold text-purple-400 leading-none hover:text-white transition-colors duration-300 relative group"
           >
             Featured Auctions
-            <span className="absolute bottom-0 left-0 w-0 h-[4px] bg-white transition-all duration-300 group-hover:w-full" />
+            <span className="absolute bottom-0 left-0 w-0 h-[4px] bg-purple-500 transition-all duration-300 group-hover:w-full" />
           </Link>
 
-          <p className="md:text-2xl lg:text-3xl mx-auto text-purple-700 mt-4">
+          <p className="md:text-2xl lg:text-3xl mx-auto text-gray-300 mt-4">
             Browse through our carefully curated vintage collections
           </p>
-        </div>
+        </motion.div>
 
         <Slider {...settings}>
           {loading
@@ -480,6 +503,11 @@ export default function FuturisticAuction() {
                       <AuctionHoverPicture
                         name={auction.name}
                         picUrl={picUrl}
+                        ownerUsername={auction.owner?.username}
+                        ownerAvatar={{
+                          bucket: auction.owner?.avatar_bucket,
+                          objectPath: auction.owner?.object_path,
+                        }}
                         hoverTextColor="white"
                       />
                     </div>
@@ -490,174 +518,154 @@ export default function FuturisticAuction() {
       </section>
 
       {/* Live Auction */}
-      <section
-        id="auction"
-        className={`relative w-full flex flex-col items-center justify-start overflow-hidden bg-gradient-to-b from-purple-200 to-purple-300
-        ${isDesktop ? "h-auto" : isTablet ? "min-h-[120vh]" : "min-h-[150vh]"}
+ <section
+  id="auction"
+  className={`relative w-full flex flex-col items-center justify-start overflow-hidden bg-gray-900
+  ${isDesktop ? "h-auto" : isTablet ? "min-h-[120vh]" : "min-h-[150vh]"}`}
+>
+  {/* Top Section: Video + Text */}
+  <div
+    className={`relative mt-[18vh] w-[85%] z-10 flex flex-col lg:flex-row items-center lg:items-start justify-between space-y-10 lg:space-y-0 lg:space-x-16`}
+  >
+    {/* Video */}
+    <video
+      src="https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/vidu-video-3006995670702686.mp4"
+      className={`
+        w-full lg:w-[40vw] lg:h-[56vh]
+        object-cover rounded-2xl z-20
+        transform transition-transform duration-500 ease-out hover:scale-110
+        shadow-[0_0_40px_rgba(168,85,247,0.6)]
       `}
+      autoPlay
+      loop
+      muted
+      playsInline
+    />
+
+    {/* Text */}
+    <div className="flex flex-col justify-center w-full lg:w-[45%] text-center lg:text-left space-y-6 mt-6 lg:mt-0">
+      <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+        How do I bid?
+      </h2>
+
+      <p className="text-base sm:text-lg md:text-xl text-gray-300 leading-relaxed whitespace-pre-line">
+        Joining an auction is simple and exciting. Start by{" "}
+        <span className="font-semibold text-purple-300">
+          browsing the live listings
+        </span>{" "}
+        to discover unique items that catch your eye — from rare collectibles
+        to everyday treasures.
+        {"\n"}
+        When you find something you love,{" "}
+        <span className="font-semibold text-purple-300">place your bid</span>{" "}
+        and watch the timer count down.
+      </p>
+    </div>
+  </div>
+
+  {/* Bottom Section: Bidding Area */}
+  <div
+    className={`flex flex-col items-center justify-center text-center mt-20 mb-25 w-[90%] ${
+      isTablet ? "space-y-6" : "space-y-10"
+    }`}
+  >
+    <h3 className="text-[6vh] font-semibold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+      Try it out now
+    </h3>
+
+    <div
+      className={`grid w-full items-center justify-items-center ${
+        isDesktop
+          ? "grid-cols-3 gap-20"
+          : isTablet
+          ? "grid-cols-3 gap-12"
+          : "grid-cols-1 gap-6"
+      }`}
+    >
+      {/* LEFT SECTION */}
+      <div
+        className={`flex flex-col items-center ${
+          isDesktop ? "md:items-start text-left" : "text-center"
+        } space-y-5`}
       >
-        {/* Top Section: Video + Text */}
-        <div
-          className={`relative mt-[18vh] w-[85%] z-10 flex ${
-            isDesktop
-              ? "flex-col md:flex-row items-start justify-between space-y-16 md:space-y-0"
-              : "flex-col items-center justify-center space-y-10"
-          }`}
-        >
-          {/* Video */}
-          <video
-            src="https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/vidu-video-3006995670702686.mp4"
-            className={`
-    ${isDesktop ? "-mt-4 md:w-[40vw] md:h-[56vh]" : ""}
-    ${isTablet ? "w-full h-[40vh]" : ""}
-    ${isMobile ? "w-full h-[30vh]" : ""}
-    object-cover rounded-2xl z-20 transform transition-transform duration-500 ease-out hover:scale-110 shadow-[0_0_40px_rgba(168,85,247,0.6)]
-  `}
-            autoPlay
-            loop
-            muted
-            playsInline
-          />
+        <h3 className="text-3xl font-semibold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+          Minecraft Diamond Sword
+        </h3>
+        <p className="text-base text-gray-300 max-w-md leading-relaxed">
+          A rare collectible from the world of Minecraft.
+        </p>
 
-          {/* Text */}
-          <div
-            className={`flex flex-col justify-center ${
-              isDesktop
-                ? "md:w-[45%] text-left space-y-6"
-                : "w-full text-center space-y-6 mt-4"
-            }`}
-          >
-            <h2
-              className={`text-6xl font-bold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)] ${
-                isMobile ? "text-4xl" : ""
-              }`}
-            >
-              How do I bid?
-            </h2>
-
-            <p
-              className={`text-lg text-purple-700/90 leading-relaxed whitespace-pre-line ${
-                isMobile ? "text-base" : ""
-              }`}
-            >
-              Joining an auction is simple and exciting. Start by{" "}
-              <span className="font-semibold text-purple-800">
-                browsing the live listings
-              </span>{" "}
-              to discover unique items that catch your eye — from rare
-              collectibles to everyday treasures.
-              {"\n"}
-              When you find something you love,{" "}
-              <span className="font-semibold text-purple-800">
-                place your bid
-              </span>{" "}
-              and watch the timer count down.
-            </p>
-          </div>
-        </div>
-
-        {/* Bottom Section: Bidding Area */}
-        <div
-          className={`flex flex-col items-center justify-center text-center mt-20 mb-25 w-[90%] ${
-            isTablet ? "space-y-6" : "space-y-10"
-          }`}
-        >
-          <h3 className="text-[6vh] font-semibold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
-            Try it out now
-          </h3>
-
-          <div
-            className={`grid w-full items-center justify-items-center ${
-              isDesktop
-                ? "grid-cols-3 gap-20"
-                : isTablet
-                ? "grid-cols-3 gap-12"
-                : "grid-cols-1 gap-6"
-            }`}
-          >
-            {/* LEFT SECTION */}
-            <div
-              className={`flex flex-col items-center ${
-                isDesktop ? "md:items-start text-left" : "text-center"
-              } space-y-5`}
-            >
-              <h3 className="text-3xl font-semibold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
-                Minecraft Diamond Sword
-              </h3>
-              <p className="text-base text-purple-600 max-w-md leading-relaxed">
-                A rare collectible from the world of Minecraft.
+        {/* Timer + Current Bid */}
+        <div className="p-6 text-center">
+          <div className="flex flex-col sm:flex-row sm:space-x-6 space-y-3 sm:space-y-0 mt-4 justify-center">
+            <div>
+              <h4 className="text-lg font-medium text-purple-500">
+                Time Left
+              </h4>
+              <p className="text-3xl font-bold text-yellow-300 drop-shadow-[0_0_12px_rgba(250,204,21,0.6)]">
+                {timeLeft}s
               </p>
-
-              {/* Timer + Current Bid */}
-              <div className="p-6 text-center">
-                <div className="flex flex-col sm:flex-row sm:space-x-6 space-y-3 sm:space-y-0 mt-4 justify-center">
-                  <div>
-                    <h4 className="text-lg font-medium text-purple-500">
-                      Time Left
-                    </h4>
-                    <p className="text-3xl font-bold text-yellow-300 drop-shadow-[0_0_12px_rgba(250,204,21,0.6)]">
-                      {timeLeft}s
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-medium text-purple-500">
-                      Current Bid
-                    </h4>
-                    <p className="text-3xl font-semibold text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
-                      ${currentBid}
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
-
-            {/* CENTER IMAGE */}
-            <img
-              src="assets/newdsword.jpg"
-              alt="Minecraft Diamond Sword"
-              className={`
-            rounded-2xl border-4 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.6)]
-            object-cover aspect-square
-            ${isDesktop ? "w-96" : ""}
-            ${isTablet ? "w-56" : ""}
-            ${isMobile ? "w-full max-w-xs" : ""}
-          `}
-            />
-
-            {/* RIGHT SECTION */}
-            <div
-              className={`flex flex-col items-center ${
-                isDesktop ? "md:items-end" : ""
-              } space-y-6`}
-            >
-              <input
-                type="number"
-                placeholder="Enter your bid"
-                value={userBid}
-                onChange={(e) => setUserBid(e.target.value)}
-                className="w-64 px-6 py-3 rounded-lg bg-transparent border border-purple-600/60 text-center text-xl text-purple-100 placeholder-white focus:outline-none"
-              />
-              <button
-                onClick={handleBid}
-                className="px-12 py-4 text-2xl font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:scale-[1.03] transition-all duration-300"
-              >
-                Place Bid
-              </button>
-
-              {/* 🟣 Result Message */}
-              {result && (
-                <p className="text-xl font-semibold text-purple-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)] transition-all duration-300">
-                  {result}
-                </p>
-              )}
+            <div>
+              <h4 className="text-lg font-medium text-purple-500">
+                Current Bid
+              </h4>
+              <p className="text-3xl font-semibold text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                ${currentBid}
+              </p>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* CENTER IMAGE */}
+      <img
+        src="assets/newdsword.jpg"
+        alt="Minecraft Diamond Sword"
+        className={`
+          rounded-2xl border-4 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.6)]
+          object-cover aspect-square
+          ${isDesktop ? "w-96" : ""}
+          ${isTablet ? "w-56" : ""}
+          ${isMobile ? "w-full max-w-xs" : ""}
+        `}
+      />
+
+      {/* RIGHT SECTION */}
+      <div
+        className={`flex flex-col items-center ${
+          isDesktop ? "md:items-end" : ""
+        } space-y-6`}
+      >
+        <input
+          type="number"
+          placeholder="Enter your bid"
+          value={userBid}
+          onChange={(e) => setUserBid(e.target.value)}
+          className="w-64 px-6 py-3 rounded-lg bg-gray-800/80 border border-purple-500/60 text-center text-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:bg-gray-800 transition-all"
+        />
+        <button
+          onClick={handleBid}
+          className="px-12 py-4 text-2xl font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:scale-[1.03] transition-all duration-300"
+        >
+          Place Bid
+        </button>
+
+        {/* 🟣 Result Message */}
+        {result && (
+          <p className="text-xl font-semibold text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)] transition-all duration-300">
+            {result}
+          </p>
+        )}
+      </div>
+    </div>
+  </div>
+</section>
+
 
       {/* ABOUT SECTION */}
       <section
-        className={`section bg-purple-300 text-white w-full min-h-screen px-6 md:px-12 flex flex-col ${
+        className={`section bg-gray-900 text-white w-full min-h-screen px-6 md:px-12 flex flex-col ${
           isDesktop
             ? "lg:flex-row items-start justify-start gap-12 py-12"
             : "items-center justify-center gap-8 py-12"
@@ -676,20 +684,20 @@ export default function FuturisticAuction() {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className={`${isDesktop ? "" : "max-w-3xl mx-auto"}`}
           >
-            <h2 className="text-6xl md:text-5xl sm:text-4xl font-bold text-purple-600 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+            <h2 className="text-6xl md:text-5xl sm:text-4xl font-bold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
               Why use BidHub?
             </h2>
 
-            <p className="mt-4 text-purple-700 leading-relaxed text-lg max-w-2xl md:max-w-full mx-auto">
+            <p className="mt-4 text-gray-300 leading-relaxed text-lg max-w-2xl md:max-w-full mx-auto">
               Our platform makes online auctions{" "}
-              <span className="font-semibold text-purple-600">
+              <span className="font-semibold text-purple-300">
                 fair, transparent, and effortless
               </span>
               . Track your bids in real time, compete confidently, and uncover
               unique items — from rare collectibles to cutting-edge tech.
               <br />
-              Bidding here is more than shopping — it’s an{" "}
-              <span className="font-semibold text-purple-600">
+              Bidding here is more than shopping — it&apos;s an{" "}
+              <span className="font-semibold text-purple-300">
                 experience of discovery and excitement
               </span>
               . Join a growing community of collectors, explore trending
@@ -742,7 +750,7 @@ export default function FuturisticAuction() {
 
       {/* FAQ SECTION + Contact*/}
       <section
-        className={`bg-gradient-to-b from-purple-300 to-purple-400 text-white w-full flex flex-col ${
+        className={`bg-gray-900 text-white w-full flex flex-col ${
           isDesktop
             ? "lg:flex-row items-start justify-start gap-12 px-12 py-20 h-[100vh]"
             : "items-center justify-start gap-12 px-6 py-12"
@@ -751,7 +759,7 @@ export default function FuturisticAuction() {
         {/* For Tablet: FAQ above contact */}
         {(isTablet || isMobile) && (
           <div className="w-full flex flex-col items-center lg:items-start mb-6">
-            <h2 className="text-4xl text-purple-700 font-bold mb-6 text-center lg:text-left">
+            <h2 className="text-4xl text-purple-400 font-bold mb-6 text-center lg:text-left">
               FAQ
             </h2>
             <Accordion
@@ -759,24 +767,17 @@ export default function FuturisticAuction() {
               collapsible
               className="space-y-4 w-full pb-8"
             >
-              {[
-                "How does bidding work?",
-                "Are items authenticated?",
-                "What payment methods do you accept?",
-                "Do you ship internationally?",
-              ].map((q, i) => (
+              {faqs.map((faq, i) => (
                 <AccordionItem
                   key={i}
                   value={`item-${i}`}
-                  className="border border-purple-700 rounded-lg overflow-hidden"
+                  className="border border-purple-500/40 rounded-lg overflow-hidden bg-gray-800/40"
                 >
-                  <AccordionTrigger className="px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all text-lg font-medium text-purple-900">
-                    {q}
+                  <AccordionTrigger className="px-6 py-4 text-left bg-gray-800/60 hover:bg-gray-700/60 transition-all text-lg font-medium text-purple-300">
+                    {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed">
-                    This is the answer to &quot;{q}&quot;. Lorem ipsum dolor sit amet,
-                    consectetur adipiscing elit. Vivamus luctus elit nec justo
-                    tempor, sit amet ultricies magna posuere.
+                  <AccordionContent className="px-6 py-4 text-gray-300 bg-gray-900/80 text-base leading-relaxed">
+                    {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
               ))}
@@ -798,17 +799,17 @@ export default function FuturisticAuction() {
               isDesktop
                 ? "w-65 h-70"
                 : isTablet
-                ? "w-[20vh] h-auto mx-auto"
-                : "w-[15vh] h-auto mx-auto"
+                ? "w-[22vh] h-auto mx-auto"
+                : "w-[17vh] h-auto mx-auto"
             } bg-purple-300/20 border-2 border-purple-500 rounded-2xl flex items-center justify-center text-purple-800 font-semibold shadow-[0_0_25px_rgba(168,85,247,0.5)] object-cover`}
           />
 
           {/* Caption */}
-          <p className="text-purple-800 text-lg leading-relaxed">
+          <p className="text-gray-300 text-lg leading-relaxed">
             Still got unanswered questions?
             <br />
             Or still wondering if{" "}
-            <span className="text-purple-700 font-semibold">BidHub</span> is
+            <span className="text-purple-400 font-semibold">BidHub</span> is
             right for you?
           </p>
 
@@ -826,7 +827,7 @@ export default function FuturisticAuction() {
         {/* Right Side — FAQ for Desktop */}
         {isDesktop && (
           <div className="lg:w-2/3 w-full flex flex-col overflow-visible">
-            <h2 className="text-4xl text-purple-700 font-bold mb-8 text-center lg:text-left">
+            <h2 className="text-4xl text-purple-400 font-bold mb-8 text-center lg:text-left">
               FAQ
             </h2>
             <Accordion
@@ -838,12 +839,12 @@ export default function FuturisticAuction() {
                 <AccordionItem
                   key={i}
                   value={`item-${i}`}
-                  className="border border-purple-700 rounded-lg overflow-hidden"
+                  className="border border-purple-500/40 rounded-lg overflow-hidden bg-gray-800/40"
                 >
-                  <AccordionTrigger className="px-6 py-4 text-left bg-purple-400/10 hover:bg-purple-400/20 transition-all text-lg font-medium text-purple-900">
+                  <AccordionTrigger className="px-6 py-4 text-left bg-gray-800/60 hover:bg-gray-700/60 transition-all text-lg font-medium text-purple-300">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="px-6 py-4 text-purple-800 bg-purple-200/30 text-base leading-relaxed">
+                  <AccordionContent className="px-6 py-4 text-gray-300 bg-gray-900/80 text-base leading-relaxed">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>

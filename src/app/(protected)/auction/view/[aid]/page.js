@@ -21,6 +21,12 @@ export default async function AuctionViewerPage({ params }) {
     notFound()
   }
 
+  // Check if auction has ended
+  if (snapshot.auction?.auction_end) {
+    console.log('[AuctionViewerPage] Auction has ended, redirecting', { aid })
+    redirect(`/auction/view/${aid}/ended`)
+  }
+
   const ownerId = snapshot.auction?.oid ?? snapshot.auction?.owner?.id ?? null
   console.log('[AuctionViewerPage] Ownership check', {
     aid,

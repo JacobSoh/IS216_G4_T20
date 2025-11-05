@@ -19,11 +19,11 @@ import {
 export default function SellerConsole({ auctions = [] }) {
   return (
     <div className="space-y-12">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between mr-15">
         <h1 className={`text-4xl font-bold text-[var(--theme-gold)]`}>
           Seller Console
         </h1>
-        <Button variant="brand" loadingOnClick={true} onClick={() => window.location.href = '/auction/seller/create'}>Create Auction</Button>
+        <Button variant="brand" loadingOnClick={true} className="h-11 -translate-y-2" onClick={() => window.location.href = '/auction/seller/create'}>Create Auction</Button>
       </div>
       <Tabs defaultValue="manage" className='space-y-6'>
         <TabsList className='w-full'>
@@ -36,10 +36,14 @@ export default function SellerConsole({ auctions = [] }) {
               <SellerDatatable auctions={auctions} />
             </CardContent>
           </Card>
-          
+
         </TabsContent>
         <TabsContent value="dashboard">
-          <SellerDashboard auctions={auctions} />
+          <Card variant='default'>
+            <CardContent>
+              <SellerDashboard auctions={auctions} />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
