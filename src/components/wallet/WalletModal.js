@@ -126,6 +126,7 @@ export default function WalletModal({
         setWithdrawLoading(true);
         setError(null);
         setSuccess(null);
+        const sb = supabaseBrowser();
 
         try {
             const amount = parseFloat(withdrawAmount);
@@ -335,14 +336,20 @@ export default function WalletModal({
                                 type="text"
                                 placeholder="Account Number"
                                 value={bankDetails.accountNumber}
-                                onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    setBankDetails({ ...bankDetails, accountNumber: value });
+                                }}
                                 className="w-full px-4 py-2 bg-[var(--custom-bg-tertiary)] border border-[var(--custom-border-color)] rounded-md text-[var(--custom-text-primary)] placeholder:text-[var(--custom-text-muted)] focus:outline-none focus:border-[var(--theme-secondary)]"
                             />
                             <input
                                 type="text"
                                 placeholder="Account Name"
                                 value={bankDetails.accountName}
-                                onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                                    setBankDetails({ ...bankDetails, accountName: value });
+                                }}
                                 className="w-full px-4 py-2 bg-[var(--custom-bg-tertiary)] border border-[var(--custom-border-color)] rounded-md text-[var(--custom-text-primary)] placeholder:text-[var(--custom-text-muted)] focus:outline-none focus:border-[var(--theme-secondary)]"
                             />
                             <input
