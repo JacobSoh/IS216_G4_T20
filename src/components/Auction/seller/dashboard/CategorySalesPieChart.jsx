@@ -8,20 +8,7 @@ import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { supabaseBrowser } from "@/utils/supabase/client";
-
-// Category palette
-const categoryColorPalette = [
-  "#fa938e",
-  "#98bf45",
-  "#51cbcf",
-  "#d397ff",
-  "#ffc658",
-  "#ff8042",
-  "#8dd1e1",
-  "#d0ed57",
-  "#a4de6c",
-  "#83a6ed",
-];
+import { getCategoryColor } from "./categoryColors";
 
 export default function CategorySalesPieChart({ sellerId }) {
   const sb = supabaseBrowser();
@@ -55,43 +42,40 @@ export default function CategorySalesPieChart({ sellerId }) {
 
       if (itemsError) throw itemsError;
 
-      // Group by auction
-      const itemsByAuction = new Map();
-      allItems?.forEach((item) => {
-        if (!item.aid) return;
-        if (!itemsByAuction.has(item.aid)) itemsByAuction.set(item.aid, []);
-        itemsByAuction.get(item.aid).push(item);
-      });
+      const { data: soldEntries, error: soldError } = await sb
+        .from("items_sold")
+        .select("iid, seller_id")
+        .eq("seller_id", sellerId);
 
-      // Finished auctions: all items sold != null
-      const finishedAuctionIds = new Set();
-      itemsByAuction.forEach((items, auctionId) => {
-        const allProcessed = items.every((it) => it.sold !== null);
-        if (allProcessed) finishedAuctionIds.add(auctionId);
-      });
+      if (soldError) throw soldError;
 
-      const data =
-        allItems?.filter((item) => finishedAuctionIds.has(item.aid)) || [];
+      const soldItemIds = new Set(
+        (soldEntries ?? [])
+          .map((entry) => entry?.iid)
+          .filter((iid) => typeof iid === "string" || typeof iid === "number")
+      );
+
+      const data = Array.isArray(allItems) ? allItems : [];
 
       // Flatten categories
       const processedData = [];
       const uniqueCategories = new Set();
 
-      data?.forEach((item) => {
+      data.forEach((item) => {
         if (Array.isArray(item.item_category) && item.item_category.length) {
           item.item_category.forEach((cat) => {
             const categoryName = cat?.category_name || "Uncategorized";
             uniqueCategories.add(categoryName);
             processedData.push({
               category: categoryName,
-              sold: item.sold ? "Yes" : "No",
+              sold: soldItemIds.has(item.iid) ? "Yes" : "No",
             });
           });
         } else {
           uniqueCategories.add("Uncategorized");
           processedData.push({
             category: "Uncategorized",
-            sold: item.sold ? "Yes" : "No",
+            sold: soldItemIds.has(item.iid) ? "Yes" : "No",
           });
         }
       });
@@ -102,8 +86,8 @@ export default function CategorySalesPieChart({ sellerId }) {
 
       // Assign colors
       const colors = {};
-      categoriesArray.forEach((cat, index) => {
-        colors[cat] = categoryColorPalette[index % categoryColorPalette.length];
+      categoriesArray.forEach((cat) => {
+        colors[cat] = getCategoryColor(cat);
       });
       setCategoryColors(colors);
     } catch (err) {
@@ -126,6 +110,21 @@ export default function CategorySalesPieChart({ sellerId }) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "item", filter: `oid=eq.${sellerId}` },
+        () => fetchItemsData()
+      )
+      .subscribe();
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, [sb, sellerId, fetchItemsData]);
+
+  useEffect(() => {
+    if (!sellerId) return undefined;
+    const channel = sb
+      .channel(`category-sales-items_sold-${sellerId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "items_sold", filter: `seller_id=eq.${sellerId}` },
         () => fetchItemsData()
       )
       .subscribe();
