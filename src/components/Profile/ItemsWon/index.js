@@ -19,6 +19,7 @@ import { CustomSelect, CustomTextarea } from "@/components/Form";
 import { useModal } from "@/context/ModalContext";
 
 const MIN_REVIEW_LENGTH = 10;
+const MAX_REVIEW_LENGTH = 300;
 
 function ReviewFormFields({ initialStars, initialReview }) {
     return (
@@ -42,6 +43,7 @@ function ReviewFormFields({ initialStars, initialReview }) {
                 type="reviewText"
                 defaultValue={initialReview}
                 autoGrow
+                maxLength={MAX_REVIEW_LENGTH}
             />
         </div>
     );
@@ -176,10 +178,15 @@ export default function ItemsWon({ userId }) {
 
         const formData = new FormData(event.currentTarget);
         const stars = Number(formData.get("review-stars"));
-        const reviewBody = (formData.get("review-text") || "").toString().trim();
+        const reviewBody = (formData.get("reviewText") || "").toString().trim();
 
         if (!reviewBody || reviewBody.length < MIN_REVIEW_LENGTH) {
             toast.error(`Review must be at least ${MIN_REVIEW_LENGTH} characters.`);
+            return;
+        }
+
+        if (reviewBody.length > MAX_REVIEW_LENGTH) {
+            toast.error(`Review must not exceed ${MAX_REVIEW_LENGTH} characters.`);
             return;
         }
 
