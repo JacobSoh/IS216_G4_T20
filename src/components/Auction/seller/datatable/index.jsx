@@ -310,9 +310,6 @@ export default function SellerDatatable({ auctions = [] }) {
 }
 
 function FlipAuctionCard({ auction, thumbnail }) {
-  const [flipped, setFlipped] = React.useState(false);
-  const handleFlip = () => setFlipped((f) => !f);
-
   const onEdit = (e) => {
     e.stopPropagation();
     window.location.href = `/auction/seller/edit/${auction.aid}`;
@@ -330,10 +327,8 @@ function FlipAuctionCard({ auction, thumbnail }) {
       if (!res.ok || data?.status >= 400) {
         throw new Error(data?.error || 'Failed to delete');
       }
-      // Optimistic remove: hide card by flipping back and dispatching a custom event
-      setFlipped(false);
       // Trigger a soft reload; this page is client-side so refresh is okay
-      try { window.location.reload(); } catch {}
+      try { window.location.reload(); } catch { }
     } catch (err) {
       console.error(err);
       alert(err?.message || 'Delete failed');
@@ -341,74 +336,50 @@ function FlipAuctionCard({ auction, thumbnail }) {
   };
 
   return (
-    <div
-      className="relative h-full min-h-105"
-      style={{ perspective: '1200px' }}
-      onClick={handleFlip}
-    >
-      <div
-        className="transition-transform duration-500 relative h-full"
-        style={{ transformStyle: 'preserve-3d', transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+    <div className="relative h-full min-h-105">
+      <Card
+        className="h-full flex flex-col cursor-pointer transition-transform duration-200 hover:scale-[1.02] pt-0"
+        onClick={() => { window.location.href = `/auction/view/${auction.aid}`; }}
+        role="button"
+        tabIndex={0}
+        aria-label={`Open auction ${auction?.name ?? ''}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            window.location.href = `/auction/view/${auction.aid}`;
+          }
+        }}
       >
-        {/* Front */}
-        <div className="absolute inset-0 [backface-visibility:hidden]">
-          <Card className="h-full flex flex-col">
-            <CardHeader className="flex-shrink-0">
-              {thumbnail ? (
-                <img
-                  src={thumbnail}
-                  alt={auction?.name}
-                  className="object-cover w-full max-h-40 bg-white rounded-md"
-                />
-              ) : (
-                <div className="flex items-center justify-center w-full min-h-40 max-h-40 bg-[var(--theme-primary-darker)] rounded-md font-bold">
-                  NO IMAGE
-                </div>
-              )}
-              <CardTitle className="mt-4 line-clamp-2">{auction?.name}</CardTitle>
-              <CardDescription className="line-clamp-4">
-                {auction?.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="mt-auto">
-              <Button
-                variant="brand"
-                className="w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.location.href = `/auction/view/${auction.aid}`;
-                }}
-              >
-                View Details
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Back */}
-        <div
-          className="absolute inset-0 rotate-y-180 [backface-visibility:hidden]"
-          style={{ transform: 'rotateY(180deg)' }}
-        >
-          <Card className="h-full flex flex-col">
-            <CardHeader>
-              <CardTitle>Action</CardTitle>
-              <CardDescription>Choose an action for "{auction?.name}"</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 mt-auto">
-              <Button variant="brand" className="w-full" onClick={onEdit}>
-                <Pencil className="mr-1" /> Edit
-              </Button>
-              <Button variant="destructive" className="w-full" onClick={onDelete}>
-                <Trash className="mr-1" /> Delete
-              </Button>
-              <Button variant="outline" className="w-full" onClick={(e) => { e.stopPropagation(); setFlipped(false); }}>
-                Back
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        <CardContent className='px-0'>
+          {thumbnail ? (
+            <img
+              src={thumbnail}
+              alt={auction?.name}
+              className="object-cover w-full min-h-50 max-h-50 bg-white rounded-t-xl"
+            />
+          ) : (
+            <div className="flex items-center justify-center w-full min-h-40 max-h-40 bg-[var(--theme-primary-darker)] rounded-md font-bold">
+              NO IMAGE
+            </div>
+          )}
+        </CardContent>
+        <CardHeader className="flex-shrink-0">
+          <CardTitle className="mt-4 line-clamp-2">{auction?.name}</CardTitle>
+          <CardDescription className="line-clamp-4">
+            {auction?.description}
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className='mt-auto'>
+          <div className="grid grid-cols-2 gap-2 w-full">
+            <Button variant="outline" className="w-full" onClick={onEdit}>
+              <Pencil className="mr-1" /> Edit
+            </Button>
+            <Button variant="destructive" className="w-full" onClick={onDelete}>
+              <Trash className="mr-1" /> Delete
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

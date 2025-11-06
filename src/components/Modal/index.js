@@ -59,14 +59,15 @@ export default function Modal({
   return (
     <Dialog open={state.open} onOpenChange={(next) => { if (!next) close(); }}>
       <DialogContent className="sm:max-w-[425px]">
-          <WrapForm form={form} onSubmittingChange={setSubmitting}>
-            <DialogHeader>
-              <DialogTitle>{header.title}</DialogTitle>
-              {header.description && <DialogDescription>{header.description}</DialogDescription>}
-            </DialogHeader>
-            <div className="max-h-[50svh] overflow-y-auto overscroll-contain my-10">
-              {state.content}
-            </div>
+        <WrapForm form={form} onSubmittingChange={setSubmitting}>
+          <DialogHeader>
+            <DialogTitle>{header.title}</DialogTitle>
+            {header.description && <DialogDescription>{header.description}</DialogDescription>}
+          </DialogHeader>
+          <div className="max-h-[50svh] overflow-y-auto overscroll-contain my-10">
+            {state.content}
+          </div>
+          {(footer.showCancel || footer.showSubmit) && (
             <DialogFooter>
               {footer.showCancel && (
                 <DialogClose asChild>
@@ -85,7 +86,8 @@ export default function Modal({
                 </Button>
               )}
             </DialogFooter>
-          </WrapForm>
+          )}
+        </WrapForm>
       </DialogContent>
     </Dialog>
   )

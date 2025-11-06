@@ -65,9 +65,13 @@ export const AuctionHoverPicture = ({
 
         {/* Owner info */}
         {ownerUsername && (
-          <Link
-            href={`/user/${ownerUsername}`}
-            onClick={(e) => e.stopPropagation()}
+          <button
+            type="button"
+            aria-label={`View @${ownerUsername}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              window.location.href = `/user/${ownerUsername}`;
+            }}
             className="flex items-center gap-2 mt-1 text-gray-400 hover:text-purple-300 transition-colors duration-300"
           >
             <img
@@ -78,7 +82,7 @@ export const AuctionHoverPicture = ({
             <span className="truncate text-sm sm:text-base">
               @{ownerUsername}
             </span>
-          </Link>
+          </button>
         )}
       </div>
 
@@ -176,9 +180,13 @@ export const AuctionCard = ({
 
           {/* 👤 Owner (clickable avatar + name) */}
           {owner?.username && (
-            <Link
-              href={`/user/${owner.username}`}
-              onClick={(e) => e.stopPropagation()} // Prevent clicking the owner from triggering card link
+            <button
+              type="button"
+              aria-label={`View @${owner.username}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = `/user/${owner.username}`;
+              }} // Prevent clicking the owner from triggering card link
               className="flex items-center gap-2 pl-1.5 text-xs sm:text-sm text-gray-400 mb-2 hover:text-[var(--theme-accent)] transition-colors duration-300"
             >
               {/* Avatar */}
@@ -188,7 +196,7 @@ export const AuctionCard = ({
                 className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-[var(--theme-secondary)]"
               />
               <span className="truncate">@{owner.username}</span>
-            </Link>
+            </button>
           )}
 
           {/* Description */}
@@ -349,9 +357,13 @@ export const BigAuctionCard = ({
 
         {/* Owner info */}
         {ownerUsername && (
-          <Link
-            href={`/user/${ownerUsername}`}
-            onClick={(e) => e.stopPropagation()} // prevents triggering the parent auction link
+          <button
+            type="button"
+            aria-label={`View @${ownerUsername}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              window.location.href = `/user/${ownerUsername}`;
+            }} // prevents triggering the parent auction link
             className="mt-4 flex items-center gap-2 text-white hover:text-purple-300 transition-colors duration-300"
           >
             <img
@@ -360,7 +372,7 @@ export const BigAuctionCard = ({
               className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-purple-500"
             />
             <span className="truncate">@{ownerUsername}</span>
-          </Link>
+          </button>
         )}
 
         <div className="mt-4 text-xl">Starts: {start_time}</div>
