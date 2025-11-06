@@ -98,7 +98,7 @@ export default function Providers({ initialAuthed, children }) {
   const noPaddingPages = ["/featured_auctions"];
   // Check multiple paths
   if (
-    pathname.startsWith("/categories/") ||
+    pathname.startsWith("/categories") ||
     pathname === "/contact" ||
     pathname === "/about" ||
     pathname === "/how_it_works"

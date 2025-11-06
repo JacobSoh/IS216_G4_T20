@@ -209,7 +209,7 @@ export default function CategorySalesPieChart({ sellerId }) {
   if (totalCount === 0) {
     return (
       <Box sx={{ width: "100%", textAlign: "center", py: 4 }}>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{ color: 'var(--nav-text-muted)' }}>
           No items found. Create items to see category and sales distribution.
         </Typography>
       </Box>

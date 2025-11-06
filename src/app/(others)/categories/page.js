@@ -81,7 +81,7 @@ export default function FeaturedCategories() {
 
         {/* Category Grid (5 per row) */}
         {isLoading ? (
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-10">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
             {Array.from({ length: 10 }).map((_, i) => (
               <CategoryCard key={`cat-skeleton-${i}`} />
             ))}
@@ -91,7 +91,7 @@ export default function FeaturedCategories() {
             No categories found.
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-10">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
   {isLoading
     ? Array.from({ length: 10 }).map((_, i) => (
         <AuctionHoverPictureSkeleton key={`cat-skeleton-${i}`} />

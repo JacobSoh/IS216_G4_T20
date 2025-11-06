@@ -41,7 +41,9 @@ export default function AuctionCreateForm({ onSubmit, initialData }) {
             required={true}
             defaultValue={initialData?.auctionDescription ?? ''}
           />
-          <div className='flex gap-6'>
+          
+          {/* FIXED: Now fully responsive - stacks on mobile */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <CustomerDatePicker
               type="startDateTime"
               required={true}
@@ -51,7 +53,6 @@ export default function AuctionCreateForm({ onSubmit, initialData }) {
               type='timeInterval'
               min={1}
               required={true}
-              // Show minutes if provided (time_interval is seconds)
               defaultValue={
                 initialData?.timeIntervalMinutes !== undefined
                   ? initialData.timeIntervalMinutes
@@ -76,4 +77,3 @@ export default function AuctionCreateForm({ onSubmit, initialData }) {
     </FieldGroup>
   );
 }
-

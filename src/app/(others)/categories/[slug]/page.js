@@ -105,11 +105,25 @@ export default function CategoryPage() {
           return;
         }
 
-        // 3️⃣ Fetch auction details
+        // 3️⃣ Fetch auction details (including owner profile via foreign key)
         const { data: auctionData, error: auctionErr } = await supabase
           .from("auction")
           .select(
-            "aid, name, description, start_time, thumbnail_bucket, object_path"
+            `
+          aid,
+          oid,
+          name,
+          description,
+          start_time,
+          thumbnail_bucket,
+          object_path,
+          owner:profile!auction_oid_fkey (
+            id,
+            username,
+            avatar_bucket,
+            object_path
+          )
+        `
           )
           .in("aid", auctionIds);
 
@@ -140,12 +154,25 @@ export default function CategoryPage() {
             picUrl = publicData?.publicUrl || null;
           }
 
+          // 👤 Owner avatar URL
+          let ownerAvatar = null;
+          if (a.owner?.avatar_bucket && a.owner?.object_path) {
+            const { data: avatarData } = supabase.storage
+              .from(a.owner.avatar_bucket)
+              .getPublicUrl(a.owner.object_path);
+            ownerAvatar = avatarData?.publicUrl || null;
+          }
+
           return {
             aid: a.aid,
             name: a.name,
             description: a.description,
             start_time: new Date(a.start_time).toLocaleString(),
             picUrl,
+            owner: {
+              username: a.owner?.username || "Unknown",
+              avatar: ownerAvatar,
+            },
           };
         });
 
@@ -169,7 +196,9 @@ export default function CategoryPage() {
         <Button
           variant="brand"
           className="absolute top-6 left-6 " // horizontal: 4, vertical: 2 (Tailwind)
-          onClick={() => { window.location.href = "/categories"; }}
+          onClick={() => {
+            window.location.href = "/categories";
+          }}
         >
           <ArrowBigLeft className="w-12 h-12" />{" "}
           {/* adjust icon size separately */}
@@ -205,18 +234,15 @@ export default function CategoryPage() {
         ) : (
           <div className="flex flex-wrap justify-center gap-10">
             {auctions.map((a) => (
-              <Link
+              <AuctionCard
                 key={a.aid}
-                href={`/auction/view/${a.aid}`}
-                className="transform transition-transform hover:scale-105"
-              >
-                <AuctionCard
-                  name={a.name}
-                  description={a.description}
-                  start_time={a.start_time}
-                  picUrl={a.picUrl}
-                />
-              </Link>
+                name={a.name}
+                owner={a.owner} // Pass the full owner object
+                description={a.description}
+                start_time={a.start_time}
+                picUrl={a.picUrl}
+                auctionLink={`/auction/view/${a.aid}`} // optional: pass link if card handles it internally
+              />
             ))}
           </div>
         )}

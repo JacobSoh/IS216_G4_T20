@@ -50,20 +50,12 @@ export class User {
 
         this.total_reviews = review?.total ?? 0,
         this.total_stars = review?.total_stars ?? 0,
-        this.avg_rating = this.total_reviews > 0 ? Number(review.avg_rating).toFixed(1) : '0.0',
+        this.avg_rating = this.total_reviews > 0 ? Number(review.avg_rating).toFixed(1) : 'No ratings yet',
 
         this.stats = [
             { title: 'Sold', number: statsData?.itemsSold ?? 0 },
             { title: 'Won', number: statsData?.itemsWon ?? 0 }
         ];
-
-        // this.current_listings = item ?? 0;
-
-        // this.total_reviews = review?.total ?? 0;
-        // this.total_stars = review?.total_stars ?? 0;
-        // this.avg_rating = this.total_reviews > 0 ? Number(review.avg_rating).toFixed(1) : '0.0';
-        // this.items_sold = item ?? 0;
-        // this.items_bought = item ?? 0;
     }
 
     get verified() {
@@ -97,60 +89,4 @@ export class User {
     set avatar_url(avatar_url) {
         this.#avatarUrl = avatar_url;
     }
-
-    // get id() {
-    //     return this.#authUser?.id;
-    // }
-
-    // get email() {
-    //     return this.#authUser?.email;
-    // }
-
-    // get username() {
-    //     return this.#profile?.username || 'Unknown User';
-    // }
-
-    // get firstName() {
-    //     return this.#profile?.first_name;
-    // }
-
-    // get middleName() {
-    //     return this.#profile?.middle_name;
-    // }
-
-    // get lastName() {
-    //     return this.#profile?.last_name;
-    // }
-
-    // get fullName() {
-    //     const parts = [this.firstName, this.middleName, this.lastName].filter(Boolean);
-    //     return parts.length > 0 ? parts.join(' ') : this.username;
-    // }
-
-    // get avatarBucket() {
-    //     return this.#profile?.avatar_bucket || 'avatar';
-    // }
-
-    // get avatarPath() {
-    //     return this.#profile?.object_path;
-    // }
-
-    // get createdAt() {
-    //     return this.#authUser?.created_at;
-    // }
-
-    // getTimeAgo() {
-    //     if (!this.created_at) return 'Recently';
-    //     const now = new Date();
-    //     const past = new Date(this.created_at);
-    //     const diffMs = now - past;
-    //     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    //     const diffMonths = Math.floor(diffDays / 30);
-    //     const diffYears = Math.floor(diffDays / 365);
-
-    //     if (diffYears > 0) return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
-    //     if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
-    //     if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    //     return 'Today';
-    // }
 }

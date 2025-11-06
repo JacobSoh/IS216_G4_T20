@@ -31,9 +31,10 @@ export default function ItemCard({ item, onEdit, onDelete }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex gap-6 items-center relative z-0">
+      {/* FIXED: Responsive layout - stacks on mobile, side-by-side on sm+ */}
+      <div className="flex flex-col sm:flex-row gap-6 items-center relative z-0">
         {/* Image Preview with Carousel */}
-        <div className="relative flex-shrink-0 w-48 h-32 bg-[#0f1115] rounded-lg overflow-hidden border border-[#2d3139]">
+        <div className="relative flex-shrink-0 w-full sm:w-48 h-48 sm:h-32 bg-[#0f1115] rounded-lg overflow-hidden border border-[#2d3139]">
           {item.filePreviews.length > 0 ? (
             <>
               <img
@@ -103,13 +104,13 @@ export default function ItemCard({ item, onEdit, onDelete }) {
           )}
         </div>
 
-        {/* Item Details */}
-        <div className="flex-1 grid grid-cols-3 gap-8">
-          <div className="flex flex-col">
+        {/* FIXED: Item Details - Stack on mobile, 3 columns on sm+ */}
+        <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8">
+          <div className="flex flex-col items-center sm:items-start">
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               Item Name
             </span>
-            <span className="text-xl font-semibold text-brand truncate">
+            <span className="text-xl font-semibold text-brand truncate w-full text-center sm:text-left">
               {item.itemName}
             </span>
           </div>

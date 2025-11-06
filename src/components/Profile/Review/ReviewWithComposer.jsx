@@ -320,38 +320,44 @@ export default function ReviewWithComposer({ revieweeId, viewerId }) {
           </Card>
         )}
 
-        <Card>
-          <CardContent className='flex gap-3'>
-            <CustomSelect
-              type="review-filter-rating"
-              label="Filter by rating"
-              value={starFilter}
-              onChange={(event) => setStarFilter(event.target.value)}
-              options={[
-                { value: "all", label: "All" },
-                ...[5, 4, 3, 2, 1].map((value) => ({
-                  value: value.toString(),
-                  label: `${value} star${value > 1 ? "s" : ""}`,
-                })),
-              ]}
-            />
-            <CustomSelect
-              type="review-sort-order"
-              label="Sort by date"
-              value={sortOrder}
-              onChange={(event) => setSortOrder(event.target.value)}
-              options={[
-                { value: "desc", label: "Newest first" },
-                { value: "asc", label: "Oldest first" },
-              ]}
-            />
-          </CardContent>
-        </Card>
+        {reviews.length > 0 && (
+          <Card>
+            <CardContent className='flex gap-3'>
+              <CustomSelect
+                type="review-filter-rating"
+                label="Filter by rating"
+                value={starFilter}
+                onChange={(event) => setStarFilter(event.target.value)}
+                options={[
+                  { value: "all", label: "All" },
+                  ...[5, 4, 3, 2, 1].map((value) => ({
+                    value: value.toString(),
+                    label: `${value} star${value > 1 ? "s" : ""}`,
+                  })),
+                ]}
+              />
+              <CustomSelect
+                type="review-sort-order"
+                label="Sort by date"
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value)}
+                options={[
+                  { value: "desc", label: "Newest first" },
+                  { value: "asc", label: "Oldest first" },
+                ]}
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="md" className="text-[var(--theme-primary)]" />
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] py-20 text-center text-[var(--theme-muted)]">
+          {viewerAllowed ? "Leave the first review!" : "This user has no reviews yet."}
         </div>
       ) : filteredReviews.length === 0 ? (
         <div className="rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] py-20 text-center text-[var(--theme-muted)]">

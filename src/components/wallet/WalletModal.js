@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useReducer } from 'react';
 import { supabaseBrowser } from '@/utils/supabase/client';
-import { createTopUpPayment } from '@/utils/hitpay/client';
+import { createTopUpPayment, createWithdrawalPayout } from '@/utils/hitpay/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { CustomInput, CustomSelect, CustomTextarea } from '@/components/Form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.jsx";
@@ -158,19 +158,35 @@ export default function WalletModal({
                 throw new Error('Please fill in all bank details');
             }
 
+            // Create HitPay transfer/payout
+            const hitpayResult = await createWithdrawalPayout(
+                amount,
+                profile.id,
+                bankDetails,
+                withdrawNote
+            );
+
+            if (!hitpayResult.success) {
+                throw new Error(hitpayResult.error || 'Failed to process withdrawal with HitPay');
+            }
+
+            // Store transaction in database with HitPay transfer ID
             const { error: txError } = await sb
                 .from('wallet_transaction')
                 .insert({
                     uid: profile.id,
                     transaction_type: 'withdraw',
                     amount: amount,
-                    status: 'pending',
+                    status: hitpayResult.status || 'pending',
                     description: `Withdrawal to ${bankDetails.bankName} - ${bankDetails.accountNumber}${withdrawNote ? ` | ${withdrawNote}` : ''}`,
+                    payment_id: hitpayResult.transferId,
+                    reference_id: hitpayResult.reference,
                     created_at: new Date().toISOString()
                 });
 
             if (txError) throw txError;
 
+            // Deduct from wallet balance
             const { error: deductError } = await sb
                 .from('profile')
                 .update({
@@ -180,8 +196,7 @@ export default function WalletModal({
 
             if (deductError) throw deductError;
 
-            toast.success('Withdrawal request submitted successfully! Processing time: 1-3 business days')
-            // setSuccess('Withdrawal request submitted successfully! Processing time: 1-3 business days');
+            toast.success('Withdrawal request submitted successfully to HitPay! Processing time: 1-3 business days')
             setWithdrawAmount('');
             setBankDetails({ bankName: '', accountNumber: '', accountName: '' });
             setWithdrawNote('');
@@ -332,13 +347,19 @@ export default function WalletModal({
                                     type="text"
                                     placeholder="Account Number"
                                     value={bankDetails.accountNumber}
-                                    onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, '');
+                                        setBankDetails({ ...bankDetails, accountNumber: value });
+                                    }}
                                 />
                                 <CustomInput
                                     type="text"
                                     placeholder="Account Name"
                                     value={bankDetails.accountName}
-                                    onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                                        setBankDetails({ ...bankDetails, accountName: value });
+                                    }}
                                 />
                                 <CustomInput
                                     type="number"
