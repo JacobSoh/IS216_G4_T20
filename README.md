@@ -10,12 +10,13 @@
 
 | Photo | Full Name | Role / Features Responsible For |
 |:--:|:--|:--|
-| <img src="photos/member1.jpg" width="80"> | Benedic Tan | Frontend Developer - Search & Filter UI |
-| <img src="photos/member2.jpg" width="80"> | Jared Chan | Backend Developer - API endpoints |
-| <img src="photos/member3.jpg" width="80"> | Jacob Soh | UI/UX Designer - Layout & Color Themes |
-| <img src="photos/member4.jpg" width="80"> | Javen Tan | Database & Auth - Firebase Integration |
-| <img src="photos/member4.jpg" width="80"> | Joshua Lim | Database & Auth - Firebase Integration |
-| <img src="photos/member4.jpg" width="80"> | Kai Wen | Database & Auth - Firebase Integration |
+| <img src="photos/member1.jpg" width="80"> | ChatGPT + Claude | Our Bestfriend |
+| <img src="photos/member2.jpg" width="80"> | Joshua Lim | Supreme Leader - Oversees project direction, architecture, and integration of the Profile and Dashboard features. |
+| <img src="photos/member3.jpg" width="80"> | Jared Chan | Lead Backend Engineer - Develops and maintains backend logic for Auction Theatre and Management systems. |
+| <img src="photos/member4.jpg" width="80"> | Javen Tan | UI/UX Designer - Designs user flows and interfaces for the Landing and Category pages, ensuring visual consistency and usability. |
+| <img src="photos/member5.jpg" width="80"> | Kai Wen | Frontend Developer - Builds and refines the Auction Creation interface with responsive, user-friendly design. |
+| <img src="photos/member6.jpg" width="80"> | Benedic Tan | Backend Engineer - Implements APIs and database logic for the Auction Creation module. |
+| <img src="photos/member7.jpg" width="80"> | Jacob Soh | System Architect - Designs core system architecture, ensures seamless integration between frontend and backend, and maintains codebase scalability. |
 
 > Place all headshot thumbnails in the `/photos` folder (JPEG or PNG).
 
@@ -23,31 +24,33 @@
 
 ## Business Problem
 
-Describe the **real-world business or community problem** your project addresses.
+Singapore’s e-commerce scene has seen growing interest in live auctions, but the lack of dedicated platforms has driven sellers to use social media channels like Telegram, TikTok Live, and Instagram Live. These platforms are not optimized for auctions—bids are sent through chat messages, creating clutter and confusion, while payment processes remain unsecured, raising scam risks.
 
-> *Example:*  
-> Current options for marketplaces lack transparency for both buyers and sellers
-> Management of buyers and payments from different buyers can also hurt sellers
-> Current Auction sites also do not provide QOL features for both sides
-> Our web application helps them better manage their listings and payment methods.
+Our project addresses these gaps by creating a dedicated online auction platform that provides a secure, intuitive, and engaging space for users to trade safely.
+
+> Auctions on social media are scattered and hard to access.
+> Payments are manual and lack seller verification.
+> Scam cases from unverified sales are increasing.
 
 ---
 
 ## Web Solution Overview
 
 ### 🎯 Intended Users
-Youths around 16-22 years old, Majority Female,
-Who are looking for affordable and reliable used/preloved items
+Young Adults around 21 - 35 years old, Mixed of Genders, 
+looking for second hand items or exquisite collections.
 
 ### 💡 What Users Can Do & Benefits
+
 Explain the core features and the benefit each provides.  
 
 | Feature | Description | User Benefit |
 |:--|:--|:--|
-| Register & Login | Secure authentication system | Personalized experience and data security |
-| Search & Filter | Find items by category or location | Saves time finding relevant results |
-| Favorites | Bookmark preferred items or places | Quick access to commonly used data |
-| Reviews | Submit ratings and comments | Builds trust and community feedback |
+| Register & Login | Secure authentication system for all users | Provides personalized access and protects user data |
+| Categorization and Featured Auctions | Browse items by category or view trending auctions | Saves time and helps users discover relevant listings easily |
+| 3D Auction House | Immersive 3D environment for live auctions | Creates an engaging, interactive experience for younger audiences |
+| Digital Wallet (Hitpay) | Enables seamless and secure in-app payments | Removes the need for manual transfers and payment screenshots |
+| Identity Verification (Persona) | Verifies users through official ID checks | Ensures seller authenticity and builds trust across the platform |
 
 ---
 
@@ -55,13 +58,11 @@ Explain the core features and the benefit each provides.
 
 | Logo | Technology | Purpose / Usage |
 |:--:|:--|:--|
-| <img src="https://raw.githubusercontent.com/github/explore/main/topics/html/html.png" width="40"> | **HTML5** | Structure and content |
-| <img src="https://raw.githubusercontent.com/github/explore/main/topics/css/css.png" width="40"> | **CSS3 / Bootstrap** | Styling and responsiveness |
-| <img src="https://raw.githubusercontent.com/github/explore/main/topics/javascript/javascript.png" width="40"> | **JavaScript (ES6)** | Client-side logic and interactivity |
-| <img src="https://vuejs.org/images/logo.png" width="40"> | **React JS** | Component-based frontend framework |
-| <img src="https://firebase.google.com/downloads/brand-guidelines/PNG/logo-logomark.png" width="40"> | **Supabase** | Authentication and database services |
-
-> Add or remove technologies depending on your project stack (e.g., Express.js, Supabase, MongoDB Atlas, AWS S3).
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/html/html.png" width="40"> | **HTML5** | Structure and layout |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/tailwind/tailwind.png" width="40"> | **CSS3 / Tailwind** | Styling and responsiveness |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/shadcn-ui/shadcn-ui.png" width="40"> | **ShadCN** | React component library |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/javascript/javascript.png" width="40"> | **JavaScript (ES6)** |  Interactivity and logic |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/nextjs/nextjs.png" width="40"> | **Next JS / React JS** | Frontend and routing framework |
 
 ---
 
@@ -100,56 +101,70 @@ Comprehensive steps to help other developers or evaluators run and test your pro
 
 ### 1) Download the Project
 ```bash
-git clone https://github.com/<org-or-user>/<repo-name>.git
-cd <repo-name>
+git clone https://github.com/JacobSoh/IS216_G4_T20.git
+cd IS216_G4_T20
 npm install
 ```
 
 ---
 
 ### 2) Configure Environment Variables
-Create a `.env` file in the root directory with the following structure:
+Create a `.env.local` file in the root directory with the following structure:
 
 ```bash
-VITE_API_URL=<your_backend_or_firebase_url>
-VITE_FIREBASE_API_KEY=<your_firebase_api_key>
-VITE_FIREBASE_AUTH_DOMAIN=<your_auth_domain>
-VITE_FIREBASE_PROJECT_ID=<your_project_id>
-VITE_FIREBASE_STORAGE_BUCKET=<your_storage_bucket>
-VITE_FIREBASE_MESSAGING_SENDER_ID=<your_sender_id>
-VITE_FIREBASE_APP_ID=<your_app_id>
-```
+# Replace BASE_URL with Ngrok's if Ngrok's is used.
+NEXT_PUBLIC_BASE_URL=
+NEXT_PUBLIC_API_BASE_URL=
 
-> Never commit the `.env` file to your repository.  
-> Instead, include a `.env.example` file with placeholder values.
+# Supabase API Keys
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SECRET_KEY=
+
+# HitPay SANDBOX/TEST Configuration
+# Uses webhook, require special configuration at HitPay Dashboard
+HITPAY_API_KEY=
+HITPAY_SALT=
+HITPAY_API_URL=
+
+# Persona API
+# Uses webhook, require special configuration at Persona Dashboard
+NEXT_PUBLIC_PERSONA_TEMPLATE_ID=
+NEXT_PUBLIC_PERSONA_ENV_ID=
+PERSONA_API_KEY=
+PERSONA_WEBHOOK_SECRET=
+
+# Google API Key
+NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY=
+
+# SerpAPI Key
+NEXT_PUBLIC_SERPAPI_KEY=
+```
 
 ---
 
 ### 3) Backend / Cloud Service Setup
 
-#### Firebase
-1. Go to [Firebase Console](https://console.firebase.google.com/)
+#### NGROK
+1. Go to [Ngrok](https://dashboard.ngrok.com/signup)
+2. Sign up for an account
+3. Copy and run ngrok command
+   - ```
+      ngrok config add-authtoken <AUTH TOKEN>
+      ngrok http 3000
+      ```
+4. Copy the Ngrok HTTPS Url into `.env.local` file.
+
+#### Supabase
+1. Go to [Supabase](https://supabase.com/dashboard/org)
 2. Create a new project.
 3. Enable the following:
    - **Authentication** → Email/Password sign-in
-   - **Firestore Database** or **Realtime Database**
-   - **Hosting (optional)** if you plan to deploy your web app
-4. Copy the Firebase configuration into your `.env` file.
+   - **Create Scehmas** -> Load [main.sql](README/main.sql)
+4. Copy the Supabase required API into your `.env.local` file.
 
-#### Optional: Express.js / MongoDB
-If your app includes a backend:
-1. Create a `/server` folder for backend code.
-2. Inside `/server`, create a `.env` file with:
-   ```bash
-   MONGO_URI=<your_mongodb_connection_string>
-   JWT_SECRET=<your_jwt_secret_key>
-   ```
-3. Start the backend:
-   ```bash
-   cd server
-   npm install
-   npm start
-   ```
+### HitPay & Persona
+1. Inform contributors if testing these APIs
 
 ---
 
@@ -158,7 +173,7 @@ To start the development server:
 ```bash
 npm run dev
 ```
-The project will run on [http://localhost:5173](http://localhost:5173) by default.
+The project will run on [http://localhost:3000](http://localhost:3000) by default.
 
 To build and preview the production version:
 ```bash
