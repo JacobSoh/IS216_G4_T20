@@ -6,6 +6,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'teiunfcrodktaevlilhm.supabase.co',
         pathname: '/storage/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+        pathname: '/**'
       }
     ]
   }

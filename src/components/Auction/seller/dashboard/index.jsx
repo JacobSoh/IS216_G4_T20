@@ -33,6 +33,12 @@ function formatCurrency(value) {
   return currencyFormatter.format(numeric);
 }
 
+function formatTooltipCurrency(value) {
+  const numeric = Number(value ?? 0);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  return currencyFormatter.format(numeric);
+}
+
 function formatCurrencyAxis(value) {
   const numeric = Number(value ?? 0);
   if (!Number.isFinite(numeric)) return axisCurrencyFormatter.format(0);
@@ -723,13 +729,18 @@ export default function SellerDashboard({ auctions = [] }) {
         xLabels.push(day);
         const dayMap = monthMap?.get(day) ?? new Map();
         categoryList.forEach((category) => {
-          const value = Number(dayMap?.get(category) ?? 0);
-          seriesValues.get(category).push(Number.isFinite(value) ? value : 0);
+        const rawValue = Number(dayMap?.get(category) ?? 0);
+        const numeric = Number.isFinite(rawValue) ? rawValue : 0;
+        if (numeric > 0) {
+          seriesValues.get(category).push(numeric);
           categoryTotals.set(
             category,
-            (categoryTotals.get(category) ?? 0) + value
+            (categoryTotals.get(category) ?? 0) + numeric
           );
-        });
+        } else {
+          seriesValues.get(category).push(undefined);
+        }
+      });
       }
 
       const categoriesWithRevenue = categoryList.filter(
@@ -746,7 +757,7 @@ export default function SellerDashboard({ auctions = [] }) {
         stack: "revenue",
         data: seriesValues.get(category),
         color: categoryColorMapping.get(category),
-        valueFormatter: (value) => formatCurrency(value),
+        valueFormatter: (value) => formatTooltipCurrency(value),
       }));
 
       const hasData = orderedCategories.some(
@@ -778,12 +789,17 @@ export default function SellerDashboard({ auctions = [] }) {
     for (let month = 0; month < 12; month += 1) {
       const monthMap = yearMap?.get(month) ?? new Map();
       categoryList.forEach((category) => {
-        const value = Number(monthMap?.get(category) ?? 0);
-        seriesValues.get(category).push(Number.isFinite(value) ? value : 0);
-        categoryTotals.set(
-          category,
-          (categoryTotals.get(category) ?? 0) + value
-        );
+        const rawValue = Number(monthMap?.get(category) ?? 0);
+        const numeric = Number.isFinite(rawValue) ? rawValue : 0;
+        if (numeric > 0) {
+          seriesValues.get(category).push(numeric);
+          categoryTotals.set(
+            category,
+            (categoryTotals.get(category) ?? 0) + numeric
+          );
+        } else {
+          seriesValues.get(category).push(undefined);
+        }
       });
     }
 
@@ -801,7 +817,7 @@ export default function SellerDashboard({ auctions = [] }) {
       stack: "revenue",
       data: seriesValues.get(category),
       color: categoryColorMapping.get(category),
-      valueFormatter: (value) => formatCurrency(value),
+      valueFormatter: (value) => formatTooltipCurrency(value),
     }));
 
     const hasData = orderedCategories.some(
@@ -823,6 +839,29 @@ export default function SellerDashboard({ auctions = [] }) {
     resolvedMonth,
     resolvedYear,
   ]);
+
+  const xAxisValueFormatter = useCallback(
+    (value, context) => {
+      if (context?.location === "tooltip") {
+        if (timeframe === "day") {
+          const monthName =
+            resolvedMonth != null ? monthNames[resolvedMonth] : null;
+          const yearLabel = resolvedYear != null ? ` ${resolvedYear}` : "";
+          if (monthName) {
+            return `${monthName} ${value}${yearLabel}`;
+          }
+          if (yearLabel) {
+            return `${value}${yearLabel}`;
+          }
+        } else if (timeframe === "month") {
+          const yearLabel = resolvedYear != null ? ` ${resolvedYear}` : "";
+          return `${value}${yearLabel}`;
+        }
+      }
+      return String(value);
+    },
+    [timeframe, resolvedMonth, resolvedYear]
+  );
 
   useEffect(() => {
     console.info("[SellerDashboard] Revenue summary", {
@@ -1064,13 +1103,14 @@ export default function SellerDashboard({ auctions = [] }) {
               <BarChart
                 height={340}
                 xAxis={[
-                  {
-                    id: "period",
-                    data: chartView.xLabels,
-                    scaleType: "band",
-                    label: chartView.xAxisLabel,
-                  },
-                ]}
+                {
+                  id: "period",
+                  data: chartView.xLabels,
+                  scaleType: "band",
+                  label: chartView.xAxisLabel,
+                  valueFormatter: xAxisValueFormatter,
+                },
+              ]}
                 yAxis={[
                   {
                     valueFormatter: (value) => formatCurrencyAxis(value),

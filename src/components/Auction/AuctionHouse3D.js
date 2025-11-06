@@ -54,7 +54,7 @@ const resolveAvatarUrl = (sender) => {
   )
 }
 
-const DEFAULT_AVATAR = '/images/avatar-placeholder.png'
+const DEFAULT_AVATAR = buildStoragePublicUrl({ bucket: 'avatar', objectPath: 'default.png' })
 
 const buildGuestPresenceId = () => {
   if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
