@@ -72,63 +72,50 @@ Explain the core features and the benefit each provides.
 
 1. **Landing Page & Navigation**
    <img src="README/screenshots/landing.jpg" width="600">
-
-   - Users are greeted with the landing page showcasing "Vintage Retro Finds" with a discover button to explore the platform.
+   Users are greeted with the landing page showcasing "Vintage Retro Finds" with a discover button to explore the platform.
 
    <img src="README/screenshots/navbar.jpg" width="600">
-
-   - Navigation menu provides easy access to Home, Auctions, Categories, Profile, and Dashboard.
+   Navigation menu provides easy access to Home, Auctions, Categories, Profile, and Dashboard.
 
 2. **User Registration**
    <img src="README/screenshots/register.jpg" width="300">
-
-   - New users sign up by providing their username, email, and password to create an account.
+   New users sign up by providing their username, email, and password to create an account.
 
 3. **User Login**
    <img src="README/screenshots/login.jpg" width="300">
-
-   - Returning users authenticate with their credentials to access personalized features.
+   Returning users authenticate with their credentials to access personalized features.
 
 4. **Wallet Top-Up & Payment Flow**
    <img src="README/screenshots/topupwallet.jpg" width="300">
-
-   - Users add funds to their wallet by selecting preset amounts or entering a custom value.
+   Users add funds to their wallet by selecting preset amounts or entering a custom value.
 
    <img src="README/screenshots/payment.jpg" width="600">
-
-   - Payment gateway (HitPay) integration displays the amount and payment method selection.
+   Payment gateway (HitPay) integration displays the amount and payment method selection.
 
    <img src="README/screenshots/payment2.jpg" width="300">
-
-   - Users complete the transaction via PayNow or other supported payment methods.
+   Users complete the transaction via PayNow or other supported payment methods.
 
    <img src="README/screenshots/payment_complete.jpg" width="300">
-
-   - Transaction history shows completed wallet top-ups and auction payments.
+   Transaction history shows completed wallet top-ups and auction payments.
 
 5. **Browse Categories**
    <img src="README/screenshots/categories.jpg" width="600">
-
-   - Users explore diverse categories including Automotive, Books, Collectibles, Electronics, and Fashion to discover items of interest.
+   Users explore diverse categories including Automotive, Books, Collectibles, Electronics, and Fashion to discover items of interest.
 
 6. **Featured Auctions**
    <img src="README/screenshots/featured_auction.jpg" width="600">
-
-   - Live auctions are prominently displayed, showcasing featured collections with category filters for easy browsing.
+   Live auctions are prominently displayed, showcasing featured collections with category filters for easy browsing.
 
 7. **Live Auction House (3D Experience)**
    <img src="README/screenshots/auction_house1.jpg" width="600">
-
-   - Immersive 3D auction environment where users can view live auctions, see active bidders, and control audio settings.
+   Immersive 3D auction environment where users can view live auctions, see active bidders, and control audio settings.
 
    <img src="README/screenshots/auction_house2.jpg" width="600">
-
-   - Interactive bidding modal displays wallet balance, current bid status, minimum increment, and live chat functionality.
+   Interactive bidding modal displays wallet balance, current bid status, minimum increment, and live chat functionality.
 
 8. **User Profile - Items Won**
    <img src="README/screenshots/profile.jpg" width="600">
-
-   - Buyers can view their profile showing items won, wallet balance, and verification status.
+   Buyers can view their profile showing items won, wallet balance, and verification status.
 
 ---
 
@@ -137,29 +124,24 @@ Explain the core features and the benefit each provides.
 *After experiencing the platform as a buyer, users may want to sell their own items (or they might just want to sell items from the start). Here's how they can transition to becoming a seller:*
 
 9. **Identity Verification**
-   <img src="README/screenshots/id_verify.jpg" width="600">
-
-   - Users complete identity verification via Persona to become verified sellers and build trust with buyers.
+   <img src="README/screenshots/id_verify.jpg" width="300">
+   Users complete identity verification via Persona to become verified sellers and build trust with buyers.
 
 10. **Seller Dashboard**
     <img src="README/screenshots/seller_dashboard.jpg" width="600">
-
-    - Verified sellers access their dashboard to view and manage all their auction listings with search functionality.
+    Verified sellers access their dashboard to view and manage all their auction listings with search functionality.
 
 11. **Create New Auction**
     <img src="README/screenshots/auction_create.jpg" width="600">
-
-    - Sellers create auctions by providing auction name, description, images, start datetime, and item display duration.
+    Sellers create auctions by providing auction name, description, images, start datetime, and item display duration.
 
 12. **Manage Live Auctions**
     <img src="README/screenshots/auction_manage.jpg" width="600">
-
-    - Auction Host Panel allows sellers to monitor all auction lots, control item display (make active/locked), manage live chat, and control auction flow.
+    Auction Host Panel allows sellers to monitor all auction lots, control item display (make active/locked), manage live chat, and control auction flow.
 
 13. **Seller Reviews**
     <img src="README/screenshots/reviews.jpg" width="600">
-
-    - Sellers can view their ratings and reviews from buyers, building their reputation and credibility on the platform.
+    Sellers can view their ratings and reviews from buyers, building their reputation and credibility on the platform.
 
 ---
 
