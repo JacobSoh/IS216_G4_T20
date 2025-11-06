@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Suspense, useRef, useEffect, useState, useMemo } from 'react'
+import { Suspense, useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { useAuctionLive } from '@/hooks/useAuctionLive'
@@ -10,7 +10,7 @@ import { ModalContext, AuctionScreenCard, buildScreenLot } from './AuctionScreen
 // replaced axiosBrowserClient with fetch
 import { buildStoragePublicUrl } from '@/utils/storage'
 import { supabaseBrowser } from '@/utils/supabase/client'
-import { ChatBubbleLeftIcon } from '@heroicons/react/24/solid'
+import { ChatBubbleLeftIcon, HomeIcon } from '@heroicons/react/24/solid'
 import BiddingModal from './AuctionHouse3D/BiddingModal'
 import BidConfirmationModal from './AuctionHouse3D/BidConfirmationModal'
 import ChatModal from './AuctionHouse3D/ChatModal'
@@ -213,8 +213,11 @@ export default function AuctionHouse3D({
   const [bidAnnouncement, setBidAnnouncement] = useState(null)
   const [isMusicMuted, setIsMusicMuted] = useState(false)
   const [musicVolume, setMusicVolume] = useState(0.3)
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false)
+  const [showAudioPrompt, setShowAudioPrompt] = useState(true)
   const audioRef = useRef(null)
   const hasUnlockedAudioRef = useRef(false)
+  const isEnablingAudioRef = useRef(false)
   const [itemTimerSeconds, setItemTimerSeconds] = useState(null)
   const [bidConfirmModal, setBidConfirmModal] = useState(null) // { amount, onConfirm, onCancel }
   const [participantCount, setParticipantCount] = useState(0)
@@ -418,57 +421,173 @@ useEffect(() => {
   }
 }, [isMusicMuted, musicVolume])
 
+// Load audio file on mount
 useEffect(() => {
-  // Auto-play music when component mounts
-  const playMusic = async () => {
-    if (!audioRef.current) return
-    try {
-      await audioRef.current.play()
-      hasUnlockedAudioRef.current = true
-    } catch (error) {
-      console.log('Autoplay prevented:', error)
-      // Autoplay might be blocked by browser, user will need to interact first
-    }
-  }
-  playMusic()
-}, [])
+  const audioElement = audioRef.current
+  if (!audioElement) return undefined
 
-useEffect(() => {
-  if (hasUnlockedAudioRef.current) return undefined
+  console.log('[Audio Mount] Audio element mounted, explicitly loading audio file')
 
-  const cleanup = () => {
-    window.removeEventListener('pointerdown', handleUserInteraction)
-    window.removeEventListener('keydown', handleUserInteraction)
-    window.removeEventListener('touchstart', handleUserInteraction)
+  const handleLoadStart = () => {
+    console.log('[Audio] loadstart event - browser has started loading')
   }
 
-  const attemptUnlock = async () => {
-    if (!audioRef.current) return
-    try {
-      await audioRef.current.play()
-      hasUnlockedAudioRef.current = true
-      cleanup()
-    } catch (error) {
-      console.log('Playback still locked, waiting for another interaction.', error)
-    }
+  const handleLoadedMetadata = () => {
+    console.log('[Audio] loadedmetadata event - metadata loaded successfully')
+    console.log('[Audio] Duration:', audioElement.duration, 'seconds')
   }
 
-  function handleUserInteraction() {
-    if (hasUnlockedAudioRef.current) {
-      cleanup()
-      return
-    }
-    attemptUnlock()
+  const handleCanPlay = () => {
+    console.log('[Audio] canplay event - audio can start playing')
+    console.log('[Audio] readyState:', audioElement.readyState)
   }
 
-  window.addEventListener('pointerdown', handleUserInteraction, { once: false })
-  window.addEventListener('keydown', handleUserInteraction, { once: false })
-  window.addEventListener('touchstart', handleUserInteraction, { once: false })
+  const handleError = (e) => {
+    console.error('[Audio] error event - failed to load audio:', e)
+    console.error('[Audio] Error details:', {
+      error: audioElement.error,
+      errorCode: audioElement.error?.code,
+      errorMessage: audioElement.error?.message,
+      src: audioElement.src,
+      currentSrc: audioElement.currentSrc,
+      networkState: audioElement.networkState
+    })
+  }
+
+  const handleStalled = () => {
+    console.warn('[Audio] stalled event - download has stopped')
+  }
+
+  const handleSuspend = () => {
+    console.log('[Audio] suspend event - download intentionally stopped')
+  }
+
+  // Add event listeners
+  audioElement.addEventListener('loadstart', handleLoadStart)
+  audioElement.addEventListener('loadedmetadata', handleLoadedMetadata)
+  audioElement.addEventListener('canplay', handleCanPlay)
+  audioElement.addEventListener('error', handleError)
+  audioElement.addEventListener('stalled', handleStalled)
+  audioElement.addEventListener('suspend', handleSuspend)
+
+  // Explicitly load the audio
+  audioElement.load()
+  console.log('[Audio Mount] Called load() on audio element')
+  console.log('[Audio Mount] Initial state:', {
+    readyState: audioElement.readyState,
+    networkState: audioElement.networkState,
+    src: audioElement.src,
+    currentSrc: audioElement.currentSrc
+  })
 
   return () => {
-    cleanup()
+    audioElement.removeEventListener('loadstart', handleLoadStart)
+    audioElement.removeEventListener('loadedmetadata', handleLoadedMetadata)
+    audioElement.removeEventListener('canplay', handleCanPlay)
+    audioElement.removeEventListener('error', handleError)
+    audioElement.removeEventListener('stalled', handleStalled)
+    audioElement.removeEventListener('suspend', handleSuspend)
   }
 }, [])
+
+const handleEnableAudio = useCallback(() => {
+  // Prevent multiple simultaneous calls
+  if (isEnablingAudioRef.current) {
+    console.log('[handleEnableAudio] Already enabling audio, ignoring duplicate call')
+    return
+  }
+
+  isEnablingAudioRef.current = true
+  console.log('[handleEnableAudio] Button clicked!')
+  console.log('[handleEnableAudio] audioRef.current:', audioRef.current)
+
+  const audioElement = audioRef.current
+  if (!audioElement) {
+    console.error('[handleEnableAudio] No audio element found!')
+    isEnablingAudioRef.current = false
+    setShowAudioPrompt(false)
+    return
+  }
+
+  // Close the prompt FIRST, before attempting to play
+  setShowAudioPrompt(false)
+  hasUnlockedAudioRef.current = true
+
+  // Then attempt to play audio after a small delay to let React finish rendering
+  setTimeout(() => {
+    // Re-check audio element is still valid
+    if (!audioRef.current) {
+      console.error('[handleEnableAudio] Audio element disappeared after timeout!')
+      isEnablingAudioRef.current = false
+      return
+    }
+
+    console.log('[handleEnableAudio] Attempting to play audio unmuted...')
+    console.log('[handleEnableAudio] Audio element state:', {
+      paused: audioElement.paused,
+      readyState: audioElement.readyState,
+      networkState: audioElement.networkState,
+      currentSrc: audioElement.currentSrc
+    })
+
+    audioElement.muted = false
+    audioElement.volume = isMusicMuted ? 0 : musicVolume
+
+    console.log('[handleEnableAudio] Calling play()...')
+    const playPromise = audioElement.play()
+    console.log('[handleEnableAudio] playPromise:', playPromise)
+
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log('[handleEnableAudio] ✓ Audio enabled and playing successfully')
+          console.log('[handleEnableAudio] Final audio state:', {
+            paused: audioElement.paused,
+            volume: audioElement.volume,
+            muted: audioElement.muted
+          })
+          isEnablingAudioRef.current = false
+        })
+        .catch((error) => {
+          console.error('[handleEnableAudio] Failed to play unmuted:', error)
+          console.error('[handleEnableAudio] Error name:', error.name)
+          console.error('[handleEnableAudio] Error message:', error.message)
+
+          // Try fallback: start muted then unmute
+          console.log('[handleEnableAudio] Trying fallback: muted start')
+          audioElement.muted = true
+          audioElement.volume = musicVolume
+
+          const retryPromise = audioElement.play()
+          if (retryPromise !== undefined) {
+            retryPromise
+              .then(() => {
+                console.log('[handleEnableAudio] Playing muted successfully')
+                // Successfully playing while muted, now unmute after a short delay
+                setTimeout(() => {
+                  if (audioRef.current && !isMusicMuted) {
+                    console.log('[handleEnableAudio] Unmuting audio')
+                    audioRef.current.muted = false
+                    audioRef.current.volume = musicVolume
+                  }
+                }, 200)
+                console.log('[handleEnableAudio] ✓ Audio enabled (via muted start)')
+              })
+              .catch((retryError) => {
+                console.error('[handleEnableAudio] Audio playback completely blocked:', retryError)
+              })
+              .finally(() => {
+                isEnablingAudioRef.current = false
+              })
+          } else {
+            isEnablingAudioRef.current = false
+          }
+        })
+    } else {
+      isEnablingAudioRef.current = false
+    }
+  }, 100)
+}, [isMusicMuted, musicVolume])
 
   const handleBidSubmit = async () => {
     if (!aid || !currentLot.activeItem?.iid) return
@@ -683,11 +802,17 @@ useEffect(() => {
 
   return (
     <ModalContext.Provider value={{ isModalOpen, setIsModalOpen, currentLot, items: lotItems, nextItem: currentLot.nextItem, itemTimerSeconds }}>
+      {/* Background Music - Outside main container to prevent unmounting */}
+      <audio
+        ref={audioRef}
+        loop
+        playsInline
+        preload="metadata"
+        crossOrigin="anonymous"
+        src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/music/auction_music.mp3`}
+      />
+
       <div className="w-full h-screen bg-black relative">
-        {/* Background Music */}
-        <audio ref={audioRef} loop autoPlay>
-          <source src="/auction_music.mp3" type="audio/mpeg" />
-        </audio>
 
         {/* 3D Canvas Layer */}
         <div className="absolute inset-0 z-0" style={{ visibility: isModalOpen ? 'hidden' : 'visible' }}>
@@ -722,86 +847,179 @@ useEffect(() => {
           <div className="absolute top-6 left-6 z-10 pointer-events-auto">
             <Link href="/">
               <button className="bg-black/70 hover:bg-[var(--theme-secondary)]/30 text-white px-6 py-3 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm font-semibold transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(176,38,255,0.3)]">
-                <span>?</span> Home
+                <HomeIcon className="w-5 h-5" /> Home
               </button>
             </Link>
           </div>
 
           {/* Status Bar - Top Right */}
-          <div className="absolute top-6 right-6 text-white z-10 flex flex-col gap-3">
-            <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 ${isFetching ? 'bg-[var(--theme-secondary)] animate-ping' : 'bg-[var(--theme-secondary)] animate-pulse'} rounded-full`}></div>
-                <span className="text-sm font-medium uppercase tracking-wide text-[var(--theme-secondary)]">Live Auction</span>
-              </div>
-              <div className="space-y-1">
-                {itemTimerSeconds !== null && (
-                  <p className="text-purple-200 text-xs">
-                    Item timer: {pad(Math.floor(itemTimerSeconds / 60))}:{pad(itemTimerSeconds % 60)}
-                  </p>
-                )}
-                <p className="text-purple-200 text-xs">
-                  {currentLot.auctionName || 'Live Lot'} - {currentLot.bidders} active bidders
-                </p>
-              </div>
-            </div>
+          <div className="absolute top-6 right-6 text-white z-10">
+            {/* Mobile: Collapsible Dropdown */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsInfoExpanded(!isInfoExpanded)}
+                className="bg-black/70 px-6 py-3 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)] hover:bg-black/80 transition-all flex items-center gap-2 font-semibold"
+              >
+                <div className={`w-2 h-2 ${isFetching ? 'bg-[var(--theme-secondary)] animate-ping' : 'bg-[var(--theme-secondary)] animate-pulse'} rounded-full`}></div>
+                <span className="text-xs uppercase tracking-wide text-[var(--theme-secondary)]">Info</span>
+                <span className={`text-xs transform transition-transform ${isInfoExpanded ? 'rotate-180' : ''}`}>▼</span>
+              </button>
 
-            {/* Music Controls */}
-            <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
-              <div className="flex items-center gap-3 mb-2">
-                <button
-                  onClick={() => setIsMusicMuted(!isMusicMuted)}
-                  className="text-2xl hover:scale-110 transition-transform"
-                  title={isMusicMuted ? 'Unmute Music' : 'Mute Music'}
-                >
-                  {isMusicMuted ? '??' : '??'}
-                </button>
-                <span className="text-xs text-purple-200 uppercase tracking-wide">Music</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-purple-300">??</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={musicVolume}
-                  onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
-                  disabled={isMusicMuted}
-                  className="w-24 h-1 bg-[var(--theme-primary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-secondary)]"
-                  style={{
-                    background: `linear-gradient(to right, var(--theme-secondary) 0%, var(--theme-secondary) ${musicVolume * 100}%, var(--theme-primary) ${musicVolume * 100}%, var(--theme-primary) 100%)`,
-                    opacity: isMusicMuted ? 0.5 : 1
-                  }}
-                />
-                <span className="text-xs text-purple-300">{isMusicMuted ? '0%' : `${Math.round(musicVolume * 100)}%`}</span>
-              </div>
-            </div>
-
-            {/* Seller Profile Link */}
-            {snapshot?.auction?.owner?.username && (
-              <Link href={`/user/${snapshot.auction.owner.username}`}>
-                <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)] hover:border-[var(--theme-accent)] hover:shadow-[0_0_30px_rgba(176,38,255,0.5)] transition-all cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">??</span>
-                    <div>
-                      <p className="text-xs text-purple-200 uppercase tracking-wide mb-1">Hosted by</p>
-                      <p className="text-sm text-[var(--theme-cream)] font-semibold">@{snapshot.auction.owner.username}</p>
+              {/* Expanded Mobile Content */}
+              {isInfoExpanded && (
+                <div className="mt-2 flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
+                  {/* Live Auction Status */}
+                  <div className="bg-black/70 p-3 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-2 h-2 ${isFetching ? 'bg-[var(--theme-secondary)] animate-ping' : 'bg-[var(--theme-secondary)] animate-pulse'} rounded-full`}></div>
+                      <span className="text-xs font-medium uppercase tracking-wide text-[var(--theme-secondary)]">Live Auction</span>
+                    </div>
+                    <div className="space-y-1">
+                      {itemTimerSeconds !== null && (
+                        <p className="text-purple-200 text-xs">
+                          Item timer: {pad(Math.floor(itemTimerSeconds / 60))}:{pad(itemTimerSeconds % 60)}
+                        </p>
+                      )}
+                      <p className="text-purple-200 text-xs">
+                        {currentLot.auctionName || 'Live Lot'} - {currentLot.bidders} bidders
+                      </p>
                     </div>
                   </div>
+
+                  {/* Music Controls */}
+                  <div className="bg-black/70 p-3 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <button
+                        onClick={() => setIsMusicMuted(!isMusicMuted)}
+                        className="text-lg hover:scale-110 transition-transform"
+                        title={isMusicMuted ? 'Unmute Music' : 'Mute Music'}
+                      >
+                        {isMusicMuted ? '🔇' : '🔊'}
+                      </button>
+                      <span className="text-xs text-purple-200 uppercase tracking-wide">Music</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-purple-300">🔉</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={musicVolume}
+                        onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+                        disabled={isMusicMuted}
+                        className="flex-1 h-1 bg-[var(--theme-primary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-secondary)]"
+                        style={{
+                          background: `linear-gradient(to right, var(--theme-secondary) 0%, var(--theme-secondary) ${musicVolume * 100}%, var(--theme-primary) ${musicVolume * 100}%, var(--theme-primary) 100%)`,
+                          opacity: isMusicMuted ? 0.5 : 1
+                        }}
+                      />
+                      <span className="text-xs text-purple-300">{isMusicMuted ? '0%' : `${Math.round(musicVolume * 100)}%`}</span>
+                    </div>
+                  </div>
+
+                  {/* Seller Profile Link */}
+                  {snapshot?.auction?.owner?.username && (
+                    <Link href={`/user/${snapshot.auction.owner.username}`}>
+                      <div className="bg-black/70 p-3 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)] hover:border-[var(--theme-accent)] hover:shadow-[0_0_30px_rgba(176,38,255,0.5)] transition-all cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={resolveAvatarUrl(snapshot.auction.owner)}
+                            alt={snapshot.auction.owner.username}
+                            className="w-8 h-8 rounded-full object-cover border-2 border-[var(--theme-secondary)]"
+                          />
+                          <div>
+                            <p className="text-xs text-purple-200 uppercase tracking-wide">Hosted by</p>
+                            <p className="text-sm text-[var(--theme-cream)] font-semibold">@{snapshot.auction.owner.username}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  )}
                 </div>
-              </Link>
-            )}
+              )}
+            </div>
+
+            {/* Desktop: Always Visible Column */}
+            <div className="hidden md:flex flex-col gap-3">
+              <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 ${isFetching ? 'bg-[var(--theme-secondary)] animate-ping' : 'bg-[var(--theme-secondary)] animate-pulse'} rounded-full`}></div>
+                  <span className="text-sm font-medium uppercase tracking-wide text-[var(--theme-secondary)]">Live Auction</span>
+                </div>
+                <div className="space-y-1">
+                  {itemTimerSeconds !== null && (
+                    <p className="text-purple-200 text-xs">
+                      Item timer: {pad(Math.floor(itemTimerSeconds / 60))}:{pad(itemTimerSeconds % 60)}
+                    </p>
+                  )}
+                  <p className="text-purple-200 text-xs">
+                    {currentLot.auctionName || 'Live Lot'} - {currentLot.bidders} active bidders
+                  </p>
+                </div>
+              </div>
+
+              {/* Music Controls */}
+              <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)]">
+                <div className="flex items-center gap-3 mb-2">
+                  <button
+                    onClick={() => setIsMusicMuted(!isMusicMuted)}
+                    className="text-2xl hover:scale-110 transition-transform"
+                    title={isMusicMuted ? 'Unmute Music' : 'Mute Music'}
+                  >
+                    {isMusicMuted ? '🔇' : '🔊'}
+                  </button>
+                  <span className="text-xs text-purple-200 uppercase tracking-wide">Music</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-purple-300">🔉</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={musicVolume}
+                    onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
+                    disabled={isMusicMuted}
+                    className="w-24 h-1 bg-[var(--theme-primary)] rounded-lg appearance-none cursor-pointer accent-[var(--theme-secondary)]"
+                    style={{
+                      background: `linear-gradient(to right, var(--theme-secondary) 0%, var(--theme-secondary) ${musicVolume * 100}%, var(--theme-primary) ${musicVolume * 100}%, var(--theme-primary) 100%)`,
+                      opacity: isMusicMuted ? 0.5 : 1
+                    }}
+                  />
+                  <span className="text-xs text-purple-300">{isMusicMuted ? '0%' : `${Math.round(musicVolume * 100)}%`}</span>
+                </div>
+              </div>
+
+              {/* Seller Profile Link */}
+              {snapshot?.auction?.owner?.username && (
+                <Link href={`/user/${snapshot.auction.owner.username}`}>
+                  <div className="bg-black/70 p-4 rounded-xl border border-[var(--theme-secondary)]/40 backdrop-blur-sm shadow-[0_0_20px_rgba(176,38,255,0.3)] hover:border-[var(--theme-accent)] hover:shadow-[0_0_30px_rgba(176,38,255,0.5)] transition-all cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={resolveAvatarUrl(snapshot.auction.owner)}
+                        alt={snapshot.auction.owner.username}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-[var(--theme-secondary)]"
+                      />
+                      <div>
+                        <p className="text-xs text-purple-200 uppercase tracking-wide mb-1">Hosted by</p>
+                        <p className="text-sm text-[var(--theme-cream)] font-semibold">@{snapshot.auction.owner.username}</p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              )}
+            </div>
           </div>
 
           {/* Floating Action Button - Bid (Bottom Left) */}
           <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 z-[100]">
             <button
               onClick={() => setIsBidPanelOpen(!isBidPanelOpen)}
-              className="w-12 h-12 md:w-14 md:h-14 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center text-xl md:text-2xl transition-all"
+              className="w-12 h-12 md:w-14 md:h-14 bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] text-white rounded-full shadow-[0_0_30px_rgba(176,38,255,0.6)] flex items-center justify-center transition-all text-xl md:text-2xl"
               title="Place Bid"
             >
-              ??
+              🔨
             </button>
           </div>
 
@@ -873,6 +1091,40 @@ useEffect(() => {
 
       {/* Bid Confirmation Modal */}
       <BidConfirmationModal bidConfirmModal={bidConfirmModal} />
+
+      {/* Audio Prompt Overlay - Rendered LAST to be on top */}
+      {showAudioPrompt && (
+        <div className="fixed inset-0 z-[10002] bg-black/80 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
+          <div className="bg-gradient-to-br from-[#1a0b2e] to-[#0f0520] border-2 border-[var(--theme-secondary)] rounded-2xl p-8 max-w-md mx-4 shadow-[0_0_50px_rgba(176,38,255,0.5)] text-center space-y-6 pointer-events-auto">
+            <div className="text-6xl mb-4 animate-pulse">🔊</div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Welcome to the Auction House
+            </h2>
+            <p className="text-purple-200 text-sm mb-6">
+              Enable sound for the full immersive experience with background music during the auction.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleEnableAudio}
+                className="w-full bg-[var(--theme-secondary)] hover:bg-[var(--theme-primary)] text-white font-semibold py-3 px-6 rounded-xl shadow-[0_0_30px_rgba(176,38,255,0.6)] transition-all hover:scale-105 cursor-pointer"
+              >
+                Enable Sound & Enter
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAudioPrompt(false)
+                  setIsMusicMuted(true)
+                }}
+                className="w-full bg-transparent border border-[var(--theme-secondary)]/50 hover:border-[var(--theme-secondary)] text-purple-200 hover:text-white font-semibold py-3 px-6 rounded-xl transition-all cursor-pointer"
+              >
+                Enter Without Sound
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </ModalContext.Provider>
   )

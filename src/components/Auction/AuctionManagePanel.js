@@ -505,7 +505,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
         }
       },
     })
-  }, [aid, refresh, router, snapshot?.auction?.name])
+  }, [aid, refresh, snapshot?.auction?.name])
 
   const requestCloseAuction = useCallback(() => {
     const auctionName = snapshot?.auction?.name ?? 'this auction'
@@ -537,7 +537,7 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
         }
       },
     })
-  }, [aid, refresh, router, snapshot?.auction?.name])
+  }, [aid, refresh, snapshot?.auction?.name])
 
   const updateTimerAdjustMinutes = (value) => {
     if (0 <= Number(value) <= 99) setTimerAdjust(prev => ({ ...prev, minutes: value }));
