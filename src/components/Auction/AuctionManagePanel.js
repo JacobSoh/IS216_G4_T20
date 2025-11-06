@@ -20,6 +20,7 @@ import { CustomInput, CustomTextarea } from '@/components/Form'
 import { Badge } from '@/components/ui/badge'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid'
 import { useModal } from '@/context/ModalContext'
+import { ArrowBigLeft } from 'lucide-react';
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -104,10 +105,12 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
 
     setModalHeader({ title });
     setModalFooter({ showCancel: true, cancelText: cancelLabel, showSubmit: true, submitText: confirmLabel, submitVariant: 'brand' });
-    setModalForm({ isForm: true, onSubmit: async (e) => {
-      e?.preventDefault?.();
-      try { await onConfirm?.(); } finally { setModalState({ open: false }); }
-    }});
+    setModalForm({
+      isForm: true, onSubmit: async (e) => {
+        e?.preventDefault?.();
+        try { await onConfirm?.(); } finally { setModalState({ open: false }); }
+      }
+    });
     setModalState({ open: true, content: Body });
   }, [setModalHeader, setModalFooter, setModalForm, setModalState]);
 
@@ -552,11 +555,19 @@ export default function AuctionManagePanel({ aid, initialLiveData, initialChatMe
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1
-            className="text-4xl font-bold mb-2 text-[var(--theme-gold)]"
-          >
-            Seller Dashboard
-          </h1>
+          <div className='flex items-center justify-center gap-4'>
+            <Button
+              variant="brand"
+              onClick={() => window.location.href = '/auction/seller'}
+            >
+              <ArrowBigLeft /> Back
+            </Button>
+            <h1
+              className="text-4xl font-bold mb-2 text-[var(--theme-gold)]"
+            >
+              Auction Host Panel
+            </h1>
+          </div>
           <p
             className="text-base text-[var(--theme-secondary)]"
           >
