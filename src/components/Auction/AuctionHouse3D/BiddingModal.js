@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { supabaseBrowser } from '@/utils/supabase/client'
+import { useModal } from '@/context/ModalContext'
+import WalletModal from '@/components/wallet/WalletModal'
+import getProfile from '@/hooks/getProfile'
 
 export default function BiddingModal({
   isOpen,
@@ -25,6 +28,8 @@ export default function BiddingModal({
   const [walletBalance, setWalletBalance] = useState(null)
   const [loadingWallet, setLoadingWallet] = useState(true)
   const [userId, setUserId] = useState(null)
+  const [userProfile, setUserProfile] = useState(null)
+  const { setModalHeader, setModalState, setModalForm, setModalFooter } = useModal()
 
   // Fetch initial wallet balance and user ID
   useEffect(() => {
@@ -67,12 +72,10 @@ export default function BiddingModal({
   const fetchWalletBalance = async () => {
     try {
       setLoadingWallet(true)
-      const response = await fetch('/api/profile')
-      if (response.ok) {
-        const data = await response.json()
-        setWalletBalance(Number(data.record?.wallet_balance ?? 0))
-        setUserId(data.record?.id)
-      }
+      const profile = await getProfile()
+      setWalletBalance(Number(profile?.wallet_balance ?? 0))
+      setUserId(profile?.id)
+      setUserProfile(profile)
     } catch (error) {
       console.error('Error fetching wallet balance:', error)
     } finally {
@@ -84,6 +87,16 @@ export default function BiddingModal({
     if (walletBalance === null || !bidAmount) return false
     const amount = Number(bidAmount)
     return !isNaN(amount) && walletBalance < amount
+  }
+
+  const handleOpenWalletModal = () => {
+    // Get current page URL to redirect back after payment
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname + window.location.search : null
+
+    setModalHeader({ title: 'My Wallet' })
+    setModalForm({ isForm: false })
+    setModalFooter({ showCancel: false, showSubmit: false })
+    setModalState({ open: true, content: <WalletModal profile={userProfile} redirectPath={currentPath} /> })
   }
 
   if (!isOpen) return null
@@ -139,6 +152,13 @@ export default function BiddingModal({
                   {walletBalance !== null ? `$${walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '--'}
                 </p>
               </div>
+              <button
+                onClick={handleOpenWalletModal}
+                className="ml-3 px-3 py-2 bg-[var(--theme-gold)]/20 hover:bg-[var(--theme-gold)]/30 border border-[var(--theme-gold)]/50 text-[var(--theme-gold)] font-semibold rounded-lg transition-all duration-200 text-xs md:text-sm whitespace-nowrap"
+                title="Top up your wallet"
+              >
+                + Top Up
+              </button>
             </div>
           </div>
 

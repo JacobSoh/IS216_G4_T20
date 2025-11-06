@@ -10,44 +10,45 @@
 
 | Photo | Full Name | Role / Features Responsible For |
 |:--:|:--|:--|
-| <img src="photos/member1.jpg" width="80"> | Benedic Tan | Frontend Developer - Search & Filter UI |
-| <img src="photos/member2.jpg" width="80"> | Jared Chan | Backend Developer - API endpoints |
-| <img src="photos/member3.jpg" width="80"> | Jacob Soh | UI/UX Designer - Layout & Color Themes |
-| <img src="photos/member4.jpg" width="80"> | Javen Tan | Database & Auth - Firebase Integration |
-| <img src="photos/member4.jpg" width="80"> | Joshua Lim | Database & Auth - Firebase Integration |
-| <img src="photos/member4.jpg" width="80"> | Kai Wen | Database & Auth - Firebase Integration |
-
-> Place all headshot thumbnails in the `/photos` folder (JPEG or PNG).
+| <img src="README/photos/member1.png" width="80"> | ChatGPT + Claude | Our Bestfriend |
+| <img src="README/photos/member2.jpg" width="80"> | Joshua Lim | Supreme Leader - Oversees project direction, architecture, and integration of the Profile and Dashboard features. |
+| <img src="README/photos/member3.jpg" width="80"> | Jared Chan | Lead Backend Engineer - Develops and maintains backend logic for Auction Theatre and Management systems. |
+| <img src="README/photos/member4.jpg" width="80"> | Javen Tan | UI/UX Designer - Designs user flows and interfaces for the Landing and Category pages, ensuring visual consistency and usability. |
+| <img src="README/photos/member5.jpg" width="80"> | Kai Wen | Frontend Developer - Builds and refines the Auction Creation interface with responsive, user-friendly design. |
+| <img src="README/photos/member6.jpg" width="80"> | Benedic Tan | Backend Engineer - Implements APIs and database logic for the Auction Creation module. |
+| <img src="README/photos/member7.jpg" width="80"> | Jacob Soh | Git Master - Builds and refines UI/UX and handles merges between git branches. |
 
 ---
 
 ## Business Problem
 
-Describe the **real-world business or community problem** your project addresses.
+Singapore’s e-commerce scene has seen growing interest in live auctions, but the lack of dedicated platforms has driven sellers to use social media channels like Telegram, TikTok Live, and Instagram Live. These platforms are not optimized for auctions—bids are sent through chat messages, creating clutter and confusion, while payment processes remain unsecured, raising scam risks.
 
-> *Example:*  
-> Current options for marketplaces lack transparency for both buyers and sellers
-> Management of buyers and payments from different buyers can also hurt sellers
-> Current Auction sites also do not provide QOL features for both sides
-> Our web application helps them better manage their listings and payment methods.
+Our project addresses these gaps by creating a dedicated online auction platform that provides a secure, intuitive, and engaging space for users to trade safely.
+
+> Auctions on social media are scattered and hard to access.
+> Payments are manual and lack seller verification.
+> Scam cases from unverified sales are increasing.
 
 ---
 
 ## Web Solution Overview
 
 ### 🎯 Intended Users
-Youths around 16-22 years old, Majority Female,
-Who are looking for affordable and reliable used/preloved items
+Young Adults around 21 - 35 years old, Mixed of Genders, 
+looking for second hand items or exquisite collections.
 
 ### 💡 What Users Can Do & Benefits
+
 Explain the core features and the benefit each provides.  
 
 | Feature | Description | User Benefit |
 |:--|:--|:--|
-| Register & Login | Secure authentication system | Personalized experience and data security |
-| Search & Filter | Find items by category or location | Saves time finding relevant results |
-| Favorites | Bookmark preferred items or places | Quick access to commonly used data |
-| Reviews | Submit ratings and comments | Builds trust and community feedback |
+| Register & Login | Secure authentication system for all users | Provides personalized access and protects user data |
+| Categorization and Featured Auctions | Browse items by category or view trending auctions | Saves time and helps users discover relevant listings easily |
+| 3D Auction House | Immersive 3D environment for live auctions | Creates an engaging, interactive experience for younger audiences |
+| Digital Wallet (Hitpay) | Enables seamless and secure in-app payments | Removes the need for manual transfers and payment screenshots |
+| Identity Verification (Persona) | Verifies users through official ID checks | Ensures seller authenticity and builds trust across the platform |
 
 ---
 
@@ -55,33 +56,122 @@ Explain the core features and the benefit each provides.
 
 | Logo | Technology | Purpose / Usage |
 |:--:|:--|:--|
-| <img src="https://raw.githubusercontent.com/github/explore/main/topics/html/html.png" width="40"> | **HTML5** | Structure and content |
-| <img src="https://raw.githubusercontent.com/github/explore/main/topics/css/css.png" width="40"> | **CSS3 / Bootstrap** | Styling and responsiveness |
-| <img src="https://raw.githubusercontent.com/github/explore/main/topics/javascript/javascript.png" width="40"> | **JavaScript (ES6)** | Client-side logic and interactivity |
-| <img src="https://vuejs.org/images/logo.png" width="40"> | **React JS** | Component-based frontend framework |
-| <img src="https://firebase.google.com/downloads/brand-guidelines/PNG/logo-logomark.png" width="40"> | **Supabase** | Authentication and database services |
-
-> Add or remove technologies depending on your project stack (e.g., Express.js, Supabase, MongoDB Atlas, AWS S3).
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/html/html.png" width="40"> | **HTML5** | Structure and layout |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/tailwind/tailwind.png" width="40"> | **CSS3 / Tailwind** | Styling and responsiveness |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/shadcn-ui/shadcn-ui.png" width="40"> | **ShadCN** | React component library |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/javascript/javascript.png" width="40"> | **JavaScript (ES6)** |  Interactivity and logic |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/nextjs/nextjs.png" width="40"> | **Next JS / React JS** | Frontend and routing framework |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/supabase/supabase.png" width="40"> | **Supabase** | Database and Authentication |
 
 ---
 
 ## Use Case & User Journey
 
-Provide screenshots and captions showing how users interact with your app.
+### Buyer Journey
 
-1. **Landing Page**  
-   <img src="screenshots/landing.jpg" width="600">  
-   - Displays the homepage with navigation options.
+1. **Landing Page & Navigation**
 
-2. **Featured Auctions**  
-   <img src="screenshots/featured_auctions.jpg" width="600">  
-   - Users can browse and filter items by criteria.
+   <img src="README/screenshots/landing.jpg" width="600">
 
-3. **User Dashboar**  
-   <img src="screenshots/dashboard.png" width="600">  
-   - Shows saved data and recent activities.
+   Users are greeted with the landing page showcasing "Vintage Retro Finds" with a discover button to explore the platform.
 
-> Save screenshots inside `/screenshots` with clear filenames.
+   <img src="README/screenshots/navbar.jpg" width="600">
+
+   Navigation menu provides easy access to Home, Auctions, Categories, Profile, and Dashboard.
+
+2. **User Registration**
+
+   <img src="README/screenshots/register.jpg" width="300">
+
+   New users sign up by providing their username, email, and password to create an account.
+
+3. **User Login**
+
+   <img src="README/screenshots/login.jpg" width="300">
+
+   Returning users authenticate with their credentials to access personalized features.
+
+4. **Wallet Top-Up & Payment Flow**
+
+   <img src="README/screenshots/topupwallet.jpg" width="300">
+
+   Users add funds to their wallet by selecting preset amounts or entering a custom value.
+
+   <img src="README/screenshots/payment.jpg" width="600">
+
+   Payment gateway (HitPay) integration displays the amount and payment method selection.
+
+   <img src="README/screenshots/payment2.jpg" width="300">
+
+   Users complete the transaction via PayNow or other supported payment methods.
+
+   <img src="README/screenshots/payment_complete.jpg" width="300">
+
+   Transaction history shows completed wallet top-ups and auction payments.
+
+5. **Browse Categories**
+
+   <img src="README/screenshots/categories.jpg" width="600">
+
+   Users explore diverse categories including Automotive, Books, Collectibles, Electronics, and Fashion to discover items of interest.
+
+6. **Featured Auctions**
+
+   <img src="README/screenshots/featured_auction.jpg" width="600">
+
+   Live auctions are prominently displayed, showcasing featured collections with category filters for easy browsing.
+
+7. **Live Auction House (3D Experience)**
+
+   <img src="README/screenshots/auction_house1.jpg" width="600">
+
+   Immersive 3D auction environment where users can view live auctions, see active bidders, and control audio settings.
+
+   <img src="README/screenshots/auction_house2.jpg" width="600">
+
+   Interactive bidding modal displays wallet balance, current bid status, minimum increment, and live chat functionality.
+
+8. **User Profile - Items Won**
+
+   <img src="README/screenshots/profile.jpg" width="600">
+
+   Buyers can view their profile showing items won, wallet balance, and verification status.
+
+---
+
+### Seller Journey
+
+*After experiencing the platform as a buyer, users may want to sell their own items (or they might just want to sell items from the start). Here's how they can transition to becoming a seller:*
+
+9. **Identity Verification**
+
+   <img src="README/screenshots/id_verify.jpg" width="300">
+
+   Users complete identity verification via Persona to become verified sellers and build trust with buyers.
+
+10. **Seller Dashboard**
+
+    <img src="README/screenshots/seller_dashboard.jpg" width="600">
+
+    Verified sellers access their dashboard to view and manage all their auction listings with search functionality.
+
+11. **Create New Auction**
+
+    <img src="README/screenshots/auction_create.jpg" width="600">
+
+    Sellers create auctions by providing auction name, description, images, start datetime, and item display duration.
+
+12. **Manage Live Auctions**
+
+    <img src="README/screenshots/auction_manage.jpg" width="600">
+
+    Auction Host Panel allows sellers to monitor all auction lots, control item display (make active/locked), manage live chat, and control auction flow.
+
+13. **Seller Reviews**
+
+    <img src="README/screenshots/reviews.jpg" width="600">
+
+    Sellers can view their ratings and reviews from buyers, building their reputation and credibility on the platform.
 
 ---
 
@@ -100,56 +190,70 @@ Comprehensive steps to help other developers or evaluators run and test your pro
 
 ### 1) Download the Project
 ```bash
-git clone https://github.com/<org-or-user>/<repo-name>.git
-cd <repo-name>
+git clone https://github.com/JacobSoh/IS216_G4_T20.git
+cd IS216_G4_T20
 npm install
 ```
 
 ---
 
 ### 2) Configure Environment Variables
-Create a `.env` file in the root directory with the following structure:
+Create a `.env.local` file in the root directory with the following structure:
 
 ```bash
-VITE_API_URL=<your_backend_or_firebase_url>
-VITE_FIREBASE_API_KEY=<your_firebase_api_key>
-VITE_FIREBASE_AUTH_DOMAIN=<your_auth_domain>
-VITE_FIREBASE_PROJECT_ID=<your_project_id>
-VITE_FIREBASE_STORAGE_BUCKET=<your_storage_bucket>
-VITE_FIREBASE_MESSAGING_SENDER_ID=<your_sender_id>
-VITE_FIREBASE_APP_ID=<your_app_id>
-```
+# Replace BASE_URL with Ngrok's if Ngrok's is used.
+NEXT_PUBLIC_BASE_URL=
+NEXT_PUBLIC_API_BASE_URL=
 
-> Never commit the `.env` file to your repository.  
-> Instead, include a `.env.example` file with placeholder values.
+# Supabase API Keys
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SECRET_KEY=
+
+# HitPay SANDBOX/TEST Configuration
+# Uses webhook, require special configuration at HitPay Dashboard
+HITPAY_API_KEY=
+HITPAY_SALT=
+HITPAY_API_URL=
+
+# Persona SANDBOX/TEST Configuration
+# Uses webhook, require special configuration at Persona Dashboard
+NEXT_PUBLIC_PERSONA_TEMPLATE_ID=
+NEXT_PUBLIC_PERSONA_ENV_ID=
+PERSONA_API_KEY=
+PERSONA_WEBHOOK_SECRET=
+
+# Google API Key
+NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY=
+
+# SerpAPI Key
+NEXT_PUBLIC_SERPAPI_KEY=
+```
 
 ---
 
 ### 3) Backend / Cloud Service Setup
 
-#### Firebase
-1. Go to [Firebase Console](https://console.firebase.google.com/)
+#### NGROK
+1. Go to [Ngrok](https://dashboard.ngrok.com/signup)
+2. Sign up for an account
+3. Copy and run ngrok command
+   - ```
+      ngrok config add-authtoken <AUTH TOKEN>
+      ngrok http 3000
+      ```
+4. Copy the Ngrok HTTPS Url into `.env.local` file.
+
+#### Supabase
+1. Go to [Supabase](https://supabase.com/dashboard/org)
 2. Create a new project.
 3. Enable the following:
    - **Authentication** → Email/Password sign-in
-   - **Firestore Database** or **Realtime Database**
-   - **Hosting (optional)** if you plan to deploy your web app
-4. Copy the Firebase configuration into your `.env` file.
+   - **Create Scehmas** -> Load [main.sql](README/main.sql)
+4. Copy the Supabase required API into your `.env.local` file.
 
-#### Optional: Express.js / MongoDB
-If your app includes a backend:
-1. Create a `/server` folder for backend code.
-2. Inside `/server`, create a `.env` file with:
-   ```bash
-   MONGO_URI=<your_mongodb_connection_string>
-   JWT_SECRET=<your_jwt_secret_key>
-   ```
-3. Start the backend:
-   ```bash
-   cd server
-   npm install
-   npm start
-   ```
+### HitPay & Persona
+1. Inform contributors if testing these APIs
 
 ---
 
@@ -158,7 +262,7 @@ To start the development server:
 ```bash
 npm run dev
 ```
-The project will run on [http://localhost:5173](http://localhost:5173) by default.
+The project will run on [http://localhost:3000](http://localhost:3000) by default.
 
 To build and preview the production version:
 ```bash
@@ -194,9 +298,7 @@ npm run test
 | Issue | Cause | Fix |
 |:--|:--|:--|
 | `Module not found` | Missing dependencies | Run `npm install` again |
-| `Firebase: permission-denied` | Firestore security rules not set | Check rules under Firestore → Rules |
-| `CORS policy error` | Backend not allowing requests | Enable your domain in CORS settings |
-| `.env` variables undefined | Missing `VITE_` prefix | Rename variables to start with `VITE_` |
+| `.env.local` variables undefined | Missing `NEXT_PUBLIC_` prefix | Rename variables to start with `NEXT_PUBLIC_` |
 | `npm run dev` fails | Node version mismatch | Check Node version (`node -v` ≥ 18) |
 
 ---

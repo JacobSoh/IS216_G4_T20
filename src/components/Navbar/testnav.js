@@ -10,6 +10,7 @@ import { supabaseBrowser } from "@/utils/supabase/client";
 import { validateRegistration } from "@/lib/validators";
 import { toast } from "sonner";
 import getProfile from "@/hooks/getProfile";
+import { usePathname } from "next/navigation";
 
 export default function BubbleNav() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -19,6 +20,14 @@ export default function BubbleNav() {
   const { isAuthed, logout } = useSupabaseAuth();
   const { setModalHeader, setModalState, setModalForm } = useModal();
 const [userProfile, setUserProfile] = useState(null);
+  const pathname = usePathname();
+
+  // Helper to determine active state based on current pathname
+  const isActivePath = (href) => {
+    if (!href) return false;
+    if (href === "/") return pathname === "/";
+    return pathname?.startsWith(href);
+  };
 
 
   useEffect(() => {
@@ -304,6 +313,8 @@ const avatarUrl =
               >
                 {navLinks.map((link, i) => {
                   const isHovered = hoveredLink === i;
+                  const isActive = isActivePath(link.href);
+                  const showActive = isActive || isHovered;
                   return (
                     <motion.li
                       key={link.name}
@@ -323,7 +334,7 @@ const avatarUrl =
                           <motion.span
                             key={idx}
                             className={`inline-block transition-colors duration-300 ${
-                              isHovered
+                              showActive
                                 ? "text-white"
                                 : "text-[var(--theme-primary)]"
                             }`}
@@ -347,7 +358,7 @@ const avatarUrl =
                         ))}
                         <span
                           className={`absolute left-0 -bottom-1 h-[4px] bg-white transition-all duration-300 ${
-                            isHovered ? "w-full" : "w-0"
+                            showActive ? "w-full" : "w-0"
                           }`}
                         />
                       </a>
@@ -365,12 +376,15 @@ const avatarUrl =
               >
                 {["About", "How it works", "Contact"].map((text, i) => {
                   const href = `/${text.toLowerCase().replace(/\s+/g, "_")}`;
+                  const isActive = isActivePath(href);
 
                   return (
                     <motion.a
                       key={text}
                       href={href}
-                      className="relative cursor-pointer lg:text-12px sm:text-8px font-semibold text-[var(--theme-primary)]"
+                      className={`relative cursor-pointer lg:text-12px sm:text-8px font-semibold ${
+                        isActive ? "text-white" : "text-[var(--theme-primary)]"
+                      }`}
                       whileHover="hover"
                       initial="rest"
                       animate="rest"
@@ -383,12 +397,14 @@ const avatarUrl =
                       {text.split("").map((char, idx) => (
                         <motion.span
                           key={idx}
-                          className="inline-block transition-colors duration-300"
+                          className={`inline-block transition-colors duration-300 ${
+                            isActive ? "text-white" : ""
+                          }`}
                           variants={{
                             rest: {
                               rotateX: 0,
                               y: 0,
-                              color: "var(--theme-primary)",
+                              color: isActive ? "#fff" : "var(--theme-primary)",
                             },
                             hover: {
                               rotateX: [0, 360],
@@ -411,7 +427,7 @@ const avatarUrl =
                       <motion.span
                         className="absolute left-0 -bottom-1 h-[3px] bg-white"
                         variants={{
-                          rest: { width: 0 },
+                          rest: { width: isActive ? "100%" : 0 },
                           hover: {
                             width: "100%",
                             transition: { duration: 0.3 },
