@@ -5,6 +5,7 @@ import { BarChart } from "@mui/x-charts/BarChart";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
 import { supabaseBrowser } from "@/utils/supabase/client";
+import { getCategoryColor } from "./categoryColors";
 import RecentSalesTable from "@/components/Auction/seller/recentlySold";
 import CategorySalesPieChart from "@/components/Auction/seller/dashboard/CategorySalesPieChart";
 import BidHeatmap from "@/components/Auction/seller/dashboard/BidHeatmap";
@@ -143,21 +144,6 @@ const monthNames = [
   "October",
   "November",
   "December",
-];
-
-const categoryColorPalette = [
-  "#fa938e",
-  "#98bf45",
-  "#51cbcf",
-  "#d397ff",
-  "#ffc658",
-  "#ff8042",
-  "#8dd1e1",
-  "#d0ed57",
-  "#a4de6c",
-  "#83a6ed",
-  "#f6a5c0",
-  "#b2df8a",
 ];
 
 export default function SellerDashboard({ auctions = [] }) {
@@ -626,10 +612,10 @@ export default function SellerDashboard({ auctions = [] }) {
     return ["Uncategorized"];
   }, [revenueAggregation.categories]);
 
-  const categoryColorMap = useMemo(() => {
+  const categoryColorMapping = useMemo(() => {
     const mapping = new Map();
-    categoryList.forEach((category, index) => {
-      mapping.set(category, categoryColorPalette[index % categoryColorPalette.length]);
+    categoryList.forEach((category) => {
+      mapping.set(category, getCategoryColor(category));
     });
     return mapping;
   }, [categoryList]);
@@ -759,7 +745,7 @@ export default function SellerDashboard({ auctions = [] }) {
         label: category,
         stack: "revenue",
         data: seriesValues.get(category),
-        color: categoryColorMap.get(category),
+        color: categoryColorMapping.get(category),
         valueFormatter: (value) => formatCurrency(value),
       }));
 
@@ -814,7 +800,7 @@ export default function SellerDashboard({ auctions = [] }) {
       label: category,
       stack: "revenue",
       data: seriesValues.get(category),
-      color: categoryColorMap.get(category),
+      color: categoryColorMapping.get(category),
       valueFormatter: (value) => formatCurrency(value),
     }));
 
@@ -832,7 +818,7 @@ export default function SellerDashboard({ auctions = [] }) {
   }, [
     revenueAggregation,
     categoryList,
-    categoryColorMap,
+    categoryColorMapping,
     timeframe,
     resolvedMonth,
     resolvedYear,
@@ -1074,61 +1060,81 @@ export default function SellerDashboard({ auctions = [] }) {
               . Once sales occur, stacked bars will appear here.
             </p>
           ) : (
-            <BarChart
-              height={340}
-              xAxis={[
-                {
-                  id: "period",
-                  data: chartView.xLabels,
-                  scaleType: "band",
-                  label: chartView.xAxisLabel,
-                },
-              ]}
-              yAxis={[
-                {
-                  valueFormatter: (value) => formatCurrencyAxis(value),
-                },
-              ]}
-              series={chartView.series}
-              margin={{ top: 16, right: 24, bottom: 40, left: 55 }}
-              slotProps={{ legend: { hidden: true } }}
-              sx={{
-                "& .MuiChartsAxis-tickLabel": {
-                  textOverflow: "clip",
-                  overflow: "visible",
-                  whiteSpace: "nowrap",
-                  fill: "#fff",
-                },
-                "& .MuiChartsAxis-left .MuiChartsAxis-tickLabel": {
-                  textOverflow: "clip !important",
-                  overflow: "visible !important",
-                  whiteSpace: "nowrap !important",
-                  fill: "#fff !important",
-                },
-                "& .MuiChartsAxis-label": {
-                  fill: "#fff",
-                },
-                "& .MuiChartsLegend-label": {
-                  fill: "#fff",
-                },
-                "& .MuiChartsLegend-series text": {
-                  fill: "#fff",
-                },
-                "& .MuiChartsGrid-line": {
-                  stroke: "color-mix(in oklab, white 15%, transparent)",
-                },
-                "& .MuiChartsTooltip-root": {
-                  "& .MuiChartsTooltip-table": {
-                    color: '#fff'
-                  }
-                },
+            <>
+              <BarChart
+                height={340}
+                xAxis={[
+                  {
+                    id: "period",
+                    data: chartView.xLabels,
+                    scaleType: "band",
+                    label: chartView.xAxisLabel,
+                  },
+                ]}
+                yAxis={[
+                  {
+                    valueFormatter: (value) => formatCurrencyAxis(value),
+                  },
+                ]}
+                series={chartView.series}
+                margin={{ top: 16, right: 24, bottom: 40, left: 55 }}
+                slotProps={{ legend: { hidden: true } }}
+                sx={{
+                  "& .MuiChartsAxis-tickLabel": {
+                    textOverflow: "clip",
+                    overflow: "visible",
+                    whiteSpace: "nowrap",
+                    fill: "#fff",
+                  },
+                  "& .MuiChartsAxis-left .MuiChartsAxis-tickLabel": {
+                    textOverflow: "clip !important",
+                    overflow: "visible !important",
+                    whiteSpace: "nowrap !important",
+                    fill: "#fff !important",
+                  },
+                  "& .MuiChartsAxis-bottom .MuiChartsAxis-tickLabel": {
+                    fill: "#fff !important",
+                  },
+                  "& .MuiChartsAxis-label": {
+                    fill: "#fff !important",
+                  },
+                  "& .MuiChartsLegend-label": {
+                    fill: "#fff",
+                  },
+                  "& .MuiChartsLegend-series text": {
+                    fill: "#fff",
+                  },
+                  "& .MuiChartsGrid-line": {
+                    stroke: "color-mix(in oklab, white 15%, transparent)",
+                  },
+                  "& .MuiChartsTooltip-root": {
+                    "& .MuiChartsTooltip-table": {
+                      color: '#fff'
+                    }
+                  },
 
-                /* >>> AXIS LINES & TICKS TO WHITE <<< */
-                "& .MuiChartsAxis-bottom .MuiChartsAxis-line": { stroke: "var(--theme-gold)" }, // x-axis line
-                "& .MuiChartsAxis-left .MuiChartsAxis-line": { stroke: "var(--theme-gold)" },   // y-axis line
-                "& .MuiChartsAxis-tick": { stroke: "var(--theme-gold)" },
-              }}
-            />
+                  /* >>> AXIS LINES & TICKS TO WHITE <<< */
+                  "& .MuiChartsAxis-bottom .MuiChartsAxis-line": { stroke: "var(--theme-gold)" }, // x-axis line
+                  "& .MuiChartsAxis-left .MuiChartsAxis-line": { stroke: "var(--theme-gold)" },   // y-axis line
+                  "& .MuiChartsAxis-tick": { stroke: "var(--theme-gold)" },
+                }}
+              />
+
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                {chartView.series.map((series) => (
+                  <div
+                    key={series.id}
+                    className="flex items-center gap-2 text-sm text-white"
+                  >
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-[2px]"
+                      style={{ backgroundColor: series.color }}
+                    />
+                    <span>{series.label}</span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
           {error && (
             <p className="mt-2 text-sm text-red-400">{error}</p>
