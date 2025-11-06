@@ -307,13 +307,32 @@ npm run test
 
 Each member should contribute 2–3 sentences on their learning and project experience.
 
-> **Example Template:**  
-> - *Alice:* Learned to build reusable Vue components and manage state effectively.  
-> - *Ben:* Gained experience connecting frontend and backend APIs.  
-> - *Chloe:* Improved UI/UX design workflow and collaboration using Figma.  
-> - *David:* Understood how Firebase Authentication and Firestore integrate with modern SPAs.  
+| **Member**  | **Reflection** |
+|:--|:--|
+| **Jared**   | - Gained hands-on experience integrating frontend interfaces with backend APIs and databases.<br>- Learned how to create seamless data flow between different layers of a web application.<br>- Developed skills in designing intuitive and visually appealing interfaces that enhance user experience. |
+| **Joshua**  | - Strengthened collaboration skills using GitHub to ensure all components worked cohesively.<br>- Learned how to use Supabase for dynamic data storage and seamless updates.<br>- Expanded knowledge from frontend to backend development through hands-on integration work.|
+| **Javen**   | - Learned the importance of planning ahead and setting structured goals before coding.<br>- Recognized how poor preparation leads to inefficiency and rework.<br>- Gained appreciation for proper planning and organization in both academic and personal projects.|
+| **Kai Wen** | - Gained a clearer mental visualization of how frontend, backend, and databases interact in web development.<br>- Learned Git branching and version control commands for smooth collaboration.<br>- Developed appreciation for well-designed user interfaces that enhance user experience.|
+| **Benedic** | - Improved technical proficiency by learning React, GitHub, and Tailwind from scratch.<br>- Overcame initial skill gaps through self-learning and teamwork.<br>- Built confidence to apply new technical skills in future projects and internships. ❤️|
+| **Jacob**   | - Deepened understanding of properly handle merging of multiple branches and version control. <br>- Learned how to communicate better with team members, specifically to deliver clearer intentions. <br>- Improved skills in managing APIs and ensuring consistent data flow across layers.|
 
-As a team, reflect on:
-- Key takeaways from working with real-world frameworks  
-- Challenges faced and how they were resolved  
-- Insights on teamwork, project management, and problem-solving  
+1. ### Key Takeaways from Working with Real-World Frameworks
+   Working with real-world frameworks such as Next.js, TailwindCSS, and Supabase allowed the team to experience how modern technologies integrate to form a complete web application.
+   - We learned that the materials from WAD2 is the most fundamental level needed to begin using real-world frameworks.
+   - We learned how to connect frontend components with backend APIs and databases to create a seamless flow of data and functionality.
+   - The process deepened our understanding of design systems, responsive layouts, and database interactions in practical development contexts.
+
+2. ### Challenges Faced and How They Were Resolved
+   Challenge 1: Version control and code conflicts from collaboration on GitHub.
+   - Resolved through clearer communication and standardizing commit practices.
+
+   Challenge 2: Connecting Supabase to frontend
+   - Trial and error
+   - Documentation review
+
+   Challenge 3: Frontend Design
+   - GenAI Assistance
+   - Standardizing common CSS/Classname usage
+
+3. ### Insights on Teamwork, Project Management, and Problem-Solving
+   Working together taught us the importance of planning, communication, and task delegation. Regular discussions and updates ensured everyone was aligned on project goals and progress. We realized that effective teamwork is not just about coding but also about understanding each other’s strengths and supporting one another during obstacles. Through this experience, we improved our project management discipline, learned to adapt quickly to changes, and developed a collaborative mindset essential for future professional projects.
