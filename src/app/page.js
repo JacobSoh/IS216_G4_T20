@@ -684,7 +684,7 @@ export default function FuturisticAuction() {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className={`${isDesktop ? "" : "max-w-3xl mx-auto"}`}
           >
-            <h2 className="text-6xl md:text-5xl sm:text-4xl font-bold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
+            <h2 className="text-4xl md:text-6xl sm:text-5xl font-bold text-purple-400 drop-shadow-[0_0_25px_rgba(168,85,247,0.9)]">
               Why use BidHub?
             </h2>
 

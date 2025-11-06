@@ -103,8 +103,8 @@ export default function BubbleNav() {
   const navLinks = isAuthed
     ? [
         ...baseLinks,
-        { name: "Profile", href: "/profile" },
         { name: "Dashboard", href: "/auction/seller" },
+        { name: "Profile", href: "/profile" },
       ]
     : baseLinks; // Hide Profile when not logged in
 
