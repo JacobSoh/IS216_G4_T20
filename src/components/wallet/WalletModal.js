@@ -34,7 +34,8 @@ const reducer = (s, a) => {
 };
 
 export default function WalletModal({
-    profile
+    profile,
+    redirectPath = null
 }) {
     const [wallet, setWallet] = useReducer(reducer, initialWallet);
 
@@ -119,7 +120,8 @@ export default function WalletModal({
                 amount,
                 profile.id,
                 profile.email,
-                currentOrigin
+                currentOrigin,
+                redirectPath
             );
 
             if (result.success) {

@@ -10,18 +10,21 @@ const CONFIG = {
 };
 
 // Helper to build form data
-function buildPaymentFormData({ amount, email, userId, redirectOrigin, referenceNumber }) {
+function buildPaymentFormData({ amount, email, userId, redirectOrigin, referenceNumber, redirectPath }) {
     const formData = new URLSearchParams();
 
     // Use provided redirectOrigin or fallback to CONFIG.baseUrl
     const baseUrl = redirectOrigin || CONFIG.baseUrl;
+
+    // Determine the redirect path - use provided path or default to /profile
+    const finalRedirectPath = redirectPath || '/profile';
 
     formData.append('amount', amount.toString());
     formData.append('currency', CONFIG.currency);
     formData.append('email', email);
     formData.append('purpose', 'Wallet Top-Up');
     formData.append('reference_number', referenceNumber);
-    formData.append('redirect_url', `${baseUrl}/profile?payment_ref=${referenceNumber}&amount=${amount}`);
+    formData.append('redirect_url', `${baseUrl}${finalRedirectPath}${finalRedirectPath.includes('?') ? '&' : '?'}payment_ref=${referenceNumber}&amount=${amount}`);
     formData.append('webhook', `${CONFIG.baseUrl}/api/hitpay/webhook`);
 
     CONFIG.paymentMethods.forEach(method => {
@@ -32,7 +35,7 @@ function buildPaymentFormData({ amount, email, userId, redirectOrigin, reference
 }
 
 // Main payment creation function
-export async function createTopUpPayment(amount, userId, email, redirectOrigin = null) {
+export async function createTopUpPayment(amount, userId, email, redirectOrigin = null, redirectPath = null) {
     // Validate API key
     if (!CONFIG.apiKey) {
         return {
@@ -58,7 +61,7 @@ export async function createTopUpPayment(amount, userId, email, redirectOrigin =
 
     try {
         const referenceNumber = `TOPUP_${userId}_${Date.now()}`;
-        const formData = buildPaymentFormData({ amount, email, userId, redirectOrigin, referenceNumber });
+        const formData = buildPaymentFormData({ amount, email, userId, redirectOrigin, referenceNumber, redirectPath });
 
         console.log('Creating HitPay payment:', {
             amount,

@@ -90,10 +90,13 @@ export default function BiddingModal({
   }
 
   const handleOpenWalletModal = () => {
+    // Get current page URL to redirect back after payment
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname + window.location.search : null
+
     setModalHeader({ title: 'My Wallet' })
     setModalForm({ isForm: false })
     setModalFooter({ showCancel: false, showSubmit: false })
-    setModalState({ open: true, content: <WalletModal profile={userProfile} /> })
+    setModalState({ open: true, content: <WalletModal profile={userProfile} redirectPath={currentPath} /> })
   }
 
   if (!isOpen) return null
