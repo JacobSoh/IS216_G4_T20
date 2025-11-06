@@ -146,16 +146,20 @@ export async function createWithdrawalPayout(amount, userId, bankDetails, note =
     try {
         const referenceNumber = `WITHDRAW_${userId}_${Date.now()}`;
 
-        // Build transfer payload
+        // Build transfer payload with beneficiary object
         const transferData = {
             amount: amount.toString(),
             currency: CONFIG.currency,
-            recipient_bank_account_number: bankDetails.accountNumber,
-            recipient_account_name: bankDetails.accountName,
-            recipient_bank_swift_code: getBankSwiftCode(bankDetails.bankName),
             reference_number: referenceNumber,
             description: note || `Wallet withdrawal to ${bankDetails.bankName}`,
-            purpose: 'Wallet Withdrawal'
+            purpose: 'Wallet Withdrawal',
+            beneficiary: {
+                bank_account_number: bankDetails.accountNumber,
+                account_holder_name: bankDetails.accountName,
+                bank_swift_code: getBankSwiftCode(bankDetails.bankName),
+                bank_name: bankDetails.bankName,
+                bank_country: 'SG'
+            }
         };
 
         console.log('Creating HitPay transfer/payout:', {
