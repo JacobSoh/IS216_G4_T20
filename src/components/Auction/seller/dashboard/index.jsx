@@ -9,7 +9,6 @@ import RecentSalesTable from "@/components/Auction/seller/recentlySold";
 import CategorySalesPieChart from "@/components/Auction/seller/dashboard/CategorySalesPieChart";
 import BidHeatmap from "@/components/Auction/seller/dashboard/BidHeatmap";
 // import PriceUpliftWaterfall from "@/components/Auction/seller/dashboard/PriceUpliftWaterfall";
-import ReserveCalibration from "@/components/Auction/seller/dashboard/ReserveCalibration";
 import { CustomSelect } from "@/components/Form";
 import { Card, CardAction, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
@@ -1091,14 +1090,20 @@ export default function SellerDashboard({ auctions = [] }) {
                 },
               ]}
               series={chartView.series}
-              margin={{ top: 16, right: 24, bottom: 40, left: 40 }}
+              margin={{ top: 16, right: 24, bottom: 40, left: 55 }}
               slotProps={{ legend: { hidden: true } }}
               sx={{
                 "& .MuiChartsAxis-tickLabel": {
-                  textOverflow: "initial",
+                  textOverflow: "clip",
                   overflow: "visible",
                   whiteSpace: "nowrap",
                   fill: "#fff",
+                },
+                "& .MuiChartsAxis-left .MuiChartsAxis-tickLabel": {
+                  textOverflow: "clip !important",
+                  overflow: "visible !important",
+                  whiteSpace: "nowrap !important",
+                  fill: "#fff !important",
                 },
                 "& .MuiChartsAxis-label": {
                   fill: "#fff",
@@ -1134,6 +1139,7 @@ export default function SellerDashboard({ auctions = [] }) {
       <Card variant='default'>
         <CardHeader>
           <CardTitle>Category & Sales Distribution</CardTitle>
+          <CardDescription>Items auctions and their sold status</CardDescription>
         </CardHeader>
         <CardContent>
           <CategorySalesPieChart sellerId={sellerId} />
@@ -1160,12 +1166,6 @@ export default function SellerDashboard({ auctions = [] }) {
           <PriceUpliftWaterfall sellerId={sellerId} />
         </CardContent>
       </Card> */}
-
-      <Card variant='default'>
-        <CardContent>
-          <ReserveCalibration sellerId={sellerId} />
-        </CardContent>
-      </Card>
 
       <RecentSalesTable soldItems={soldRows} loading={loading} />
     </div>

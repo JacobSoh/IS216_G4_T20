@@ -196,7 +196,7 @@ export default function BidHeatmap({ sellerId }) {
               valueFormatter: (value) => DAYS_OF_WEEK[value] || "",
             },
           ]}
-          margin={{ top: 20, right: 20, bottom: 50, left: 40 }}
+          margin={{ top: 20, right: 20, bottom: 50, left: 35 }}
           slotProps={{ legend: { hidden: true } }}
           sx={{
             "& .MuiChartsAxis-tickLabel": {
