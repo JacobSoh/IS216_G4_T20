@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useModal } from "@/context/ModalContext";
@@ -9,6 +9,7 @@ import Register from "@/components/LR/Register";
 import { supabaseBrowser } from "@/utils/supabase/client";
 import { validateRegistration } from "@/lib/validators";
 import { toast } from "sonner";
+import getProfile from "@/hooks/getProfile";
 
 export default function BubbleNav() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -17,6 +18,37 @@ export default function BubbleNav() {
   const [loggedIn, setLoggedIn] = useState(false); // mock auth state (unused)
   const { isAuthed, logout } = useSupabaseAuth();
   const { setModalHeader, setModalState, setModalForm } = useModal();
+const [userProfile, setUserProfile] = useState(null);
+
+
+  useEffect(() => {
+  const loadProfile = async () => {
+    if (!isAuthed) {
+      setUserProfile(null);
+      return;
+    }
+
+    try {
+      const user = await getProfile(); // returns a User instance
+      setUserProfile(user);
+    } catch (err) {
+      console.error("Error fetching user profile:", err);
+      setUserProfile(null);
+    }
+  };
+
+  loadProfile();
+}, [isAuthed]);
+
+  const defaultAvatar =
+  "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/profile.jpg";
+
+const avatarUrl =
+  userProfile?.avatar_url ||
+  (userProfile?.avatar_bucket && userProfile?.object_path
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${userProfile.avatar_bucket}/${userProfile.object_path}`
+    : defaultAvatar);
+
 
   const openLogin = () => {
     // Close overlay so modal appears above everything
@@ -88,12 +120,27 @@ export default function BubbleNav() {
     setTimeout(() => setModalState({ open: true, content: <Register /> }), 200);
   };
 
+
+
   const imageItems = [
-    { src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/Kidshomedrawing.jpg", alt: "Home" },
-    { src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/gavel.jpg", alt: "Auctions" },
-    { src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/stuff.jpg", alt: "Categories" },
-    { src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/profile.jpg", alt: "Profile" },
-  ];
+  {
+    src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/Kidshomedrawing.jpg",
+    alt: "Home",
+  },
+  {
+    src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/gavel.jpg",
+    alt: "Auctions",
+  },
+  {
+    src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/stuff.jpg",
+    alt: "Categories",
+  },
+  {
+    src: avatarUrl, // ← dynamically shows user avatar
+    alt: userProfile?.username || "Profile",
+  },
+];
+
 
   const baseLinks = [
     { name: "Home", href: "/" },
@@ -103,8 +150,9 @@ export default function BubbleNav() {
   const navLinks = isAuthed
     ? [
         ...baseLinks,
-        { name: "Dashboard", href: "/auction/seller" },
         { name: "Profile", href: "/profile" },
+        { name: "Dashboard", href: "/auction/seller" },
+        
       ]
     : baseLinks; // Hide Profile when not logged in
 
