@@ -322,14 +322,6 @@ function StageAuctionCard({ lotData, onClick }) {
             {lotLabel}
           </span>
         </div>
-        <div className="rounded-full px-3.5 py-1.5 text-[11px] uppercase tracking-[0.12em] flex items-center gap-1.5 border" style={{
-          backgroundColor: `${COLORS.richPurple}20`,
-          color: COLORS.richPurple,
-          borderColor: `${COLORS.richPurple}30`
-        }}>
-          <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: COLORS.richPurple }} />
-          {timeRemaining} remaining
-        </div>
       </div>
 
       <div className="flex gap-3 flex-1 min-h-0">
@@ -369,11 +361,7 @@ function StageAuctionCard({ lotData, onClick }) {
             </div>
           </div>
 
-          <div className={`grid ${itemTimer ? 'grid-cols-3' : 'grid-cols-2'} gap-2.5 bg-black/80 rounded-[14px] p-3 border`} style={{ borderColor: `${COLORS.richPurple}20` }}>
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] uppercase" style={{ color: COLORS.lightPurple }}>Auction Ends</span>
-              <span className="text-base font-semibold" style={{ color: COLORS.warmCream }}>{timeRemaining}</span>
-            </div>
+          <div className={`grid grid-cols-2 gap-2.5 bg-black/80 rounded-[14px] p-3 border`} style={{ borderColor: `${COLORS.richPurple}20` }}>
             {itemTimer && (
               <div className="flex flex-col gap-1">
                 <span className="text-[11px] uppercase" style={{ color: COLORS.lightPurple }}>Item Timer</span>
@@ -623,14 +611,6 @@ function ModalAuctionCard({ lotData, onClose }) {
             <h2 className="text-xl md:text-2xl lg:text-3xl font-bold" style={{ color: COLORS.warmCream }}>{auctionName}</h2>
             <span className="text-xs tracking-[0.12em] uppercase" style={{ color: COLORS.lightPurple }}>{lotLabel}</span>
           </div>
-          <div className="rounded-full px-3 py-2 text-xs uppercase tracking-wider flex items-center gap-2 w-fit flex-shrink-0 border" style={{
-            backgroundColor: `${COLORS.richPurple}20`,
-            color: COLORS.richPurple,
-            borderColor: `${COLORS.richPurple}40`
-          }}>
-            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: COLORS.richPurple }} />
-            <span className="whitespace-nowrap">{timeRemaining} remaining</span>
-          </div>
         </div>
 
         {/* Main Content */}
@@ -675,11 +655,7 @@ function ModalAuctionCard({ lotData, onClose }) {
             </div>
 
             {/* Stats Grid */}
-            <div className={`grid ${itemTimer ? 'grid-cols-3' : 'grid-cols-2'} gap-3 md:gap-4 bg-black/80 rounded-xl md:rounded-2xl p-4 md:p-5 border`} style={{ borderColor: `${COLORS.richPurple}30` }}>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] md:text-xs uppercase" style={{ color: COLORS.lightPurple }}>Auction Ends</span>
-                <span className="text-sm md:text-base lg:text-lg font-semibold" style={{ color: COLORS.warmCream }}>{timeRemaining}</span>
-              </div>
+            <div className={`grid grid-cols-2 gap-3 md:gap-4 bg-black/80 rounded-xl md:rounded-2xl p-4 md:p-5 border`} style={{ borderColor: `${COLORS.richPurple}30` }}>
               {itemTimer && (
                 <div className="flex flex-col gap-1">
                   <span className="text-[10px] md:text-xs uppercase" style={{ color: COLORS.lightPurple }}>Item Timer</span>

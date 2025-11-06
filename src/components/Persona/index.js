@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function VerifyButton({id, className}) {
+export default function VerifyButton({ id, className, variant = 'brand', size = 'default' }) {
   const [ready, setReady] = useState(false);
 
   // when the CDN script has loaded, window.Persona will exist
@@ -74,7 +74,8 @@ export default function VerifyButton({id, className}) {
     <Button
       onClick={launch}
       disabled={!ready}
-      variant="link"
+      variant={variant}
+      size={size}
       className={className}
     >
       <ShieldCheck /> {ready || !!id ? "Verify my ID" : "Loading verifier…"}
