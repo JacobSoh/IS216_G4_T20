@@ -37,7 +37,7 @@ const Textarea = React.forwardRef(({ className, type, hoverVariant = 'border', .
       className="group/input rounded-md p-[2px] transition duration-300"
     >
       <div
-        className="rounded-md ring-1 ring-[var(--theme-primary)] bg-background transition duration-300"
+        className="rounded-md ring-1 ring-[var(--theme-primary)] bg-background transition duration-300 overflow-hidden"
         style={hoverVariant === 'fill' ? { background: gradient } : undefined}
       >
         <textarea
@@ -46,6 +46,13 @@ const Textarea = React.forwardRef(({ className, type, hoverVariant = 'border', .
             `shadow-input flex min-h-10 w-full rounded-md bg-background px-3 py-2 text-sm text-[var(--theme-surface-contrast)] transition duration-400 group-hover/input:shadow-none placeholder:text-[var(--theme-placeholder)] focus-visible:ring-[2px] focus-visible:ring-[color:var(--theme-secondary)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50`,
             className
           )}
+          style={{
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
+            resize: 'vertical'
+          }}
           ref={ref}
           {...props}
         />

@@ -47,7 +47,7 @@ export default function ReviewCard({ review, sb, avatarSize = 12 }) {
                 </CardAction>
             </CardHeader>
             <CardContent>
-                <p className='text-center sm:text-start'>{review.review || 'No review text provided'}</p>
+                <p className='text-center sm:text-start break-words whitespace-pre-wrap overflow-wrap-anywhere'>{review.review || 'No review text provided'}</p>
             </CardContent>
         </Card>
     );
