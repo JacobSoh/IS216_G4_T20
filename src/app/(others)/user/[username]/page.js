@@ -54,7 +54,7 @@ async function fetchPublicProfile(sb, username) {
   let listingCount = 0;
   let soldCount = 0;
   let wonCount = 0;
-  let avgRating = "0.0";
+  let avgRating = "No ratings yet";
   let totalReviews = 0;
 
   const nowIso = new Date().toISOString();
@@ -99,7 +99,7 @@ async function fetchPublicProfile(sb, username) {
     if (Array.isArray(reviewStats) && reviewStats[0]) {
       totalReviews = reviewStats[0].total ?? 0;
       const average = reviewStats[0].avg_rating ?? 0;
-      avgRating = totalReviews > 0 ? Number(average).toFixed(1) : "0.0";
+      avgRating = totalReviews > 0 ? Number(average).toFixed(1) : "No ratings yet";
     }
   } catch (err) {
     console.warn("[fetchPublicProfile] Unable to fetch review stats:", err?.message);
@@ -122,7 +122,7 @@ async function fetchPublicProfile(sb, username) {
 
 export default function PublicProfilePage() {
   const params = useParams();
-  
+
   const sb = supabaseBrowser();
 
   const [profile, setProfile] = useState(null);
@@ -207,7 +207,7 @@ export default function PublicProfilePage() {
             if (Array.isArray(reviewStats) && reviewStats[0]) {
               const totalReviews = reviewStats[0].total ?? 0;
               const average = reviewStats[0].avg_rating ?? 0;
-              const avgRating = totalReviews > 0 ? Number(average).toFixed(1) : "0.0";
+              const avgRating = totalReviews > 0 ? Number(average).toFixed(1) : "No ratings yet";
 
               console.log('[PublicProfile] Updating profile with avg_rating:', avgRating);
 

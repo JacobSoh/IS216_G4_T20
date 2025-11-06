@@ -150,6 +150,7 @@ export async function createWithdrawalPayout(amount, userId, bankDetails, note =
         const transferData = {
             amount: amount.toString(),
             currency: CONFIG.currency,
+            source_currency: CONFIG.currency,
             reference_number: referenceNumber,
             description: note || `Wallet withdrawal to ${bankDetails.bankName}`,
             purpose: 'Wallet Withdrawal',
