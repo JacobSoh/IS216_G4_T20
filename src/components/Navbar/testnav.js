@@ -150,8 +150,9 @@ const avatarUrl =
   const navLinks = isAuthed
     ? [
         ...baseLinks,
-        { name: "Dashboard", href: "/auction/seller" },
         { name: "Profile", href: "/profile" },
+        { name: "Dashboard", href: "/auction/seller" },
+        
       ]
     : baseLinks; // Hide Profile when not logged in
 

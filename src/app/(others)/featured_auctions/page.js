@@ -176,10 +176,10 @@ export default function FeaturedStorePage() {
       {/* Auctions Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
          {isLoading
-          ? Array.from({ length: 6 }).map((_, i) => (
+          ? Array.from({ length: 7 }).map((_, i) => (
               <AuctionHoverPictureSkeleton key={i} />
             ))
-          : auctions.slice(1, 6).map((auction) => {
+          : auctions.slice(1, 7).map((auction) => {
               const picUrl =
                 auction.thumbnail_bucket && auction.object_path
                   ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${auction.thumbnail_bucket}/${auction.object_path}`
