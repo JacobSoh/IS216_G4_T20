@@ -94,9 +94,8 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
 
   const onSignInClick = async () => {
     if (isAuthed) {
-      // Instant logout, stay on current page
-      logout();
-      // Optional: no toast due to immediate navigation; keep UX clean
+      // Logout and redirect to home to avoid protected-page flashes
+      logout({ redirectTo: '/' });
     } else {
       openLogin();
     }
@@ -125,11 +124,17 @@ export default function Navbar({ isAuthed: initialAuthed } = {}) {
         autoOpenedRef.current = true;
         openLogin();
         // Clean the URL to avoid reopening on re-render
+        // Use history.replaceState to avoid a full reload that closes the modal
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
           url.searchParams.delete('login');
           if (nextPath) url.searchParams.set('next', nextPath); else url.searchParams.delete('next');
-          window.location.href = url.pathname + (url.search ? url.search : '');
+          const newUrl = url.pathname + (url.search ? url.search : '');
+          try {
+            window.history.replaceState({}, '', newUrl);
+          } catch {
+            // Fallback: do nothing rather than reload
+          }
         }
       }
     } catch {}

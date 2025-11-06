@@ -184,13 +184,18 @@ function AutoOpenLogin() {
           },
         });
         setModalState({ open: true, content: <Login /> });
-        // Clean login param but keep next
+        // Clean login param but keep next without reloading the page
         if (typeof window !== "undefined") {
           const url = new URL(window.location.href);
           url.searchParams.delete("login");
           if (nextPath) url.searchParams.set("next", nextPath);
           else url.searchParams.delete("next");
-          window.location.href = url.pathname + (url.search ? url.search : "");
+          const newUrl = url.pathname + (url.search ? url.search : "");
+          try {
+            window.history.replaceState({}, "", newUrl);
+          } catch {
+            // Avoid full reload to keep modal open
+          }
         }
       }
     } catch {}
