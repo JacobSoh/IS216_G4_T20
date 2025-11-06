@@ -70,14 +70,14 @@ Explain the core features and the benefit each provides.
 Provide screenshots and captions showing how users interact with your app.
 
 1. **Landing Page**  
-   <img src="screenshots/landing.png" width="600">  
+   <img src="screenshots/landing.jpg" width="600">  
    - Displays the homepage with navigation options.
 
-2. **Search Feature**  
-   <img src="screenshots/search.png" width="600">  
+2. **Featured Auctions**  
+   <img src="screenshots/featured_auctions.jpg" width="600">  
    - Users can browse and filter items by criteria.
 
-3. **User Dashboard**  
+3. **User Dashboar**  
    <img src="screenshots/dashboard.png" width="600">  
    - Shows saved data and recent activities.
 
