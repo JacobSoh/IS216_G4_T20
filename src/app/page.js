@@ -447,7 +447,7 @@ export default function FuturisticAuction() {
 
         {/* IMAGE COLUMN */}
         <div className="flex-[1.1] flex justify-center md:justify-end items-center mt-10 md:mt-0">
-          <div className="w-[85%] md:w-[70%] lg:w-[55%] xl:w-[45%] max-w-[600px]">
+          <div className="w-[85%] md:w-[70%] lg:w-[70%] xl:w-[65%] max-w-[600px]">
             <img
               className="shadow-lg w-full h-auto object-cover rounded-lg"
               src="/assets/thrift.jpg"
