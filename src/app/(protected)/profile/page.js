@@ -251,8 +251,8 @@ export default function ProfilePage() {
 				Welcome back, {profile?.full_name}!
 			</h1>
 			{loading && (
-				<div className="flex items-center justify-center h-[400px] text-6xl text-[var(--theme-gold)]">
-					<UISpinner className="size-40" /> Fetching your informtion!
+				<div className="flex items-center justify-center h-[400px] text-md text-[var(--theme-gold)]">
+					<UISpinner className='mr-2' /> Fetching your informtion!
 				</div>
 			)}
 

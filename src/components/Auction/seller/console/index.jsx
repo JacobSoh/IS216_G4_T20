@@ -7,6 +7,7 @@ import SellerDatatable from "@/components/Auction/seller/datatable";
 import SellerDashboard from "@/components/Auction/seller/dashboard";
 import getProfile from "@/hooks/getProfile";
 import VerifyButton from "@/components/Persona";
+import { Spinner as UISpinner } from '@/components/ui/spinner';
 
 import {
   Card,
@@ -44,7 +45,19 @@ export default function SellerConsole({ auctions = [] }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-[var(--theme-cream)]">Loading your profile…</div>
+      <div className='space-y-12'>
+        <div className="flex items-start justify-between">
+          <h1 className={`text-4xl font-bold text-[var(--theme-gold)]`}>
+            Seller Console
+          </h1>
+          <Button variant="brand" loadingOnClick={true} disabled={!isVerified} onClick={() => {
+            return window.location.href = '/auction/seller/create';
+          }}>Create Auction</Button>
+        </div>
+        <div className="flex items-center justify-center py-20 text-[var(--theme-gold)]">
+          <UISpinner className='mr-2' /> Fetching your informtion!
+        </div>
+      </div>
     );
   }
 
@@ -54,7 +67,7 @@ export default function SellerConsole({ auctions = [] }) {
         <h1 className={`text-4xl font-bold text-[var(--theme-gold)]`}>
           Seller Console
         </h1>
-        <Button variant="brand" loadingOnClick={true} className={`h-11 ${!isVerified ? 'hidden' : ''}`} onClick={() => {
+        <Button variant="brand" loadingOnClick={true} disabled={!isVerified} onClick={() => {
           return window.location.href = '/auction/seller/create';
         }}>Create Auction</Button>
       </div>

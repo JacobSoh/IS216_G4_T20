@@ -7,6 +7,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, ChevronLeft, ChevronRight, Sea
 import { supabaseBrowser } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CustomInput } from "@/components/Form";
+import { toast } from "sonner";
 // import {
 //   Table,
 //   TableBody,
@@ -94,6 +95,17 @@ export default function SellerDatatable({ auctions = [] }) {
   const [itemsReady, setItemsReady] = useState(false);
   const [itemsLoading, setItemsLoading] = useState(false);
   const pageSize = 8;
+
+  // Show a success toast after a delete-triggered reload
+  useEffect(() => {
+    try {
+      const flag = sessionStorage.getItem("auction:deleted-success");
+      if (flag) {
+        sessionStorage.removeItem("auction:deleted-success");
+        toast.success("Auction deleted successfully.");
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const ids = (auctions ?? [])
@@ -314,25 +326,29 @@ function FlipAuctionCard({ auction, thumbnail }) {
     e.stopPropagation();
     window.location.href = `/auction/seller/edit/${auction.aid}`;
   };
-  const onDelete = async (e) => {
+  const onDelete = (e) => {
     e.stopPropagation();
     if (!confirm('Delete this auction?')) return;
-    try {
-      const res = await fetch('/api/auctions', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aid: auction.aid })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || data?.status >= 400) {
-        throw new Error(data?.error || 'Failed to delete');
+    // Return a promise so <Button loadingOnClick> can show a spinner
+    return (async () => {
+      try {
+        const res = await fetch('/api/auctions', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ aid: auction.aid })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data?.status >= 400) {
+          throw new Error(data?.error || 'Failed to delete');
+        }
+        // Mark success and reload; toast will show on next load
+        try { sessionStorage.setItem('auction:deleted-success', '1'); } catch {}
+        try { window.location.reload(); } catch { }
+      } catch (err) {
+        console.error(err);
+        alert(err?.message || 'Delete failed');
       }
-      // Trigger a soft reload; this page is client-side so refresh is okay
-      try { window.location.reload(); } catch { }
-    } catch (err) {
-      console.error(err);
-      alert(err?.message || 'Delete failed');
-    }
+    })();
   };
 
   return (
@@ -374,8 +390,13 @@ function FlipAuctionCard({ auction, thumbnail }) {
             <Button variant="outline" className="w-full" onClick={onEdit}>
               <Pencil className="mr-1" /> Edit
             </Button>
-            <Button variant="destructive" className="w-full" onClick={onDelete}>
-              <Trash className="mr-1" /> Delete
+            <Button
+              variant="destructive"
+              className="w-full group"
+              onClick={onDelete}
+              loadingOnClick
+            >
+              <Trash className="mr-1 group-aria-[busy=true]:hidden" /> Delete
             </Button>
           </div>
         </CardFooter>
