@@ -48,9 +48,17 @@ export default function SellerConsole({ auctions = [] }) {
     );
   }
 
-  if (error || !isVerified) {
-    return (
-      <div className="max-w-2xl mx-auto">
+  return (
+    <div className='space-y-12'>
+      <div className="flex items-start justify-between">
+        <h1 className={`text-4xl font-bold text-[var(--theme-gold)]`}>
+          Seller Console
+        </h1>
+        <Button variant="brand" loadingOnClick={true} className={`h-11 ${!isVerified ? 'hidden' : ''}`} onClick={() => {
+          return window.location.href = '/auction/seller/create';
+        }}>Create Auction</Button>
+      </div>
+      {!isVerified && (
         <Card variant="default">
           <CardHeader>
             <CardTitle>Seller Verification Required</CardTitle>
@@ -72,21 +80,8 @@ export default function SellerConsole({ auctions = [] }) {
             </div>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-12">
-      <div className="flex items-start justify-between mr-15">
-        <h1 className={`text-4xl font-bold text-[var(--theme-gold)]`}>
-          Seller Console
-        </h1>
-        <Button variant="brand" loadingOnClick={true} className="h-11 -translate-y-2" onClick={() => {
-          return window.location.href = '/auction/seller/create';
-        }}>Create Auction</Button>
-      </div>
-      <Tabs defaultValue="manage" className='space-y-6'>
+      )}
+      <Tabs defaultValue="manage" className={`${!isVerified ? 'hidden' : ''} space-y-6`}>
         <TabsList className='w-full'>
           <TabsTrigger value="manage">Manage</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
