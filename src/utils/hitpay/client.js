@@ -148,9 +148,9 @@ export async function createWithdrawalPayout(amount, userId, bankDetails, note =
 
         // Build transfer payload with beneficiary object
         const transferData = {
-            amount: amount.toString(),
-            currency: CONFIG.currency,
+            source_amount: amount.toString(),
             source_currency: CONFIG.currency,
+            currency: CONFIG.currency,
             reference_number: referenceNumber,
             description: note || `Wallet withdrawal to ${bankDetails.bankName}`,
             purpose: 'Wallet Withdrawal',
