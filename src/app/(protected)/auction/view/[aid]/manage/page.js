@@ -29,6 +29,11 @@ export default async function AuctionManagePage({ params }) {
     redirect(`/auction/view/${aid}/ended`)
   };
 
+  // If user is not authenticated, send them home (middleware should also catch this)
+  if (!user) {
+    redirect('/');
+  }
+
   const ownerCandidates = [
     snapshot.auction?.oid,
     snapshot.auction?.owner?.id

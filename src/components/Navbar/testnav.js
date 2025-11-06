@@ -231,7 +231,7 @@ const avatarUrl =
     {imageItems.slice(0, 2).map((item, i) => {
       const isHovered = hoveredLink === i;
       return (
-        <Link
+        <a
           key={i}
           href={item.href}
           onClick={() => setMenuOpen(false)}
@@ -244,7 +244,7 @@ const avatarUrl =
               transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
             whileHover={{ y: 10 }}
           />
-        </Link>
+        </a>
       );
     })}
   </motion.div>
@@ -262,7 +262,7 @@ const avatarUrl =
       const index = i + 2;
       const isHovered = hoveredLink === index;
       return (
-        <Link
+        <a
           key={index}
           href={item.href}
           onClick={() => setMenuOpen(false)}
@@ -275,7 +275,7 @@ const avatarUrl =
               transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
             whileHover={{ y: 10 }}
           />
-        </Link>
+        </a>
       );
     })}
   </motion.div>
