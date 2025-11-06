@@ -123,11 +123,23 @@ const avatarUrl =
 
 
   const imageItems = [
-    { src: "/assets/kidshomedrawing.jpg", alt: "Home" },
-    { src: "/assets/gavel.jpg", alt: "Auctions" },
-    { src: "/assets/stuff.jpg", alt: "Categories" },
-    { src: "/assets/profile.jpg", alt: "Profile" },
-  ];
+  {
+    src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/Kidshomedrawing.jpg",
+    alt: "Home",
+  },
+  {
+    src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/gavel.jpg",
+    alt: "Auctions",
+  },
+  {
+    src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/stuff.jpg",
+    alt: "Categories",
+  },
+  {
+    src: avatarUrl, // ← dynamically shows user avatar
+    alt: userProfile?.username || "Profile",
+  },
+];
 
   const baseLinks = [
     { name: "Home", href: "/" },
@@ -137,8 +149,9 @@ const avatarUrl =
   const navLinks = isAuthed
     ? [
         ...baseLinks,
-        { name: "Dashboard", href: "/auction/seller" },
         { name: "Profile", href: "/profile" },
+        { name: "Dashboard", href: "/auction/seller" },
+        
         
       ]
     : baseLinks; // Hide Profile when not logged in
