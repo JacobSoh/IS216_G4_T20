@@ -178,9 +178,8 @@ export default function WalletModal({
                     transaction_type: 'withdraw',
                     amount: amount,
                     status: hitpayResult.status || 'pending',
-                    description: `Withdrawal to ${bankDetails.bankName} - ${bankDetails.accountNumber}${withdrawNote ? ` | ${withdrawNote}` : ''}`,
-                    payment_id: hitpayResult.transferId,
-                    reference_id: hitpayResult.reference,
+                    description: `Withdrawal to ${bankDetails.bankName} - ${bankDetails.accountNumber}${withdrawNote ? ` | ${withdrawNote}` : ''} (Ref: ${hitpayResult.reference})`,
+                    reference_id: hitpayResult.transferId,
                     created_at: new Date().toISOString()
                 });
 

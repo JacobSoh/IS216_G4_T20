@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useModal } from "@/context/ModalContext";
@@ -89,10 +90,10 @@ export default function BubbleNav() {
   };
 
   const imageItems = [
-    { src: "/assets/kidshomedrawing.jpg", alt: "Home" },
-    { src: "/assets/gavel.jpg", alt: "Auctions" },
-    { src: "/assets/stuff.jpg", alt: "Categories" },
-    { src: "/assets/profile.jpg", alt: "Profile" },
+    { src: "/assets/kidshomedrawing.jpg", alt: "Home", href: "/" },
+    { src: "/assets/gavel.jpg", alt: "Auctions", href: "/featured_auctions" },
+    { src: "/assets/stuff.jpg", alt: "Categories", href: "/categories" },
+    { src: "/assets/profile.jpg", alt: "Profile", href: "/profile" },
   ];
 
   const baseLinks = [
@@ -196,14 +197,20 @@ export default function BubbleNav() {
     {imageItems.slice(0, 2).map((item, i) => {
       const isHovered = hoveredLink === i;
       return (
-        <motion.img
+        <Link
           key={i}
-          src={item.src}
-          alt={item.alt}
-          className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
-            transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
-          whileHover={{ y: 10 }}
-        />
+          href={item.href}
+          onClick={() => setMenuOpen(false)}
+          className="block"
+        >
+          <motion.img
+            src={item.src}
+            alt={item.alt}
+            className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
+              transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
+            whileHover={{ y: 10 }}
+          />
+        </Link>
       );
     })}
   </motion.div>
@@ -221,14 +228,20 @@ export default function BubbleNav() {
       const index = i + 2;
       const isHovered = hoveredLink === index;
       return (
-        <motion.img
+        <Link
           key={index}
-          src={item.src}
-          alt={item.alt}
-          className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
-            transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
-          whileHover={{ y: 10 }}
-        />
+          href={item.href}
+          onClick={() => setMenuOpen(false)}
+          className="block"
+        >
+          <motion.img
+            src={item.src}
+            alt={item.alt}
+            className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
+              transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
+            whileHover={{ y: 10 }}
+          />
+        </Link>
       );
     })}
   </motion.div>
