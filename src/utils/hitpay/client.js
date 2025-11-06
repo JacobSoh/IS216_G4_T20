@@ -5,7 +5,7 @@ const CONFIG = {
     apiKey: process.env.HITPAY_API_KEY,
     apiUrl: process.env.HITPAY_API_URL || 'https://api.sandbox.hit-pay.com/v1',
     baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
-    currency: 'SGD',
+    currency: 'sgd',
     paymentMethods: ['paynow_online', 'card']
 };
 
