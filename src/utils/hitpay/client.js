@@ -144,22 +144,48 @@ export async function createWithdrawalPayout(amount, userId, bankDetails, note =
     }
 
     try {
+        const holderTypeRaw = typeof bankDetails.holderType === 'string'
+            ? bankDetails.holderType.trim().toLowerCase()
+            : '';
+
+        const normalizedHolderType = ['business', 'company', 'corporate'].includes(holderTypeRaw)
+            ? 'business'
+            : 'individual';
+
+        const sanitizedBankDetails = {
+            bankName: (bankDetails.bankName || '').trim(),
+            accountNumber: String(bankDetails.accountNumber || '').trim(),
+            accountName: (bankDetails.accountName || '').trim(),
+            holderType: normalizedHolderType
+        };
+
+        if (!sanitizedBankDetails.bankName || !sanitizedBankDetails.accountNumber || !sanitizedBankDetails.accountName) {
+            return {
+                success: false,
+                error: 'Complete bank details are required.'
+            };
+        }
+
         const referenceNumber = `WITHDRAW_${userId}_${Date.now()}`;
 
         // Build transfer payload with beneficiary object
         const transferData = {
-            source_amount: amount.toString(),
+            source_amount: Number(amount),
             source_currency: CONFIG.currency,
             currency: CONFIG.currency,
             reference_number: referenceNumber,
-            description: note || `Wallet withdrawal to ${bankDetails.bankName}`,
+            description: note || `Wallet withdrawal to ${sanitizedBankDetails.bankName}`,
             purpose: 'Wallet Withdrawal',
             beneficiary: {
-                bank_account_number: bankDetails.accountNumber,
-                account_holder_name: bankDetails.accountName,
-                bank_swift_code: getBankSwiftCode(bankDetails.bankName),
-                bank_name: bankDetails.bankName,
-                bank_country: 'SG'
+                country: 'sg',
+                currency: CONFIG.currency,
+                transfer_method: 'bank_transfer',
+                transfer_type: 'local',
+                holder_type: sanitizedBankDetails.holderType,
+                holder_name: sanitizedBankDetails.accountName,
+                account_number: sanitizedBankDetails.accountNumber,
+                bank_swift_code: getBankSwiftCode(sanitizedBankDetails.bankName),
+                bank_name: sanitizedBankDetails.bankName
             }
         };
 

@@ -6,6 +6,7 @@ import { PieChart } from "@mui/x-charts/PieChart";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 // Category palette
@@ -24,6 +25,7 @@ const categoryColorPalette = [
 
 export default function CategorySalesPieChart({ sellerId }) {
   const sb = supabaseBrowser();
+  const isSmallScreen = useMediaQuery('(max-width:640px)');
   const [loading, setLoading] = useState(true);
   const [itemsData, setItemsData] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -195,8 +197,8 @@ export default function CategorySalesPieChart({ sellerId }) {
       };
     }, [itemsData, categories, categoryColors]);
 
-  const innerRadius = 50;
-  const middleRadius = 120;
+  const innerRadius = isSmallScreen ? 30 : 50;
+  const middleRadius = isSmallScreen ? 90 : 120;
 
   if (loading) {
     return (

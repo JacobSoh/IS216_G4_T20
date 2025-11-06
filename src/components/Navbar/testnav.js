@@ -123,24 +123,11 @@ const avatarUrl =
 
 
   const imageItems = [
-  {
-    src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/Kidshomedrawing.jpg",
-    alt: "Home",
-  },
-  {
-    src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/gavel.jpg",
-    alt: "Auctions",
-  },
-  {
-    src: "https://teiunfcrodktaevlilhm.supabase.co/storage/v1/object/public/images/stuff.jpg",
-    alt: "Categories",
-  },
-  {
-    src: avatarUrl, // ← dynamically shows user avatar
-    alt: userProfile?.username || "Profile",
-  },
-];
-
+    { src: "/assets/kidshomedrawing.jpg", alt: "Home" },
+    { src: "/assets/gavel.jpg", alt: "Auctions" },
+    { src: "/assets/stuff.jpg", alt: "Categories" },
+    { src: "/assets/profile.jpg", alt: "Profile" },
+  ];
 
   const baseLinks = [
     { name: "Home", href: "/" },
@@ -244,14 +231,20 @@ const avatarUrl =
     {imageItems.slice(0, 2).map((item, i) => {
       const isHovered = hoveredLink === i;
       return (
-        <motion.img
+        <Link
           key={i}
-          src={item.src}
-          alt={item.alt}
-          className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
-            transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
-          whileHover={{ y: 10 }}
-        />
+          href={item.href}
+          onClick={() => setMenuOpen(false)}
+          className="block"
+        >
+          <motion.img
+            src={item.src}
+            alt={item.alt}
+            className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
+              transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
+            whileHover={{ y: 10 }}
+          />
+        </Link>
       );
     })}
   </motion.div>
@@ -269,14 +262,20 @@ const avatarUrl =
       const index = i + 2;
       const isHovered = hoveredLink === index;
       return (
-        <motion.img
+        <Link
           key={index}
-          src={item.src}
-          alt={item.alt}
-          className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
-            transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
-          whileHover={{ y: 10 }}
-        />
+          href={item.href}
+          onClick={() => setMenuOpen(false)}
+          className="block"
+        >
+          <motion.img
+            src={item.src}
+            alt={item.alt}
+            className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 object-cover rounded-sm shadow-[0_0_40px_rgba(147,51,234,0.5)]
+              transition-all duration-500 ease-in-out ${isHovered ? "grayscale-0 scale-105" : "grayscale"}`}
+            whileHover={{ y: 10 }}
+          />
+        </Link>
       );
     })}
   </motion.div>

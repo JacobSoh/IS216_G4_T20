@@ -865,6 +865,16 @@ export default function FuturisticAuction() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }
         }
+
+        /* Slider dots styling */
+        .slick-dots li button:before {
+          color: white !important;
+          opacity: 0.5;
+        }
+        .slick-dots li.slick-active button:before {
+          color: white !important;
+          opacity: 1;
+        }
       `}</style>
     </div>
   );
