@@ -1,6 +1,21 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
-
+CREATE TABLE public.profile (
+  id uuid NOT NULL DEFAULT auth.uid(),
+  first_name character varying,
+  middle_name character varying,
+  last_name character varying,
+  address character varying,
+  username character varying NOT NULL UNIQUE,
+  avatar_bucket text DEFAULT 'avatar'::text,
+  object_path text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  wallet_balance numeric DEFAULT 0.00 CHECK (wallet_balance >= 0::numeric),
+  wallet_held numeric DEFAULT 0.00 CHECK (wallet_held >= 0::numeric),
+  verified boolean DEFAULT false,
+  CONSTRAINT profile_pkey PRIMARY KEY (id),
+  CONSTRAINT profile_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
 CREATE TABLE public.auction (
   aid uuid NOT NULL DEFAULT gen_random_uuid(),
   oid uuid NOT NULL,
@@ -26,6 +41,21 @@ CREATE TABLE public.auction_chat (
   CONSTRAINT auction_chat_aid_fkey FOREIGN KEY (aid) REFERENCES public.auction(aid),
   CONSTRAINT auction_chat_uid_fkey FOREIGN KEY (uid) REFERENCES public.profile(id)
 );
+CREATE TABLE public.item (
+  iid uuid NOT NULL DEFAULT gen_random_uuid(),
+  aid uuid,
+  oid uuid NOT NULL,
+  min_bid numeric NOT NULL CHECK (min_bid >= 0::numeric),
+  title character varying NOT NULL,
+  description character varying NOT NULL,
+  item_bucket text NOT NULL DEFAULT 'item'::text,
+  object_path text NOT NULL,
+  bid_increment integer,
+  sold boolean NOT NULL DEFAULT false,
+  CONSTRAINT item_pkey PRIMARY KEY (iid),
+  CONSTRAINT item_oid_fkey FOREIGN KEY (oid) REFERENCES public.profile(id),
+  CONSTRAINT item_aid_fkey FOREIGN KEY (aid) REFERENCES public.auction(aid)
+);
 CREATE TABLE public.bid_history (
   bid_id uuid NOT NULL DEFAULT gen_random_uuid(),
   iid uuid NOT NULL,
@@ -47,6 +77,21 @@ CREATE TABLE public.category (
   object_path text,
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
   CONSTRAINT category_pkey PRIMARY KEY (category_name)
+);
+CREATE TABLE public.wallet_transaction (
+  tid uuid NOT NULL DEFAULT gen_random_uuid(),
+  uid uuid NOT NULL,
+  transaction_type character varying NOT NULL,
+  amount numeric NOT NULL CHECK (amount > 0::numeric),
+  status character varying NOT NULL DEFAULT 'pending'::character varying,
+  reference_id text,
+  related_item_id uuid,
+  description text,
+  created_at timestamp with time zone DEFAULT now(),
+  completed_at timestamp with time zone,
+  CONSTRAINT wallet_transaction_pkey PRIMARY KEY (tid),
+  CONSTRAINT wallet_transaction_uid_fkey FOREIGN KEY (uid) REFERENCES public.profile(id),
+  CONSTRAINT wallet_transaction_related_item_id_fkey FOREIGN KEY (related_item_id) REFERENCES public.item(iid)
 );
 CREATE TABLE public.current_bid (
   bid_datetime timestamp with time zone NOT NULL,
@@ -82,21 +127,6 @@ CREATE TABLE public.enquiry (
   Resolved boolean DEFAULT false,
   CONSTRAINT enquiry_pkey PRIMARY KEY (id)
 );
-CREATE TABLE public.item (
-  iid uuid NOT NULL DEFAULT gen_random_uuid(),
-  aid uuid,
-  oid uuid NOT NULL,
-  min_bid numeric NOT NULL CHECK (min_bid >= 0::numeric),
-  title character varying NOT NULL,
-  description character varying NOT NULL,
-  item_bucket text NOT NULL DEFAULT 'item'::text,
-  object_path text NOT NULL,
-  bid_increment integer,
-  sold boolean NOT NULL DEFAULT false,
-  CONSTRAINT item_pkey PRIMARY KEY (iid),
-  CONSTRAINT item_oid_fkey FOREIGN KEY (oid) REFERENCES public.profile(id),
-  CONSTRAINT item_aid_fkey FOREIGN KEY (aid) REFERENCES public.auction(aid)
-);
 CREATE TABLE public.item_category (
   itemid uuid NOT NULL,
   category_name character varying NOT NULL,
@@ -129,22 +159,6 @@ CREATE TABLE public.persona (
   CONSTRAINT persona_pkey PRIMARY KEY (id),
   CONSTRAINT persona_oid_fkey FOREIGN KEY (oid) REFERENCES auth.users(id)
 );
-CREATE TABLE public.profile (
-  id uuid NOT NULL DEFAULT auth.uid(),
-  first_name character varying,
-  middle_name character varying,
-  last_name character varying,
-  address character varying,
-  username character varying NOT NULL UNIQUE,
-  avatar_bucket text DEFAULT 'avatar'::text,
-  object_path text,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  wallet_balance numeric DEFAULT 0.00 CHECK (wallet_balance >= 0::numeric),
-  wallet_held numeric DEFAULT 0.00 CHECK (wallet_held >= 0::numeric),
-  verified boolean DEFAULT false,
-  CONSTRAINT profile_pkey PRIMARY KEY (id),
-  CONSTRAINT profile_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
-);
 CREATE TABLE public.review (
   reviewee_id uuid NOT NULL,
   reviewer_id uuid NOT NULL,
@@ -155,22 +169,6 @@ CREATE TABLE public.review (
   CONSTRAINT review_reviewee_id_fkey FOREIGN KEY (reviewee_id) REFERENCES public.profile(id),
   CONSTRAINT review_reviewer_id_fkey FOREIGN KEY (reviewer_id) REFERENCES public.profile(id)
 );
-CREATE TABLE public.wallet_transaction (
-  tid uuid NOT NULL DEFAULT gen_random_uuid(),
-  uid uuid NOT NULL,
-  transaction_type character varying NOT NULL,
-  amount numeric NOT NULL CHECK (amount > 0::numeric),
-  status character varying NOT NULL DEFAULT 'pending'::character varying,
-  reference_id text,
-  related_item_id uuid,
-  description text,
-  created_at timestamp with time zone DEFAULT now(),
-  completed_at timestamp with time zone,
-  CONSTRAINT wallet_transaction_pkey PRIMARY KEY (tid),
-  CONSTRAINT wallet_transaction_uid_fkey FOREIGN KEY (uid) REFERENCES public.profile(id),
-  CONSTRAINT wallet_transaction_related_item_id_fkey FOREIGN KEY (related_item_id) REFERENCES public.item(iid)
-);
-
 
 CREATE OR REPLACE FUNCTION public.add_to_wallet(user_id uuid, add_amount numeric)
  RETURNS void
@@ -181,7 +179,7 @@ BEGIN
     SET wallet_balance = wallet_balance + add_amount
     WHERE id = user_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.auth_user_exists(p_email text)
  RETURNS boolean
@@ -194,7 +192,7 @@ AS $function$
     from auth.users
     where lower(email) = lower(p_email)
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.hold_bid_funds(user_id uuid, hold_amount numeric)
  RETURNS boolean
@@ -220,7 +218,7 @@ BEGIN
         RETURN false;
     END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.insert_new_user()
  RETURNS trigger
@@ -237,7 +235,8 @@ AS $function$begin
   on conflict (id) do nothing;
 
   return new;
-end;$function$
+END;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.process_withdrawal(user_id uuid, withdrawal_amount numeric)
  RETURNS boolean
@@ -259,7 +258,7 @@ BEGIN
         RETURN false;
     END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.release_held_funds(user_id uuid, release_amount numeric)
  RETURNS void
@@ -271,7 +270,7 @@ BEGIN
         wallet_held = wallet_held - release_amount
     WHERE id = user_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.review_stats(p_reviewee uuid)
  RETURNS TABLE(total integer, total_stars numeric, avg_rating numeric)
@@ -284,7 +283,7 @@ AS $function$
     coalesce(avg(stars)::numeric, 0)               as avg_rating
   from public.review
   where reviewee_id = p_reviewee
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.transfer_to_seller(buyer_id uuid, seller_id uuid, transfer_amount numeric)
  RETURNS void
@@ -301,7 +300,7 @@ BEGIN
     SET wallet_balance = wallet_balance + transfer_amount
     WHERE id = seller_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.upd_profile_last_updated()
  RETURNS trigger
@@ -311,6 +310,6 @@ begin
   NEW.updated_at := now();
   return NEW;
 end;
-$function$
+$function$;
 
-CREATE TRIGGER auth_insert_trigger AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION insert_new_user()
+CREATE TRIGGER auth_insert_trigger AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION insert_new_user();

@@ -10,15 +10,13 @@
 
 | Photo | Full Name | Role / Features Responsible For |
 |:--:|:--|:--|
-| <img src="photos/member1.jpg" width="80"> | ChatGPT + Claude | Our Bestfriend |
-| <img src="photos/member2.jpg" width="80"> | Joshua Lim | Supreme Leader - Oversees project direction, architecture, and integration of the Profile and Dashboard features. |
-| <img src="photos/member3.jpg" width="80"> | Jared Chan | Lead Backend Engineer - Develops and maintains backend logic for Auction Theatre and Management systems. |
-| <img src="photos/member4.jpg" width="80"> | Javen Tan | UI/UX Designer - Designs user flows and interfaces for the Landing and Category pages, ensuring visual consistency and usability. |
-| <img src="photos/member5.jpg" width="80"> | Kai Wen | Frontend Developer - Builds and refines the Auction Creation interface with responsive, user-friendly design. |
-| <img src="photos/member6.jpg" width="80"> | Benedic Tan | Backend Engineer - Implements APIs and database logic for the Auction Creation module. |
-| <img src="photos/member7.jpg" width="80"> | Jacob Soh | System Architect - Designs core system architecture, ensures seamless integration between frontend and backend, and maintains codebase scalability. |
-
-> Place all headshot thumbnails in the `/photos` folder (JPEG or PNG).
+| <img src="README/photos/member1.png" width="80"> | ChatGPT + Claude | Our Bestfriend |
+| <img src="README/photos/member2.jpg" width="80"> | Joshua Lim | Supreme Leader - Oversees project direction, architecture, and integration of the Profile and Dashboard features. |
+| <img src="README/photos/member3.jpg" width="80"> | Jared Chan | Lead Backend Engineer - Develops and maintains backend logic for Auction Theatre and Management systems. |
+| <img src="README/photos/member4.jpg" width="80"> | Javen Tan | UI/UX Designer - Designs user flows and interfaces for the Landing and Category pages, ensuring visual consistency and usability. |
+| <img src="README/photos/member5.jpg" width="80"> | Kai Wen | Frontend Developer - Builds and refines the Auction Creation interface with responsive, user-friendly design. |
+| <img src="README/photos/member6.jpg" width="80"> | Benedic Tan | Backend Engineer - Implements APIs and database logic for the Auction Creation module. |
+| <img src="README/photos/member7.jpg" width="80"> | Jacob Soh | Git Master - Builds and refines UI/UX and handles merges between git branches. |
 
 ---
 
@@ -63,6 +61,7 @@ Explain the core features and the benefit each provides.
 | <img src="https://raw.githubusercontent.com/github/explore/main/topics/shadcn-ui/shadcn-ui.png" width="40"> | **ShadCN** | React component library |
 | <img src="https://raw.githubusercontent.com/github/explore/main/topics/javascript/javascript.png" width="40"> | **JavaScript (ES6)** |  Interactivity and logic |
 | <img src="https://raw.githubusercontent.com/github/explore/main/topics/nextjs/nextjs.png" width="40"> | **Next JS / React JS** | Frontend and routing framework |
+| <img src="https://raw.githubusercontent.com/github/explore/main/topics/supabase/supabase.png" width="40"> | **Supabase** | Database and Authentication |
 
 ---
 
@@ -217,7 +216,7 @@ HITPAY_API_KEY=
 HITPAY_SALT=
 HITPAY_API_URL=
 
-# Persona API
+# Persona SANDBOX/TEST Configuration
 # Uses webhook, require special configuration at Persona Dashboard
 NEXT_PUBLIC_PERSONA_TEMPLATE_ID=
 NEXT_PUBLIC_PERSONA_ENV_ID=
@@ -299,9 +298,7 @@ npm run test
 | Issue | Cause | Fix |
 |:--|:--|:--|
 | `Module not found` | Missing dependencies | Run `npm install` again |
-| `Firebase: permission-denied` | Firestore security rules not set | Check rules under Firestore → Rules |
-| `CORS policy error` | Backend not allowing requests | Enable your domain in CORS settings |
-| `.env` variables undefined | Missing `VITE_` prefix | Rename variables to start with `VITE_` |
+| `.env.local` variables undefined | Missing `NEXT_PUBLIC_` prefix | Rename variables to start with `NEXT_PUBLIC_` |
 | `npm run dev` fails | Node version mismatch | Check Node version (`node -v` ≥ 18) |
 
 ---
