@@ -251,9 +251,11 @@ NEXT_PUBLIC_SERPAPI_KEY=
    - **Create Scehmas** -> Load [main.sql](README/main.sql)
 4. Copy the Supabase required API into your `.env.local` file.
 
-### HitPay & Persona
-1. Inform contributors if testing these APIs
-
+### Persona
+1. Visit [Persona](https://app.withpersona.com/dashboard/home)
+2. Sign up for an account, under Sandbox user.
+3. Select KYC + Address work flow.
+4. Copy the required Persona API into your `.env.local` file.
 ---
 
 ### 4) Run the Frontend
