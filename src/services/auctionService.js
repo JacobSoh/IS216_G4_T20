@@ -31,7 +31,7 @@ import {
   insertWalletTransaction
 } from '@/repositories/walletTransactionRepo'
 
-const REQUIRED_FIELDS = ['oid', 'name', 'start_time', 'end_time', 'thumbnail_bucket', 'object_path']
+const REQUIRED_FIELDS = ['oid', 'aid', 'name', 'start_time', 'thumbnail_bucket', 'object_path']
 
 function validateParam(data = {}) {
   const missing = REQUIRED_FIELDS.filter((field) => !Object.prototype.hasOwnProperty.call(data, field))
@@ -228,9 +228,9 @@ export async function getAuctionById(aid) {
 }
 
 export async function updateAuctionById(param, aid) {
-  const validation = validateParam(param)
+  const validation = validateParam({...param, aid})
   if (!validation.success) throw new Error(validation.message)
-  const auction = new Auction(param)
+  const auction = new Auction({...param, aid})
   const data = await upAuctionById(auction, aid)
   if (!data) throw new Error('Auction is not updated')
   return enhanceAuctionRecord(data)

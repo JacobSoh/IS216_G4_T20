@@ -63,7 +63,7 @@ export default function SellerConsole({ auctions = [] }) {
 
   return (
     <div className='space-y-12'>
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between mr-13">
         <h1 className={`text-4xl font-bold text-[var(--theme-gold)]`}>
           Seller Console
         </h1>

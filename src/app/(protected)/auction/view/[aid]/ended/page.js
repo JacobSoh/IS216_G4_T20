@@ -46,7 +46,7 @@ export default async function AuctionEndedPage({ params }) {
             Return Home
           </Link>
           <Link
-            href="/dashboard"
+            href="/view/dashboard"
             className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold border border-[#B984DB] text-[#B984DB] hover:border-[#F8E2D4] hover:text-[#F8E2D4] transition-colors"
           >
             Go to Dashboard
