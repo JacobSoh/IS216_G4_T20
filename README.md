@@ -337,3 +337,15 @@ Each member should contribute 2–3 sentences on their learning and project expe
 
 3. ### Insights on Teamwork, Project Management, and Problem-Solving
    Working together taught us the importance of planning, communication, and task delegation. Regular discussions and updates ensured everyone was aligned on project goals and progress. We realized that effective teamwork is not just about coding but also about understanding each other’s strengths and supporting one another during obstacles. Through this experience, we improved our project management discipline, learned to adapt quickly to changes, and developed a collaborative mindset essential for future professional projects.
+
+Lower-order thinking tasks (allowed):
+Information search (yes)
+Generating website concepts, layouts, or themes (yes)
+Exploring UI/UX design inspirations (yes)
+Explaining coding errors / debugging hints (yes)
+Boilerplate code generation (starter code, small code snippets) (yes)
+Generating unit tests, sample inputs, or mock data (yes)
+Higher-order thinking tasks (not allowed):
+Core implementation tasks (no)
+Major business logic, backend endpoints, or critical frontend interactivity (no)
+Solving significant implementation issues (no)
